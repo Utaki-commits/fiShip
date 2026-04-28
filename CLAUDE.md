@@ -5,72 +5,49 @@
 ターゲット：30〜65歳男性船長（ITリテラシー低め）
 
 ## 技術スタック
-- Next.js 14 (App Router)
-- TypeScript
-- Tailwind CSS
+- Next.js 14 (App Router) / TypeScript / Tailwind CSS
 - Supabase (PostgreSQL・認証)
-- Vercel (ホスティング・Cron)
+- Vercel (ホスティング)
 
 ## ディレクトリ構成
-- src/app/ — ページコンポーネント
-- src/lib/supabase.ts — Supabase接続
-- src/app/login/ — 船長ログイン画面
-- src/app/register/ — 初回登録フロー
+- src/app/login/ — 船長ログイン
+- src/app/register/ — 初回登録
 - src/app/dashboard/ — 船長管理画面
+- src/lib/supabase.ts — Supabase接続
 
-## データベース構成
+## データベース
 - vessels — 船・船長情報
 - bookings — 予約データ
 - customers — 顧客名簿
 - passenger_logs — 乗船名簿
 
-## UI/UX設計原則（必ず守ること）
+## UI/UX原則（必ず守る）
 - 1画面1アクション
 - タップ対象は最小44px以上
-- テキスト入力は最小限（選択・トグルで代替）
-- IT用語を使わない（例：「連携」→「つなぐ」）
-- 進捗を常に表示する
+- IT用語禁止（OCR・PDF・Webhook等）
+- 選択肢は4つ以下・デフォルト値を適切に設定
 - 文字は大きく・コントラスト高く
-- 選択肢は4つ以下
-- デフォルト値を適切に設定
 
-## 色の意味（全画面統一）
+## 色の統一ルール
 - 水色：昼便・空きあり
 - 紺紫：夜便・空きあり
 - 赤：満員・残り2名以下
 - オレンジ：貸切・承認待ち
-- 黄色：承認待ちあり（船長側のみ）
 - グレー：休船日・操作不可
 
-## 文言ルール
-- 「満員」で統一（「満船」は使わない）
-- 「休船日」で統一（「休漁日」は使わない）
-- 「OCR」「PDF」「Webhook」などのIT用語は使わない
-- 「名簿を保存する（印刷・提出用）」のように補足を添える
+## 文言統一
+- 「満員」「休船日」で統一
+- IT用語は使わない
 
 ## 予約ロジック
-- 先勝ちロジック：承認済み＋承認待ちの合計で判定
-- チャーターは常に承認待ち（即時成立しない）
-- 承認待ち0件の場合のみ即時予約成立
-- 代替日提案はSNS・電話経由のみ（予約ページは不要）
+- 承認待ち0件のみ即時成立（チャーターは常に承認待ち）
 - 残り2名以下で赤色表示
-
-## 便の設定
-- 昼便・夜便を期間で設定（例：夜便は6〜9月・金土日のみ）
-- 昼便のみの日：日付1タップで即フォーム
-- 昼夜両方の日：日付タップ→便選択→フォーム
+- 代替日提案はSNS・電話経由のみ
 
 ## 環境変数
 - NEXT_PUBLIC_SUPABASE_URL
 - NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-## 開発コマンド
-- npm run dev — ローカル開発サーバー起動
-- npm run build — ビルド
-- git push origin main — Vercelへ自動デプロイ
-
-## スコープ外（Phase2以降）
-- 釣果登録・釣果報告・釣果実績
-- X(Twitter) DM連携
-- Twilio自動録音
-- 決済機能（将来的に無断キャンセル対策として検討）
+## 開発
+- npm run dev — ローカル起動
+- git push origin main — Vercel自動デプロイ
