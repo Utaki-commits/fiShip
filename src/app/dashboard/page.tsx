@@ -112,15 +112,33 @@ export default function DashboardPage() {
 
   // カレンダーセルを描画（月・週共通）
   const renderCalendar = () => {
+    // デバッグ: renderCalendar呼び出し時のbinSettings状態を確認
+    console.log('renderCalendar: binSettings.length =', binSettings.length, binSettings)
+
     // 便設定がその月・曜日に該当するか判定
+    // days_of_week は数値・文字列どちらで返っても対応できるよう Number() で変換
     const isInPeriod = (bin: BinSetting, month: number, dayOfWeek: number): boolean => {
-      return bin.start_month <= month && month <= bin.end_month && bin.days_of_week.includes(dayOfWeek)
+      const inMonth = bin.start_month <= month && month <= bin.end_month
+      const inDow = bin.days_of_week.map(Number).includes(dayOfWeek)
+      return inMonth && inDow
     }
 
     // 指定日・便に対応するbin_settingを返す（なければnull = 休船日）
     const getApplicableBinSetting = (dateStr: string, binType: 'day' | 'night'): BinSetting | null => {
       const d = new Date(dateStr + 'T00:00:00')
-      return binSettings.find(s => s.bin_type === binType && isInPeriod(s, d.getMonth(), d.getDay())) ?? null
+      const month = d.getMonth()   // 0=1月 … 11=12月
+      const dow = d.getDay()       // 0=日 … 6=土
+      // デバッグ: 月初3日分のみ詳細ログ
+      if (d.getDate() <= 3) {
+        console.log(`getApplicableBin(${dateStr}, ${binType}): month=${month}, dow=${dow}`)
+        binSettings.forEach(s => {
+          console.log(
+            `  setting bin_type=${s.bin_type} start=${s.start_month} end=${s.end_month}`,
+            `days=${JSON.stringify(s.days_of_week)} → isInPeriod=${isInPeriod(s, month, dow)}`
+          )
+        })
+      }
+      return binSettings.find(s => s.bin_type === binType && isInPeriod(s, month, dow)) ?? null
     }
 
     // 1セルを描画
