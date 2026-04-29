@@ -27,7 +27,7 @@ type Booking = {
 type BinSetting = {
   id: string
   vessel_id: string
-  bin_type: string
+  bin_type: 'day' | 'night'
   start_month: number
   end_month: number
   days_of_week: number[]
@@ -112,23 +112,22 @@ export default function DashboardPage() {
   const getActiveBinBookings = (dateStr: string, binType: string) =>
     bookings.filter(b => b.date === dateStr && b.bin_type === binType && b.status !== 'rejected')
 
+  // 便設定がその月・曜日に該当するか判定（年またぎ月範囲対応）
+  const isInPeriod = (bin: BinSetting, month: number, dayOfWeek: number): boolean => {
+    const inMonth = bin.start_month <= bin.end_month
+      ? month >= bin.start_month && month <= bin.end_month
+      : month >= bin.start_month || month <= bin.end_month
+    return inMonth && bin.days_of_week.includes(dayOfWeek)
+  }
+
   // 指定日・便に対応するbin_settingを返す（なければnull = 休船日）
-  const getApplicableBinSetting = (dateStr: string, binType: string): BinSetting | null => {
+  const getApplicableBinSetting = (dateStr: string, binType: 'day' | 'night'): BinSetting | null => {
     const d = new Date(dateStr + 'T00:00:00')
-    const month = d.getMonth()
-    const dow = d.getDay()
-    return binSettings.find(s => {
-      if (s.bin_type !== binType) return false
-      // 年をまたぐ月範囲（例：10月〜2月）に対応
-      const inMonth = s.start_month <= s.end_month
-        ? month >= s.start_month && month <= s.end_month
-        : month >= s.start_month || month <= s.end_month
-      return inMonth && s.days_of_week.includes(dow)
-    }) ?? null
+    return binSettings.find(s => s.bin_type === binType && isInPeriod(s, d.getMonth(), d.getDay())) ?? null
   }
 
   // bin_settingsを参照して残り人数・色・状態を計算
-  const getBinInfo = (dateStr: string, binType: string) => {
+  const getBinInfo = (dateStr: string, binType: 'day' | 'night') => {
     const setting = getApplicableBinSetting(dateStr, binType)
 
     // 便設定なし → 休船日（グレー）
