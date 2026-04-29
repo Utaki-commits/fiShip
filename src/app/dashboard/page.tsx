@@ -95,7 +95,7 @@ export default function DashboardPage() {
   const getActiveBinBookings = (dateStr: string, binType: string) =>
     bookings.filter(b => b.date === dateStr && b.bin_type === binType && b.status !== 'rejected')
 
-  // 残り人数と色スタイルを計算
+  // 残り人数・色・状態を計算
   const getBinInfo = (dateStr: string, binType: string) => {
     const cap = vessel?.capacity ?? 4
     const bks = getActiveBinBookings(dateStr, binType)
@@ -103,23 +103,21 @@ export default function DashboardPage() {
     const remaining = cap - used
     const hasPending = bks.some(b => b.status === 'pending')
     const hasBooking = bks.length > 0
+    const isFull = hasBooking && remaining <= 0
 
     let bg: string
     let color: string
     if (!hasBooking) {
-      bg = binType === 'day' ? '#F0F9FF' : '#F5F3FF'
-      color = '#C4C9D4'
-    } else if (remaining <= 0) {
-      bg = '#FEE2E2'; color = '#B91C1C'      // 満員
-    } else if (remaining <= 2) {
-      bg = '#FEE2E2'; color = '#B91C1C'      // 残り2名以下
+      bg = '#F8F9FA'; color = '#9CA3AF'               // 休船日・グレー
+    } else if (isFull || remaining <= 2) {
+      bg = '#FEE2E2'; color = '#B91C1C'               // 満員・残り2名以下・赤
     } else if (binType === 'day') {
-      bg = '#E8F4FD'; color = '#0A3D62'      // 昼便・水色
+      bg = '#E8F4FD'; color = '#0A3D62'               // 昼便・水色
     } else {
-      bg = '#E0E7FF'; color = '#3730A3'      // 夜便・紺紫
+      bg = '#EEF2FF'; color = '#4338CA'               // 夜便・紺紫
     }
 
-    return { bg, color, remaining, hasPending, hasBooking }
+    return { bg, color, remaining, hasPending, hasBooking, isFull }
   }
 
   // カレンダーセル（月・週共通）
@@ -134,59 +132,59 @@ export default function DashboardPage() {
     const night = getBinInfo(dateStr, 'night')
     const hasPending = day.hasPending || night.hasPending
 
+    // 昼・夜エリアの内容テキストを組み立て
+    const dayLabel = !day.hasBooking ? null
+      : day.isFull ? '満員'
+      : `昼　残${day.remaining}`
+    const nightLabel = !night.hasBooking ? null
+      : night.isFull ? '満員'
+      : `夜　残${night.remaining}`
+
     return (
       <div
         key={dateStr}
         onClick={() => setSelectedDate(isSelected ? null : dateStr)}
         style={{
           borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          cursor: 'pointer', minHeight: '70px', transition: 'border-color .15s',
+          cursor: 'pointer', minHeight: '72px', transition: 'border-color .15s',
           border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
         }}
       >
-        {/* 日付行 */}
+        {/* 日付行：左上に小さく表示、承認待ちドットを右に */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '3px 4px 2px', background: 'rgba(255,255,255,0.9)',
+          padding: '2px 3px 1px', background: '#fff',
         }}>
           <span style={{
-            fontSize: '12px', fontWeight: 700,
-            color: dow === 0 ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#111827',
+            fontSize: '11px', fontWeight: 700,
+            color: dow === 0 ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
           }}>{d}</span>
           {hasPending && (
             <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#D97706', flexShrink: 0 }} />
           )}
         </div>
 
-        {/* 昼便エリア */}
+        {/* 昼便エリア（水色） */}
         <div style={{
           flex: 1, background: day.bg,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          padding: '1px 0',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {day.hasBooking && (
-            <>
-              <span style={{ fontSize: '7px', fontWeight: 700, color: day.color, lineHeight: 1 }}>昼</span>
-              <span style={{ fontSize: '10px', fontWeight: 700, color: day.color, lineHeight: 1.2 }}>
-                残{day.remaining}
-              </span>
-            </>
+          {dayLabel && (
+            <span style={{ fontSize: '9px', fontWeight: 700, color: day.color, whiteSpace: 'nowrap' }}>
+              {dayLabel}
+            </span>
           )}
         </div>
 
-        {/* 夜便エリア */}
+        {/* 夜便エリア（紺紫） */}
         <div style={{
           flex: 1, background: night.bg,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          padding: '1px 0',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {night.hasBooking && (
-            <>
-              <span style={{ fontSize: '7px', fontWeight: 700, color: night.color, lineHeight: 1 }}>夜</span>
-              <span style={{ fontSize: '10px', fontWeight: 700, color: night.color, lineHeight: 1.2 }}>
-                残{night.remaining}
-              </span>
-            </>
+          {nightLabel && (
+            <span style={{ fontSize: '9px', fontWeight: 700, color: night.color, whiteSpace: 'nowrap' }}>
+              {nightLabel}
+            </span>
           )}
         </div>
       </div>
@@ -341,7 +339,7 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
             {[
               { bg: '#E8F4FD', color: '#0A3D62', label: '昼便' },
-              { bg: '#E0E7FF', color: '#3730A3', label: '夜便' },
+              { bg: '#EEF2FF', color: '#4338CA', label: '夜便' },
               { bg: '#FEE2E2', color: '#B91C1C', label: '満員・残2以下' },
             ].map(({ bg, color, label }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
