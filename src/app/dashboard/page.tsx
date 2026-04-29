@@ -421,8 +421,8 @@ export default function DashboardPage() {
                     {/* 昼/夜バッジ */}
                     <span style={{
                       fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', flexShrink: 0,
-                      background: b.bin_type === 'day' ? '#E8F4FD' : '#E0E7FF',
-                      color: b.bin_type === 'day' ? '#0A3D62' : '#3730A3',
+                      background: b.bin_type === 'day' ? '#E8F4FD' : '#EEF2FF',
+                      color: b.bin_type === 'day' ? '#0A3D62' : '#4338CA',
                     }}>
                       {b.bin_type === 'day' ? '昼便' : '夜便'}
                     </span>
