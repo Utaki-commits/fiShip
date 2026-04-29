@@ -112,81 +112,64 @@ export default function DashboardPage() {
 
   // カレンダーセルを描画（月・週共通）
   const renderCalendar = () => {
-    // デバッグ: renderCalendar呼び出し時のbinSettings状態を確認
-    console.log('renderCalendar: binSettings.length =', binSettings.length, binSettings)
-
-    // 便設定がその月・曜日に該当するか判定
-    // days_of_week は数値・文字列どちらで返っても対応できるよう Number() で変換
-    const isInPeriod = (bin: BinSetting, month: number, dayOfWeek: number): boolean => {
-      const inMonth = bin.start_month <= month && month <= bin.end_month
-      const inDow = bin.days_of_week.map(Number).includes(dayOfWeek)
-      return inMonth && inDow
+    // その日に有効なbinSettingsを取得
+    const getBinsForDate = (year: number, month: number, day: number) => {
+      const dow = new Date(year, month, day).getDay()
+      return binSettings.filter(bin => {
+        const inPeriod = bin.start_month <= month && month <= bin.end_month
+        const inDay = bin.days_of_week.map(Number).includes(dow)
+        return inPeriod && inDay
+      })
     }
 
-    // 指定日・便に対応するbin_settingを返す（なければnull = 休船日）
-    const getApplicableBinSetting = (dateStr: string, binType: 'day' | 'night'): BinSetting | null => {
-      const d = new Date(dateStr + 'T00:00:00')
-      const month = d.getMonth()   // 0=1月 … 11=12月
-      const dow = d.getDay()       // 0=日 … 6=土
-      // デバッグ: 月初3日分のみ詳細ログ
-      if (d.getDate() <= 3) {
-        console.log(`getApplicableBin(${dateStr}, ${binType}): month=${month}, dow=${dow}`)
-        binSettings.forEach(s => {
-          console.log(
-            `  setting bin_type=${s.bin_type} start=${s.start_month} end=${s.end_month}`,
-            `days=${JSON.stringify(s.days_of_week)} → isInPeriod=${isInPeriod(s, month, dow)}`
-          )
-        })
-      }
-      return binSettings.find(s => s.bin_type === binType && isInPeriod(s, month, dow)) ?? null
+    // confirmed + pending の使用人数を合算して残り人数を返す
+    const getRemaining = (dateStr: string, binType: string, maxCap: number) => {
+      const used = bookings
+        .filter(b => b.date === dateStr && b.bin_type === binType && (b.status === 'confirmed' || b.status === 'pending'))
+        .reduce((sum, b) => sum + b.count, 0)
+      return maxCap - used
     }
 
-    // 1セルを描画
-    const renderCell = (dateStr: string) => {
+    // 1セルを描画（year/month/day を個別に受け取りタイムゾーン問題を回避）
+    const renderCell = (year: number, month: number, day: number) => {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
       const todayStr = toDateStr(new Date())
       const isToday = dateStr === todayStr
       const isSelected = selectedDate === dateStr
-      const cellDate = new Date(dateStr + 'T00:00:00')
-      const d = cellDate.getDate()
-      const dow = cellDate.getDay()
+      const dow = new Date(year, month, day).getDay()
 
-      const daySetting = getApplicableBinSetting(dateStr, 'day')
-      const nightSetting = getApplicableBinSetting(dateStr, 'night')
+      const bins = getBinsForDate(year, month, day)
+      const dayBin = bins.find(b => b.bin_type === 'day') ?? null
+      const nightBin = bins.find(b => b.bin_type === 'night') ?? null
+      const hasPending = bookings.some(b => b.date === dateStr && b.status === 'pending')
 
-      // confirmed + pending を合算（rejected は除外）
-      const dayBks = bookings.filter(b => b.date === dateStr && b.bin_type === 'day' && b.status !== 'rejected')
-      const nightBks = bookings.filter(b => b.date === dateStr && b.bin_type === 'night' && b.status !== 'rejected')
-      const dayUsed = dayBks.reduce((s, b) => s + b.count, 0)
-      const nightUsed = nightBks.reduce((s, b) => s + b.count, 0)
-      const dayRemaining = daySetting ? daySetting.max_capacity - dayUsed : 0
-      const nightRemaining = nightSetting ? nightSetting.max_capacity - nightUsed : 0
-      const hasPending = [...dayBks, ...nightBks].some(b => b.status === 'pending')
-
-      // 昼便エリアの色・テキスト
+      // 昼便の色・ラベル
       let dayBg = '#F8F9FA'
       let dayLabel: string | null = null
       let dayTextColor = '#9CA3AF'
-      if (daySetting) {
-        if (dayRemaining <= 0) {
+      if (dayBin) {
+        const rem = getRemaining(dateStr, 'day', dayBin.max_capacity)
+        if (rem <= 0) {
           dayBg = '#FEE2E2'; dayLabel = '満員'; dayTextColor = '#B91C1C'
         } else {
           dayBg = '#E8F4FD'
-          dayLabel = `昼　残${dayRemaining}`
-          dayTextColor = dayRemaining <= 2 ? '#B91C1C' : '#0A3D62'
+          dayLabel = `昼　残${rem}`
+          dayTextColor = rem <= 2 ? '#B91C1C' : '#0A3D62'
         }
       }
 
-      // 夜便エリアの色・テキスト
+      // 夜便の色・ラベル
       let nightBg = '#F8F9FA'
       let nightLabel: string | null = null
       let nightTextColor = '#9CA3AF'
-      if (nightSetting) {
-        if (nightRemaining <= 0) {
+      if (nightBin) {
+        const rem = getRemaining(dateStr, 'night', nightBin.max_capacity)
+        if (rem <= 0) {
           nightBg = '#FEE2E2'; nightLabel = '満員'; nightTextColor = '#B91C1C'
         } else {
           nightBg = '#EEF2FF'
-          nightLabel = `夜　残${nightRemaining}`
-          nightTextColor = nightRemaining <= 2 ? '#B91C1C' : '#4338CA'
+          nightLabel = `夜　残${rem}`
+          nightTextColor = rem <= 2 ? '#B91C1C' : '#4338CA'
         }
       }
 
@@ -208,7 +191,7 @@ export default function DashboardPage() {
             <span style={{
               fontSize: '12px', fontWeight: 700,
               color: dow === 0 ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
-            }}>{d}</span>
+            }}>{day}</span>
             {hasPending && (
               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D97706', flexShrink: 0 }} />
             )}
@@ -237,15 +220,14 @@ export default function DashboardPage() {
 
     // 月表示：空白セル + 日付セル
     if (view === 'month') {
-      const fd = new Date(calYear, calM, 1).getDay()
-      const tot = new Date(calYear, calM + 1, 0).getDate()
+      const firstDow = new Date(calYear, calM, 1).getDay()
+      const totalDays = new Date(calYear, calM + 1, 0).getDate()
       const cells = []
-      for (let i = 0; i < fd; i++) {
+      for (let i = 0; i < firstDow; i++) {
         cells.push(<div key={`e${i}`} style={{ minHeight: '58px' }} />)
       }
-      for (let d = 1; d <= tot; d++) {
-        const dateStr = `${calYear}-${String(calM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-        cells.push(renderCell(dateStr))
+      for (let d = 1; d <= totalDays; d++) {
+        cells.push(renderCell(calYear, calM, d))
       }
       return cells
     }
@@ -255,7 +237,7 @@ export default function DashboardPage() {
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart)
       d.setDate(weekStart.getDate() + i)
-      cells.push(renderCell(toDateStr(d)))
+      cells.push(renderCell(d.getFullYear(), d.getMonth(), d.getDate()))
     }
     return cells
   }
