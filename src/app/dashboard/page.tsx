@@ -24,6 +24,18 @@ type Booking = {
   channel: string
 }
 
+type BinSetting = {
+  id: string
+  vessel_id: string
+  bin_type: string
+  start_month: number
+  end_month: number
+  days_of_week: number[]
+  departure_time: string
+  fish_types: string[]
+  max_capacity: number
+}
+
 const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
 const DAY_NAMES = ['日','月','火','水','木','金','土']
 
@@ -43,6 +55,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [vessel, setVessel] = useState<Vessel | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [binSettings, setBinSettings] = useState<BinSetting[]>([])
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calM, setCalM] = useState(new Date().getMonth())
   const [view, setView] = useState<'month' | 'week'>('month')
@@ -59,9 +72,13 @@ export default function DashboardPage() {
         .from('vessels').select('*').eq('user_id', session.user.id).single()
       if (!v) { router.push('/register'); return }
       setVessel(v)
-      const { data: bk } = await supabase
-        .from('bookings').select('*').eq('vessel_id', v.id).order('date', { ascending: true })
+      // 予約データと便設定を並行取得
+      const [{ data: bk }, { data: bs }] = await Promise.all([
+        supabase.from('bookings').select('*').eq('vessel_id', v.id).order('date', { ascending: true }),
+        supabase.from('bin_settings').select('*').eq('vessel_id', v.id),
+      ])
       setBookings(bk || [])
+      setBinSettings(bs || [])
       setLoading(false)
     }
     init()
@@ -95,21 +112,41 @@ export default function DashboardPage() {
   const getActiveBinBookings = (dateStr: string, binType: string) =>
     bookings.filter(b => b.date === dateStr && b.bin_type === binType && b.status !== 'rejected')
 
-  // 残り人数・色・状態を計算
+  // 指定日・便に対応するbin_settingを返す（なければnull = 休船日）
+  const getApplicableBinSetting = (dateStr: string, binType: string): BinSetting | null => {
+    const d = new Date(dateStr + 'T00:00:00')
+    const month = d.getMonth()
+    const dow = d.getDay()
+    return binSettings.find(s => {
+      if (s.bin_type !== binType) return false
+      // 年をまたぐ月範囲（例：10月〜2月）に対応
+      const inMonth = s.start_month <= s.end_month
+        ? month >= s.start_month && month <= s.end_month
+        : month >= s.start_month || month <= s.end_month
+      return inMonth && s.days_of_week.includes(dow)
+    }) ?? null
+  }
+
+  // bin_settingsを参照して残り人数・色・状態を計算
   const getBinInfo = (dateStr: string, binType: string) => {
-    const cap = vessel?.capacity ?? 4
+    const setting = getApplicableBinSetting(dateStr, binType)
+
+    // 便設定なし → 休船日（グレー）
+    if (!setting) {
+      return { bg: '#F8F9FA', color: '#9CA3AF', remaining: 0, hasPending: false, hasBooking: false, isFull: false, hasSetting: false }
+    }
+
+    const cap = setting.max_capacity
     const bks = getActiveBinBookings(dateStr, binType)
     const used = bks.reduce((s, b) => s + b.count, 0)
     const remaining = cap - used
     const hasPending = bks.some(b => b.status === 'pending')
     const hasBooking = bks.length > 0
-    const isFull = hasBooking && remaining <= 0
+    const isFull = remaining <= 0
 
     let bg: string
     let color: string
-    if (!hasBooking) {
-      bg = '#F8F9FA'; color = '#9CA3AF'               // 休船日・グレー
-    } else if (isFull || remaining <= 2) {
+    if (isFull || remaining <= 2) {
       bg = '#FEE2E2'; color = '#B91C1C'               // 満員・残り2名以下・赤
     } else if (binType === 'day') {
       bg = '#E8F4FD'; color = '#0A3D62'               // 昼便・水色
@@ -117,7 +154,7 @@ export default function DashboardPage() {
       bg = '#EEF2FF'; color = '#4338CA'               // 夜便・紺紫
     }
 
-    return { bg, color, remaining, hasPending, hasBooking, isFull }
+    return { bg, color, remaining, hasPending, hasBooking, isFull, hasSetting: true }
   }
 
   // カレンダーセル（月・週共通）
@@ -133,10 +170,11 @@ export default function DashboardPage() {
     const hasPending = day.hasPending || night.hasPending
 
     // 昼・夜エリアの内容テキストを組み立て
-    const dayLabel = !day.hasBooking ? null
+    // hasSetting=true（出船日）なら残り人数を表示、false（休船日）は表示なし
+    const dayLabel = !day.hasSetting ? null
       : day.isFull ? '満員'
       : `昼　残${day.remaining}`
-    const nightLabel = !night.hasBooking ? null
+    const nightLabel = !night.hasSetting ? null
       : night.isFull ? '満員'
       : `夜　残${night.remaining}`
 
