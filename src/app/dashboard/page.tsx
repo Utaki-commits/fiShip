@@ -65,6 +65,7 @@ export default function DashboardPage() {
   const router = useRouter()
 
   useEffect(() => {
+    console.log('useEffect triggered')
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
@@ -78,6 +79,7 @@ export default function DashboardPage() {
         supabase.from('bin_settings').select('*').eq('vessel_id', v.id),
       ])
       setBookings(bk || [])
+      console.log('binSettings:', bs)
       setBinSettings(bs || [])
       setLoading(false)
     }
@@ -108,143 +110,129 @@ export default function DashboardPage() {
 
   const getPendingCount = () => bookings.filter(b => b.status === 'pending').length
 
-  // 指定日・便のアクティブな予約（rejected除外）
-  const getActiveBinBookings = (dateStr: string, binType: string) =>
-    bookings.filter(b => b.date === dateStr && b.bin_type === binType && b.status !== 'rejected')
-
-  // 便設定がその月・曜日に該当するか判定（年またぎ月範囲対応）
-  const isInPeriod = (bin: BinSetting, month: number, dayOfWeek: number): boolean => {
-    const inMonth = bin.start_month <= bin.end_month
-      ? month >= bin.start_month && month <= bin.end_month
-      : month >= bin.start_month || month <= bin.end_month
-    return inMonth && bin.days_of_week.includes(dayOfWeek)
-  }
-
-  // 指定日・便に対応するbin_settingを返す（なければnull = 休船日）
-  const getApplicableBinSetting = (dateStr: string, binType: 'day' | 'night'): BinSetting | null => {
-    const d = new Date(dateStr + 'T00:00:00')
-    return binSettings.find(s => s.bin_type === binType && isInPeriod(s, d.getMonth(), d.getDay())) ?? null
-  }
-
-  // bin_settingsを参照して残り人数・色・状態を計算
-  const getBinInfo = (dateStr: string, binType: 'day' | 'night') => {
-    const setting = getApplicableBinSetting(dateStr, binType)
-
-    // 便設定なし → 休船日（グレー）
-    if (!setting) {
-      return { bg: '#F8F9FA', color: '#9CA3AF', remaining: 0, hasPending: false, hasBooking: false, isFull: false, hasSetting: false }
+  // カレンダーセルを描画（月・週共通）
+  const renderCalendar = () => {
+    // 便設定がその月・曜日に該当するか判定
+    const isInPeriod = (bin: BinSetting, month: number, dayOfWeek: number): boolean => {
+      return bin.start_month <= month && month <= bin.end_month && bin.days_of_week.includes(dayOfWeek)
     }
 
-    const cap = setting.max_capacity
-    const bks = getActiveBinBookings(dateStr, binType)
-    const used = bks.reduce((s, b) => s + b.count, 0)
-    const remaining = cap - used
-    const hasPending = bks.some(b => b.status === 'pending')
-    const hasBooking = bks.length > 0
-    const isFull = remaining <= 0
-
-    let bg: string
-    let color: string
-    if (isFull || remaining <= 2) {
-      bg = '#FEE2E2'; color = '#B91C1C'               // 満員・残り2名以下・赤
-    } else if (binType === 'day') {
-      bg = '#E8F4FD'; color = '#0A3D62'               // 昼便・水色
-    } else {
-      bg = '#EEF2FF'; color = '#4338CA'               // 夜便・紺紫
+    // 指定日・便に対応するbin_settingを返す（なければnull = 休船日）
+    const getApplicableBinSetting = (dateStr: string, binType: 'day' | 'night'): BinSetting | null => {
+      const d = new Date(dateStr + 'T00:00:00')
+      return binSettings.find(s => s.bin_type === binType && isInPeriod(s, d.getMonth(), d.getDay())) ?? null
     }
 
-    return { bg, color, remaining, hasPending, hasBooking, isFull, hasSetting: true }
-  }
+    // 1セルを描画
+    const renderCell = (dateStr: string) => {
+      const todayStr = toDateStr(new Date())
+      const isToday = dateStr === todayStr
+      const isSelected = selectedDate === dateStr
+      const cellDate = new Date(dateStr + 'T00:00:00')
+      const d = cellDate.getDate()
+      const dow = cellDate.getDay()
 
-  // カレンダーセル（月・週共通）
-  const renderCell = (dateStr: string) => {
-    const todayStr = toDateStr(new Date())
-    const isToday = dateStr === todayStr
-    const isSelected = selectedDate === dateStr
-    const cellDate = new Date(dateStr + 'T00:00:00')
-    const d = cellDate.getDate()
-    const dow = cellDate.getDay()
-    const day = getBinInfo(dateStr, 'day')
-    const night = getBinInfo(dateStr, 'night')
-    const hasPending = day.hasPending || night.hasPending
+      const daySetting = getApplicableBinSetting(dateStr, 'day')
+      const nightSetting = getApplicableBinSetting(dateStr, 'night')
 
-    // 昼・夜エリアの内容テキストを組み立て
-    // hasSetting=true（出船日）なら残り人数を表示、false（休船日）は表示なし
-    const dayLabel = !day.hasSetting ? null
-      : day.isFull ? '満員'
-      : `昼　残${day.remaining}`
-    const nightLabel = !night.hasSetting ? null
-      : night.isFull ? '満員'
-      : `夜　残${night.remaining}`
+      // confirmed + pending を合算（rejected は除外）
+      const dayBks = bookings.filter(b => b.date === dateStr && b.bin_type === 'day' && b.status !== 'rejected')
+      const nightBks = bookings.filter(b => b.date === dateStr && b.bin_type === 'night' && b.status !== 'rejected')
+      const dayUsed = dayBks.reduce((s, b) => s + b.count, 0)
+      const nightUsed = nightBks.reduce((s, b) => s + b.count, 0)
+      const dayRemaining = daySetting ? daySetting.max_capacity - dayUsed : 0
+      const nightRemaining = nightSetting ? nightSetting.max_capacity - nightUsed : 0
+      const hasPending = [...dayBks, ...nightBks].some(b => b.status === 'pending')
 
-    return (
-      <div
-        key={dateStr}
-        onClick={() => setSelectedDate(isSelected ? null : dateStr)}
-        style={{
-          borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          cursor: 'pointer', minHeight: '72px', transition: 'border-color .15s',
-          border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
-        }}
-      >
-        {/* 日付行：左上に小さく表示、承認待ちドットを右に */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '2px 3px 1px', background: '#fff',
-        }}>
-          <span style={{
-            fontSize: '11px', fontWeight: 700,
-            color: dow === 0 ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
-          }}>{d}</span>
-          {hasPending && (
-            <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#D97706', flexShrink: 0 }} />
-          )}
+      // 昼便エリアの色・テキスト
+      let dayBg = '#F8F9FA'
+      let dayLabel: string | null = null
+      let dayTextColor = '#9CA3AF'
+      if (daySetting) {
+        if (dayRemaining <= 0) {
+          dayBg = '#FEE2E2'; dayLabel = '満員'; dayTextColor = '#B91C1C'
+        } else {
+          dayBg = '#E8F4FD'
+          dayLabel = `昼　残${dayRemaining}`
+          dayTextColor = dayRemaining <= 2 ? '#B91C1C' : '#0A3D62'
+        }
+      }
+
+      // 夜便エリアの色・テキスト
+      let nightBg = '#F8F9FA'
+      let nightLabel: string | null = null
+      let nightTextColor = '#9CA3AF'
+      if (nightSetting) {
+        if (nightRemaining <= 0) {
+          nightBg = '#FEE2E2'; nightLabel = '満員'; nightTextColor = '#B91C1C'
+        } else {
+          nightBg = '#EEF2FF'
+          nightLabel = `夜　残${nightRemaining}`
+          nightTextColor = nightRemaining <= 2 ? '#B91C1C' : '#4338CA'
+        }
+      }
+
+      return (
+        <div
+          key={dateStr}
+          onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+          style={{
+            borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+            cursor: 'pointer', minHeight: '58px', transition: 'border-color .15s',
+            border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
+          }}
+        >
+          {/* 上段：日付 + 承認待ちドット */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '2px 3px 1px', background: '#fff',
+          }}>
+            <span style={{
+              fontSize: '12px', fontWeight: 700,
+              color: dow === 0 ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
+            }}>{d}</span>
+            {hasPending && (
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D97706', flexShrink: 0 }} />
+            )}
+          </div>
+
+          {/* 中段：昼便エリア */}
+          <div style={{ flex: 1, background: dayBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {dayLabel && (
+              <span style={{ fontSize: '9px', fontWeight: 700, color: dayTextColor, whiteSpace: 'nowrap' }}>
+                {dayLabel}
+              </span>
+            )}
+          </div>
+
+          {/* 下段：夜便エリア */}
+          <div style={{ flex: 1, background: nightBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {nightLabel && (
+              <span style={{ fontSize: '9px', fontWeight: 700, color: nightTextColor, whiteSpace: 'nowrap' }}>
+                {nightLabel}
+              </span>
+            )}
+          </div>
         </div>
-
-        {/* 昼便エリア（水色） */}
-        <div style={{
-          flex: 1, background: day.bg,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          {dayLabel && (
-            <span style={{ fontSize: '9px', fontWeight: 700, color: day.color, whiteSpace: 'nowrap' }}>
-              {dayLabel}
-            </span>
-          )}
-        </div>
-
-        {/* 夜便エリア（紺紫） */}
-        <div style={{
-          flex: 1, background: night.bg,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          {nightLabel && (
-            <span style={{ fontSize: '9px', fontWeight: 700, color: night.color, whiteSpace: 'nowrap' }}>
-              {nightLabel}
-            </span>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // 月表示：空白セル + 日付セル
-  const renderMonthCells = () => {
-    const fd = new Date(calYear, calM, 1).getDay()
-    const tot = new Date(calYear, calM + 1, 0).getDate()
-    const cells = []
-    for (let i = 0; i < fd; i++) {
-      cells.push(<div key={`e${i}`} style={{ minHeight: '70px' }} />)
+      )
     }
-    for (let d = 1; d <= tot; d++) {
-      const dateStr = `${calYear}-${String(calM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-      cells.push(renderCell(dateStr))
-    }
-    return cells
-  }
 
-  // 週表示：weekStart から7日分
-  const renderWeekCells = () => {
+    // 月表示：空白セル + 日付セル
+    if (view === 'month') {
+      const fd = new Date(calYear, calM, 1).getDay()
+      const tot = new Date(calYear, calM + 1, 0).getDate()
+      const cells = []
+      for (let i = 0; i < fd; i++) {
+        cells.push(<div key={`e${i}`} style={{ minHeight: '58px' }} />)
+      }
+      for (let d = 1; d <= tot; d++) {
+        const dateStr = `${calYear}-${String(calM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+        cells.push(renderCell(dateStr))
+      }
+      return cells
+    }
+
+    // 週表示：weekStart から7日分
     const cells = []
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart)
@@ -369,7 +357,7 @@ export default function DashboardPage() {
 
           {/* セルグリッド */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '3px' }}>
-            {view === 'month' ? renderMonthCells() : renderWeekCells()}
+            {renderCalendar()}
           </div>
 
           {/* 凡例 */}
