@@ -187,6 +187,26 @@ export default function DashboardPage() {
 
       <div style={{ padding: '12px' }}>
 
+        {/* SNS・電話メモから取込ボタン */}
+        <button
+          onClick={() => router.push('/dashboard/extract')}
+          style={{
+            width: '100%', padding: '14px 16px', marginBottom: '12px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: '#fff', border: '2px solid #E5E7EB', borderRadius: '12px',
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', background: '#E8F4FD', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>💬</div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>LINEやSNSの予約を取り込む</div>
+              <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>メッセージを貼り付けるだけで自動入力</div>
+            </div>
+          </div>
+          <span style={{ fontSize: '16px', color: '#9CA3AF' }}>→</span>
+        </button>
+
         {/* カレンダー */}
         <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
