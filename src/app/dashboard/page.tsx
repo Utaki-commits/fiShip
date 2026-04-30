@@ -112,13 +112,17 @@ export default function DashboardPage() {
 
   // カレンダーセルを描画（月・週共通）
   const renderCalendar = () => {
-    // その日に有効なbinSettingsを取得
+    // その日に有効なbinSettingsを返す
+    // start/end_monthはDBスキーマ通り0始まり(0=1月, 11=12月)
+    // 年またぎシーズン（例: start=10 end=2 → 11〜3月）も正しく判定する
     const getBinsForDate = (year: number, month: number, day: number) => {
       const dow = new Date(year, month, day).getDay()
       return binSettings.filter(bin => {
-        const inPeriod = bin.start_month <= month && month <= bin.end_month
+        const isInPeriod = bin.start_month <= bin.end_month
+          ? bin.start_month <= month && month <= bin.end_month          // 通常（例: 3〜9 = 4〜10月）
+          : month >= bin.start_month || month <= bin.end_month          // 年またぎ（例: 10〜2 = 11〜3月）
         const inDay = bin.days_of_week.map(Number).includes(dow)
-        return inPeriod && inDay
+        return isInPeriod && inDay
       })
     }
 
@@ -143,31 +147,29 @@ export default function DashboardPage() {
       const nightBin = bins.find(b => b.bin_type === 'night') ?? null
       const hasPending = bookings.some(b => b.date === dateStr && b.status === 'pending')
 
-      // 昼便の色・ラベル
-      let dayBg = '#F8F9FA'
+      // 昼便の色・ラベルを決定
+      let dayBg = '#E8F4FD'
       let dayLabel: string | null = null
-      let dayTextColor = '#9CA3AF'
+      let dayTextColor = '#0A3D62'
       if (dayBin) {
         const rem = getRemaining(dateStr, 'day', dayBin.max_capacity)
         if (rem <= 0) {
           dayBg = '#FEE2E2'; dayLabel = '満員'; dayTextColor = '#B91C1C'
         } else {
-          dayBg = '#E8F4FD'
           dayLabel = `昼　残${rem}`
           dayTextColor = rem <= 2 ? '#B91C1C' : '#0A3D62'
         }
       }
 
-      // 夜便の色・ラベル
-      let nightBg = '#F8F9FA'
+      // 夜便の色・ラベルを決定
+      let nightBg = '#EEF2FF'
       let nightLabel: string | null = null
-      let nightTextColor = '#9CA3AF'
+      let nightTextColor = '#4338CA'
       if (nightBin) {
         const rem = getRemaining(dateStr, 'night', nightBin.max_capacity)
         if (rem <= 0) {
           nightBg = '#FEE2E2'; nightLabel = '満員'; nightTextColor = '#B91C1C'
         } else {
-          nightBg = '#EEF2FF'
           nightLabel = `夜　残${rem}`
           nightTextColor = rem <= 2 ? '#B91C1C' : '#4338CA'
         }
@@ -197,23 +199,38 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* 中段：昼便エリア */}
-          <div style={{ flex: 1, background: dayBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {dayLabel && (
-              <span style={{ fontSize: '9px', fontWeight: 700, color: dayTextColor, whiteSpace: 'nowrap' }}>
-                {dayLabel}
-              </span>
-            )}
-          </div>
-
-          {/* 下段：夜便エリア */}
-          <div style={{ flex: 1, background: nightBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {nightLabel && (
-              <span style={{ fontSize: '9px', fontWeight: 700, color: nightTextColor, whiteSpace: 'nowrap' }}>
-                {nightLabel}
-              </span>
-            )}
-          </div>
+          {/* 便エリア：設定のある便のみ表示。昼・夜どちらもなければ休船日グレー */}
+          {!dayBin && !nightBin ? (
+            <div style={{ flex: 1, background: '#F8F9FA' }} />
+          ) : (
+            <>
+              {dayBin && (
+                <div style={{
+                  flex: 1, background: dayBg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderBottom: nightBin ? '1px solid rgba(0,0,0,0.06)' : undefined,
+                }}>
+                  {dayLabel && (
+                    <span style={{ fontSize: '9px', fontWeight: 700, color: dayTextColor, whiteSpace: 'nowrap' }}>
+                      {dayLabel}
+                    </span>
+                  )}
+                </div>
+              )}
+              {nightBin && (
+                <div style={{
+                  flex: 1, background: nightBg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {nightLabel && (
+                    <span style={{ fontSize: '9px', fontWeight: 700, color: nightTextColor, whiteSpace: 'nowrap' }}>
+                      {nightLabel}
+                    </span>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )
     }
