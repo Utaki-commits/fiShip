@@ -58,6 +58,14 @@ const DAY_NAMES = ['日','月','火','水','木','金','土']
 const toDateStr = (year: number, month: number, day: number) =>
   `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
+// 料金表示フォーマット（数字のみの場合はカンマ区切りで「円」を付ける）
+const formatPrice = (price: string): string => {
+  if (/^\d+$/.test(price.trim())) {
+    return Number(price.trim()).toLocaleString('ja-JP') + '円'
+  }
+  return price
+}
+
 export default function ReservePage() {
   const params = useParams()
   const vesselId = params.vesselId as string
@@ -230,21 +238,21 @@ export default function ReservePage() {
         onClick={() => !isPast && hasAvailable && handleDateSelect(year, month, day)}
         style={{
           borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          minHeight: '58px', transition: 'border-color .15s',
+          minHeight: '58px', transition: 'border-color .15s', position: 'relative',
           cursor: isPast || (!hasAvailable && bins.length > 0) ? 'default' : bins.length === 0 ? 'default' : 'pointer',
           opacity: isPast ? 0.4 : 1,
           border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
         }}
       >
-        {/* 日付行 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3px 2px 2px', background: '#fff' }}>
+        {/* 日付：左上に絶対位置で表示（z-index で便バンドの上に重ねる） */}
+        <div style={{ position: 'absolute', top: '2px', left: '3px', zIndex: 1, pointerEvents: 'none' }}>
           <span style={{
             fontSize: '12px', fontWeight: 700,
             color: dow === 0 ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
           }}>{day}</span>
         </div>
 
-        {/* 便バンド */}
+        {/* 便バンド：セルを均等分割して中央寄せ */}
         {bins.length === 0 ? (
           <div style={{ flex: 1, background: isPast ? '#F8F9FA' : '#F3F4F6' }} />
         ) : (
@@ -316,7 +324,7 @@ export default function ReservePage() {
           📍 {vessel.prefecture}・{vessel.port_name}
         </div>
         {vessel.price && (
-          <div style={{ fontSize: '14px', fontWeight: 700, color: '#D4AC0D', marginBottom: '6px' }}>{vessel.price}</div>
+          <div style={{ fontSize: '15px', fontWeight: 700, color: '#D4AC0D', marginBottom: '6px' }}>{formatPrice(vessel.price)}</div>
         )}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {vessel.beginner_accepted && (
@@ -404,9 +412,9 @@ export default function ReservePage() {
 
             <div style={{ padding: '16px' }}>
               {formError && (
-                <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: '#B91C1C' }}>
-                  {formError}
-                </div>
+                <p style={{ fontSize: '13px', fontWeight: 700, color: '#B91C1C', margin: '0 0 12px', padding: 0, lineHeight: 1.5 }}>
+                  ⚠ {formError}
+                </p>
               )}
 
               {/* 便の種類（複数便がある日のみ表示） */}

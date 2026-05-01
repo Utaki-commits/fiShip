@@ -277,12 +277,12 @@ export default function SettingsPage() {
                           </div>
                         )}
                       </div>
-                      {/* 操作ボタン */}
+                      {/* 操作ボタン（最小44px高さ） */}
                       <div style={{ display: 'flex', gap: '0', borderTop: '1px solid #F3F4F6' }}>
                         <button
                           onClick={() => handleEditClick(s)}
                           style={{
-                            flex: 1, padding: '12px', fontSize: '14px', fontWeight: 700,
+                            flex: 1, padding: '15px', fontSize: '14px', fontWeight: 700,
                             background: '#fff', color: '#0A3D62', border: 'none',
                             borderRight: '1px solid #F3F4F6', cursor: 'pointer', fontFamily: 'inherit',
                           }}
@@ -291,7 +291,7 @@ export default function SettingsPage() {
                           onClick={() => handleDelete(s.id)}
                           disabled={deleting === s.id}
                           style={{
-                            flex: 1, padding: '12px', fontSize: '14px', fontWeight: 700,
+                            flex: 1, padding: '15px', fontSize: '14px', fontWeight: 700,
                             background: '#fff', color: deleting === s.id ? '#9CA3AF' : '#B91C1C',
                             border: 'none', cursor: deleting === s.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                           }}

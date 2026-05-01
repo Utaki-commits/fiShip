@@ -179,14 +179,15 @@ export default function DashboardPage() {
           onClick={() => setSelectedDate(isSelected ? null : dateStr)}
           style={{
             borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-            cursor: 'pointer', minHeight: '58px', transition: 'border-color .15s',
+            cursor: 'pointer', minHeight: '58px', transition: 'border-color .15s', position: 'relative',
             border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
           }}
         >
-          {/* 上段：日付 + 承認待ちドット */}
+          {/* 日付 + 承認待ちドット：左上に絶対位置で表示 */}
           <div style={{
+            position: 'absolute', top: '2px', left: '3px', right: '3px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '2px 3px 1px', background: '#fff',
+            zIndex: 1, pointerEvents: 'none',
           }}>
             <span style={{
               fontSize: '12px', fontWeight: 700,
@@ -197,7 +198,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* 便エリア：設定のある便のみ表示。昼・夜どちらもなければ休船日グレー */}
+          {/* 便エリア：セル全体を均等分割して中央寄せ */}
           {!dayBin && !nightBin ? (
             <div style={{ flex: 1, background: '#F8F9FA' }} />
           ) : (
@@ -351,7 +352,7 @@ export default function DashboardPage() {
                 ? () => { if (calM === 0) { setCalM(11); setCalYear(y => y - 1) } else setCalM(m => m - 1) }
                 : () => setWeekStart(d => { const p = new Date(d); p.setDate(d.getDate() - 7); return p })
               }
-              style={{ width: '36px', height: '36px', flexShrink: 0, borderRadius: '50%', background: '#F8F9FA', border: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px' }}
+              style={{ width: '44px', height: '44px', flexShrink: 0, borderRadius: '50%', background: '#F8F9FA', border: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px' }}
             >◀</button>
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -382,7 +383,7 @@ export default function DashboardPage() {
                 ? () => { if (calM === 11) { setCalM(0); setCalYear(y => y + 1) } else setCalM(m => m + 1) }
                 : () => setWeekStart(d => { const n = new Date(d); n.setDate(d.getDate() + 7); return n })
               }
-              style={{ width: '36px', height: '36px', flexShrink: 0, borderRadius: '50%', background: '#F8F9FA', border: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px' }}
+              style={{ width: '44px', height: '44px', flexShrink: 0, borderRadius: '50%', background: '#F8F9FA', border: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px' }}
             >▶</button>
           </div>
 

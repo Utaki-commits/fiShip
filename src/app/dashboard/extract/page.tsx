@@ -153,7 +153,7 @@ export default function ExtractPage() {
       <div style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <button
           onClick={() => router.push('/dashboard')}
-          style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer' }}
+          style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>メッセージから予約を取り込む</div>
@@ -170,7 +170,7 @@ export default function ExtractPage() {
               key={t.key}
               onClick={() => handleTabChange(t.key)}
               style={{
-                flex: 1, padding: '10px', fontSize: '13px', fontWeight: 700,
+                flex: 1, padding: '14px 10px', fontSize: '13px', fontWeight: 700,
                 background: tab === t.key ? '#fff' : 'transparent',
                 color: tab === t.key ? '#0A3D62' : '#9CA3AF',
                 border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
@@ -192,7 +192,7 @@ export default function ExtractPage() {
                 key={ch.key}
                 onClick={() => setChannel(ch.key)}
                 style={{
-                  flex: 1, padding: '12px 8px', fontSize: '14px', fontWeight: 700,
+                  flex: 1, padding: '14px 8px', fontSize: '14px', fontWeight: 700,
                   background: channel === ch.key ? '#E8F4FD' : '#F8F9FA',
                   color: channel === ch.key ? '#0A3D62' : '#6B7280',
                   border: channel === ch.key ? '2px solid #2E86C1' : '2px solid transparent',
