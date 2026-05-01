@@ -96,6 +96,34 @@ export default function VesselPage() {
     }
   }
 
+  // QRコード画像をPNGとしてダウンロードする
+  const handleDownloadQR = () => {
+    const svg = qrRef.current?.querySelector('svg')
+    if (!svg) return
+
+    const svgData = new XMLSerializer().serializeToString(svg)
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    // SVGのサイズに余白を加えたcanvasサイズ
+    const size = 184
+    canvas.width = size
+    canvas.height = size
+
+    const img = new Image()
+    img.onload = () => {
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, size, size)
+      ctx.drawImage(img, 12, 12, 160, 160)
+      const a = document.createElement('a')
+      a.download = '予約QRコード.png'
+      a.href = canvas.toDataURL('image/png')
+      a.click()
+    }
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)))
+  }
+
   // URLをクリップボードにコピーする
   const handleCopy = async (url: string) => {
     try {
@@ -169,9 +197,21 @@ export default function VesselPage() {
                 </div>
               </div>
 
-              <div style={{ fontSize: '11px', color: '#6B7280', textAlign: 'center', marginBottom: '12px', lineHeight: 1.5 }}>
+              <div style={{ fontSize: '11px', color: '#6B7280', textAlign: 'center', marginBottom: '10px', lineHeight: 1.5 }}>
                 このQRコードをLINEやインスタで送ると<br />お客さんがすぐに予約できます
               </div>
+
+              {/* QRコード保存ボタン */}
+              <button
+                onClick={handleDownloadQR}
+                style={{
+                  width: '100%', padding: '12px', marginBottom: '12px', fontSize: '14px', fontWeight: 700,
+                  background: '#F8F9FA', color: '#374151',
+                  border: '2px solid #E5E7EB', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                QRコードを保存する
+              </button>
 
               {/* URL表示 */}
               <div style={{ background: '#F8F9FA', borderRadius: '8px', padding: '10px 12px', marginBottom: '10px', wordBreak: 'break-all', fontSize: '12px', color: '#374151' }}>

@@ -199,8 +199,19 @@ export default function LogsPage() {
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F8F9FA', fontFamily: 'sans-serif' }}>
 
+      {/* 印刷用スタイル */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          .print-title { display: block !important; }
+          body { background: #fff !important; margin: 0; padding: 16px; }
+          * { font-family: sans-serif; }
+        }
+        .print-title { display: none; }
+      `}</style>
+
       {/* ヘッダー */}
-      <div style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
+      <div className="no-print" style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
         <button
           onClick={() => selectedDay ? setSelectedDay(null) : router.push('/dashboard')}
           style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
@@ -341,6 +352,12 @@ export default function LogsPage() {
       {selectedDay && (
         <div style={{ padding: '12px' }}>
 
+          {/* 印刷用タイトル（画面では非表示、印刷時のみ表示） */}
+          <div className="print-title" style={{ marginBottom: '16px', borderBottom: '2px solid #000', paddingBottom: '8px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 700 }}>乗船名簿</div>
+            <div style={{ fontSize: '14px', marginTop: '4px' }}>{formatDate(selectedDay.date)}</div>
+          </div>
+
           {/* 日付ヘッダー */}
           <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ fontSize: '24px' }}>📋</div>
@@ -455,7 +472,21 @@ export default function LogsPage() {
             </div>
           )}
 
+          {/* 印刷ボタン */}
           <button
+            className="no-print"
+            onClick={() => window.print()}
+            style={{
+              width: '100%', padding: '14px', fontSize: '14px', fontWeight: 700,
+              background: '#0A3D62', color: '#fff', border: 'none',
+              borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', marginBottom: '8px',
+            }}
+          >
+            この日の乗船名簿を保存する（印刷・提出用）
+          </button>
+
+          <button
+            className="no-print"
             onClick={() => setSelectedDay(null)}
             style={{
               width: '100%', padding: '14px', fontSize: '14px', fontWeight: 700,

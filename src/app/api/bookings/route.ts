@@ -25,6 +25,43 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // bin_settingsからその日・その便のmax_capacityを確認
+    const { data: binSettingsData } = await supabase
+      .from('bin_settings')
+      .select('max_capacity, start_month, end_month, days_of_week')
+      .eq('vessel_id', vessel_id)
+      .eq('bin_type', bin_type)
+
+    // 指定日に対応する便設定を特定する
+    const d = new Date(date)
+    const month = d.getMonth()
+    const dow = d.getDay()
+    const matchingBin = (binSettingsData || []).find(bin => {
+      const inPeriod = bin.start_month <= bin.end_month
+        ? bin.start_month <= month && month <= bin.end_month
+        : month >= bin.start_month || month <= bin.end_month
+      return inPeriod && (bin.days_of_week as number[]).includes(dow)
+    })
+
+    // 便設定が見つかった場合は定員チェックを行う
+    if (matchingBin) {
+      const { data: existingBookings } = await supabase
+        .from('bookings')
+        .select('count')
+        .eq('vessel_id', vessel_id)
+        .eq('date', date)
+        .eq('bin_type', bin_type)
+        .in('status', ['confirmed', 'pending'])
+
+      const usedCount = (existingBookings || []).reduce((s, b) => s + (b.count as number), 0)
+      if (usedCount + Number(count) > matchingBin.max_capacity) {
+        return NextResponse.json(
+          { error: '満員のため予約できません', code: 'FULL' },
+          { status: 409 }
+        )
+      }
+    }
+
     // 同じ日・同じ便の承認待ち件数を確認
     const { data: pendingBookings } = await supabase
       .from('bookings')
