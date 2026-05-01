@@ -23,21 +23,40 @@ type Booking = {
   bin_type: string
   count: number
   status: string
-  channel: string
+}
+
+type BinSetting = {
+  id: string
+  bin_type: 'day' | 'night'
+  start_month: number
+  end_month: number
+  days_of_week: number[]
+  departure_time: string
+  fish_types: string[]
+  max_capacity: number
+}
+
+type BinInfo = {
+  setting: BinSetting
+  remaining: number
+  isFull: boolean
 }
 
 type Form = {
   name: string
   tel: string
   count: number
-  bin_type: string
+  bin_type: 'day' | 'night'
   fishing_style: string
   message: string
 }
 
-type BookingResult = {
-  isImmediate: boolean
-}
+const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
+const DAY_NAMES = ['日','月','火','水','木','金','土']
+
+// Date → YYYY-MM-DD（タイムゾーン問題を回避）
+const toDateStr = (year: number, month: number, day: number) =>
+  `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
 export default function ReservePage() {
   const params = useParams()
@@ -46,97 +65,95 @@ export default function ReservePage() {
   const [loading, setLoading] = useState(true)
   const [vessel, setVessel] = useState<Vessel | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [binSettings, setBinSettings] = useState<BinSetting[]>([])
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calM, setCalM] = useState(new Date().getMonth())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [form, setForm] = useState<Form>({
-    name: '', tel: '', count: 1, bin_type: '昼便', fishing_style: '', message: '',
-  })
+  const [selectedBins, setSelectedBins] = useState<BinInfo[]>([])
+  const [form, setForm] = useState<Form>({ name: '', tel: '', count: 1, bin_type: 'day', fishing_style: '', message: '' })
   const [submitting, setSubmitting] = useState(false)
-  const [result, setResult] = useState<BookingResult | null>(null)
+  const [completed, setCompleted] = useState<{ isImmediate: boolean } | null>(null)
   const [formError, setFormError] = useState('')
 
   useEffect(() => {
     const init = async () => {
-      // 船の情報を取得
-      const { data: v } = await supabase
-        .from('vessels')
-        .select('*')
-        .eq('id', vesselId)
-        .single()
-
+      const { data: v } = await supabase.from('vessels').select('*').eq('id', vesselId).single()
       if (!v) { setLoading(false); return }
       setVessel(v)
 
-      // 予約状況を取得（お断り以外）
-      const { data: bk } = await supabase
-        .from('bookings')
-        .select('id, date, bin_type, count, status, channel')
-        .eq('vessel_id', vesselId)
-        .neq('status', 'rejected')
-
+      const [{ data: bk }, { data: bs }] = await Promise.all([
+        supabase.from('bookings').select('id, date, bin_type, count, status').eq('vessel_id', vesselId).neq('status', 'rejected'),
+        supabase.from('bin_settings').select('*').eq('vessel_id', vesselId),
+      ])
       setBookings(bk || [])
+      setBinSettings(bs || [])
       setLoading(false)
     }
     init()
   }, [vesselId])
 
-  // 指定日の予約情報を集計する
-  const getDayInfo = (dateStr: string) => {
-    const dayBookings = bookings.filter(b => b.date === dateStr)
-    const confirmedCount = dayBookings
-      .filter(b => b.status === 'confirmed')
-      .reduce((s, b) => s + b.count, 0)
-    const pendingCount = dayBookings.filter(b => b.status === 'pending').length
-    const remaining = (vessel?.capacity ?? 0) - confirmedCount
-    return { confirmedCount, pendingCount, remaining }
+  // 指定日に有効なbinSettingsを返す
+  const getBinsForDate = (year: number, month: number, day: number): BinInfo[] => {
+    const dow = new Date(year, month, day).getDay()
+    return binSettings
+      .filter(bin => {
+        const inPeriod = bin.start_month <= bin.end_month
+          ? bin.start_month <= month && month <= bin.end_month
+          : month >= bin.start_month || month <= bin.end_month
+        return inPeriod && bin.days_of_week.map(Number).includes(dow)
+      })
+      .sort((a, b) => (a.bin_type === b.bin_type ? 0 : a.bin_type === 'day' ? -1 : 1))
+      .map(bin => {
+        const dateStr = toDateStr(year, month, day)
+        const used = bookings
+          .filter(b => b.date === dateStr && b.bin_type === bin.bin_type && (b.status === 'confirmed' || b.status === 'pending'))
+          .reduce((s, b) => s + b.count, 0)
+        const remaining = bin.max_capacity - used
+        return { setting: bin, remaining, isFull: remaining <= 0 }
+      })
   }
 
-  // 指定日の表示ステータスを判定する
-  type DayStatus = 'available' | 'almost-full' | 'full' | 'has-pending'
-  const getDayStatus = (dateStr: string): DayStatus => {
-    const { remaining, pendingCount } = getDayInfo(dateStr)
-    if (remaining <= 0) return 'full'
-    if (remaining <= 2) return 'almost-full'
-    if (pendingCount > 0) return 'has-pending'
-    return 'available'
-  }
+  // 日付セルをタップしたとき
+  const handleDateSelect = (year: number, month: number, day: number) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const clicked = new Date(year, month, day)
+    if (clicked < today) return
 
-  // 日付をタップしたときの処理
-  const handleDateSelect = (dateStr: string) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    if (new Date(dateStr) < today) return
-    if (getDayStatus(dateStr) === 'full') return
+    const bins = getBinsForDate(year, month, day)
+    const available = bins.filter(b => !b.isFull)
+    if (available.length === 0) return
 
+    const dateStr = toDateStr(year, month, day)
     setSelectedDate(dateStr)
-    setResult(null)
+    setSelectedBins(bins)
+    setCompleted(null)
     setFormError('')
-    setForm({ name: '', tel: '', count: 1, bin_type: '昼便', fishing_style: '', message: '' })
+    // 利用可能な最初の便を初期選択
+    setForm(f => ({ ...f, count: 1, bin_type: available[0].setting.bin_type, name: '', tel: '', fishing_style: '', message: '' }))
 
-    // フォームまでスクロール
     setTimeout(() => {
       document.getElementById('reserve-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 100)
   }
 
-  // 予約フォームを送信する
+  // フォーム送信
   const handleSubmit = async () => {
-    if (!form.name || !form.tel) {
+    if (!form.name.trim() || !form.tel.trim()) {
       setFormError('お名前と電話番号を入力してください')
       return
     }
     if (!selectedDate) return
 
-    const { remaining } = getDayInfo(selectedDate)
-    if (form.count > remaining) {
-      setFormError(`残り${remaining}名分しか空きがありません`)
+    const activeBin = selectedBins.find(b => b.setting.bin_type === form.bin_type)
+    if (!activeBin) return
+
+    if (form.count > activeBin.remaining) {
+      setFormError(`残り${activeBin.remaining}名分しか空きがありません`)
       return
     }
 
     setSubmitting(true)
     setFormError('')
-
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
@@ -153,24 +170,15 @@ export default function ReservePage() {
           channel: 'page',
         }),
       })
-
       const data = await res.json()
+      if (!res.ok) { setFormError(data.error || '予約に失敗しました。もう一度お試しください。'); return }
 
-      if (!res.ok) {
-        setFormError(data.error || '予約に失敗しました。もう一度お試しください。')
-        return
-      }
-
-      setResult({ isImmediate: data.isImmediate })
+      setCompleted({ isImmediate: data.isImmediate })
 
       // 予約リストを再取得して残数を更新
       const { data: bk } = await supabase
-        .from('bookings')
-        .select('id, date, bin_type, count, status, channel')
-        .eq('vessel_id', vesselId)
-        .neq('status', 'rejected')
+        .from('bookings').select('id, date, bin_type, count, status').eq('vessel_id', vesselId).neq('status', 'rejected')
       setBookings(bk || [])
-
     } catch {
       setFormError('通信エラーが発生しました。電波の状態を確認してください。')
     } finally {
@@ -178,110 +186,123 @@ export default function ReservePage() {
     }
   }
 
-  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
-  const dayNames = ['日','月','火','水','木','金','土']
+  // カレンダーの1セルを描画
+  const renderCell = (year: number, month: number, day: number) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const cellDate = new Date(year, month, day)
+    const dateStr = toDateStr(year, month, day)
+    const isPast = cellDate < today
+    const isToday = cellDate.getTime() === today.getTime()
+    const isSelected = selectedDate === dateStr
+    const dow = cellDate.getDay()
 
-  // カレンダーのセルを生成する
-  const renderCalendar = () => {
-    const fd = new Date(calYear, calM, 1).getDay()
-    const tot = new Date(calYear, calM + 1, 0).getDate()
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const cells = []
+    const bins = isPast ? [] : getBinsForDate(year, month, day)
+    const dayBin = bins.find(b => b.setting.bin_type === 'day') ?? null
+    const nightBin = bins.find(b => b.setting.bin_type === 'night') ?? null
+    const allFull = bins.length > 0 && bins.every(b => b.isFull)
+    const hasAvailable = bins.some(b => !b.isFull)
 
-    for (let i = 0; i < fd; i++) {
-      cells.push(<div key={`e${i}`} />)
-    }
+    // 昼便バンドの色
+    const dayBg = dayBin
+      ? (dayBin.isFull ? '#FEE2E2' : '#E8F4FD')
+      : null
+    const dayLabel = dayBin
+      ? (dayBin.isFull ? '満員' : dayBin.remaining <= 2 ? `残${dayBin.remaining}` : '空き')
+      : null
+    const dayTextColor = dayBin
+      ? (dayBin.isFull || dayBin.remaining <= 2 ? '#B91C1C' : '#0A3D62')
+      : null
 
-    for (let d = 1; d <= tot; d++) {
-      const dateStr = `${calYear}-${String(calM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-      const status = getDayStatus(dateStr)
-      const { remaining } = getDayInfo(dateStr)
-      const isToday = today.getFullYear() === calYear && today.getMonth() === calM && today.getDate() === d
-      const isSelected = selectedDate === dateStr
-      const isPast = new Date(dateStr) < today
-      const isFull = status === 'full'
-      const dow = (fd + d - 1) % 7
+    // 夜便バンドの色
+    const nightBg = nightBin
+      ? (nightBin.isFull ? '#FEE2E2' : '#EEF2FF')
+      : null
+    const nightLabel = nightBin
+      ? (nightBin.isFull ? '満員' : nightBin.remaining <= 2 ? `残${nightBin.remaining}` : '空き')
+      : null
+    const nightTextColor = nightBin
+      ? (nightBin.isFull || nightBin.remaining <= 2 ? '#B91C1C' : '#4338CA')
+      : null
 
-      // CLAUDE.md の色ルールに従う
-      const bgColor = isSelected ? '#0A3D62'
-        : isPast || isFull ? '#F1F5F9'
-        : status === 'almost-full' ? '#FEE2E2'
-        : status === 'has-pending' ? '#FEF3C7'
-        : '#E8F4FD'
-
-      const numColor = isSelected ? '#fff'
-        : isPast || isFull ? '#9CA3AF'
-        : dow === 0 ? '#B91C1C'
-        : dow === 6 ? '#2E86C1'
-        : '#111827'
-
-      const labelColor = isSelected ? 'rgba(255,255,255,0.85)'
-        : status === 'almost-full' ? '#B91C1C'
-        : status === 'has-pending' ? '#92400E'
-        : '#2E86C1'
-
-      const labelText = isPast ? ''
-        : isFull ? '満員'
-        : status === 'almost-full' ? `残${remaining}`
-        : status === 'has-pending' ? '要確認'
-        : '空き'
-
-      cells.push(
-        <div
-          key={d}
-          onClick={() => handleDateSelect(dateStr)}
-          style={{
-            borderRadius: '8px',
-            padding: '6px 2px 4px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: isPast || isFull ? 'default' : 'pointer',
-            background: bgColor,
-            minHeight: '56px',
-            border: isToday && !isSelected ? '2px solid #D4AC0D' : '2px solid transparent',
-            opacity: isPast ? 0.45 : 1,
-            transition: 'all .15s',
-          }}
-        >
-          <span style={{ fontSize: '14px', fontWeight: 700, color: numColor, lineHeight: 1 }}>{d}</span>
-          {labelText && (
-            <span style={{ fontSize: '9px', fontWeight: 700, color: labelColor, marginTop: '3px', lineHeight: 1 }}>
-              {labelText}
-            </span>
-          )}
+    return (
+      <div
+        key={dateStr}
+        onClick={() => !isPast && hasAvailable && handleDateSelect(year, month, day)}
+        style={{
+          borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+          minHeight: '58px', transition: 'border-color .15s',
+          cursor: isPast || (!hasAvailable && bins.length > 0) ? 'default' : bins.length === 0 ? 'default' : 'pointer',
+          opacity: isPast ? 0.4 : 1,
+          border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
+        }}
+      >
+        {/* 日付行 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3px 2px 2px', background: '#fff' }}>
+          <span style={{
+            fontSize: '12px', fontWeight: 700,
+            color: dow === 0 ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
+          }}>{day}</span>
         </div>
-      )
+
+        {/* 便バンド */}
+        {bins.length === 0 ? (
+          <div style={{ flex: 1, background: isPast ? '#F8F9FA' : '#F3F4F6' }} />
+        ) : (
+          <>
+            {dayBin && (
+              <div style={{ flex: 1, background: dayBg!, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: nightBin ? '1px solid rgba(0,0,0,0.05)' : undefined }}>
+                <span style={{ fontSize: '8px', fontWeight: 700, color: dayTextColor!, whiteSpace: 'nowrap' }}>{dayLabel}</span>
+              </div>
+            )}
+            {nightBin && (
+              <div style={{ flex: 1, background: nightBg!, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '8px', fontWeight: 700, color: nightTextColor!, whiteSpace: 'nowrap' }}>{nightLabel}</span>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    )
+  }
+
+  // カレンダーグリッド全体を生成
+  const renderCalendar = () => {
+    const firstDow = new Date(calYear, calM, 1).getDay()
+    const totalDays = new Date(calYear, calM + 1, 0).getDate()
+    const cells = []
+    for (let i = 0; i < firstDow; i++) {
+      cells.push(<div key={`e${i}`} style={{ minHeight: '58px' }} />)
+    }
+    for (let d = 1; d <= totalDays; d++) {
+      cells.push(renderCell(calYear, calM, d))
     }
     return cells
   }
 
-  if (loading) {
-    return (
-      <main style={{ minHeight: '100vh', background: '#0A3D62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#fff', fontSize: '16px' }}>読み込み中...</div>
-      </main>
-    )
-  }
+  // 選択便の残席上限
+  const activeBinInfo = selectedBins.find(b => b.setting.bin_type === form.bin_type)
+  const maxCount = activeBinInfo?.remaining ?? 1
 
-  if (!vessel) {
-    return (
-      <main style={{ minHeight: '100vh', background: '#F8F9FA', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚓</div>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>船の情報が見つかりません</div>
-          <div style={{ fontSize: '13px', color: '#6B7280' }}>URLが正しいか確認してください</div>
-        </div>
-      </main>
-    )
-  }
+  if (loading) return (
+    <main style={{ minHeight: '100vh', background: '#0A3D62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: '#fff', fontSize: '16px' }}>読み込み中...</div>
+    </main>
+  )
+
+  if (!vessel) return (
+    <main style={{ minHeight: '100vh', background: '#F8F9FA', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚓</div>
+        <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>船の情報が見つかりません</div>
+        <div style={{ fontSize: '13px', color: '#6B7280' }}>URLが正しいか確認してください</div>
+      </div>
+    </main>
+  )
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F8F9FA', fontFamily: 'sans-serif' }}>
 
-      {/* ヘッダー：船の情報 */}
+      {/* ヘッダー */}
       <div style={{ background: '#0A3D62', padding: '20px 16px 34px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', bottom: '-16px', left: 0, right: 0, height: '32px', background: '#F8F9FA', borderRadius: '50% 50% 0 0 / 100% 100% 0 0' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
@@ -294,9 +315,9 @@ export default function ReservePage() {
         <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>
           📍 {vessel.prefecture}・{vessel.port_name}
         </div>
-        {vessel.price ? (
+        {vessel.price && (
           <div style={{ fontSize: '14px', fontWeight: 700, color: '#D4AC0D', marginBottom: '6px' }}>{vessel.price}</div>
-        ) : null}
+        )}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {vessel.beginner_accepted && (
             <span style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: '11px', padding: '3px 10px', borderRadius: '99px' }}>初心者歓迎</span>
@@ -309,36 +330,37 @@ export default function ReservePage() {
 
       <div style={{ padding: '12px' }}>
 
-        {/* カレンダーセクション */}
+        {/* カレンダー */}
         <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
           <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827', marginBottom: '4px', textAlign: 'center' }}>
             ご希望の日を選んでください
           </div>
           <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '12px', textAlign: 'center' }}>
-            タップすると予約フォームが開きます
+            色のついた日をタップすると予約フォームが開きます
           </div>
 
           {/* 凡例 */}
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
             {[
-              { bg: '#E8F4FD', label: '空きあり', color: '#2E86C1' },
-              { bg: '#FEE2E2', label: '残りわずか', color: '#B91C1C' },
-              { bg: '#FEF3C7', label: '要確認', color: '#92400E' },
-            ].map(item => (
-              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: item.bg, border: '1px solid #E5E7EB', flexShrink: 0 }} />
-                <span style={{ fontSize: '11px', color: item.color, fontWeight: 700 }}>{item.label}</span>
+              { bg: '#E8F4FD', color: '#0A3D62', label: '昼便' },
+              { bg: '#EEF2FF', color: '#4338CA', label: '夜便' },
+              { bg: '#FEE2E2', color: '#B91C1C', label: '満員' },
+              { bg: '#F3F4F6', color: '#9CA3AF', label: '休船日' },
+            ].map(({ bg, color, label }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '2px', background: bg }} />
+                <span style={{ fontSize: '10px', color, fontWeight: 700 }}>{label}</span>
               </div>
             ))}
           </div>
 
-          {/* 月ナビゲーション */}
+          {/* 月ナビ */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <button
               onClick={() => { if (calM === 0) { setCalM(11); setCalYear(y => y - 1) } else setCalM(m => m - 1) }}
               style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#F8F9FA', border: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px' }}
             >◀</button>
-            <span style={{ fontSize: '17px', fontWeight: 700, color: '#111827' }}>{calYear}年{monthNames[calM]}</span>
+            <span style={{ fontSize: '17px', fontWeight: 700, color: '#111827' }}>{calYear}年{MONTH_NAMES[calM]}</span>
             <button
               onClick={() => { if (calM === 11) { setCalM(0); setCalYear(y => y + 1) } else setCalM(m => m + 1) }}
               style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#F8F9FA', border: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px' }}
@@ -347,7 +369,7 @@ export default function ReservePage() {
 
           {/* 曜日ヘッダー */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '2px', marginBottom: '4px' }}>
-            {dayNames.map((d, i) => (
+            {DAY_NAMES.map((d, i) => (
               <div key={d} style={{ fontSize: '11px', fontWeight: 700, textAlign: 'center', color: i === 0 ? '#B91C1C' : i === 6 ? '#2E86C1' : '#9CA3AF' }}>{d}</div>
             ))}
           </div>
@@ -358,21 +380,25 @@ export default function ReservePage() {
           </div>
         </div>
 
-        {/* 予約フォーム（日付が選択されていて、完了前に表示） */}
-        {selectedDate && !result && (
+        {/* 予約フォーム */}
+        {selectedDate && !completed && (
           <div id="reserve-form" style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
+
+            {/* フォームヘッダー */}
             <div style={{ background: '#0A3D62', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
-                  {new Date(selectedDate + 'T00:00:00').getMonth() + 1}月{new Date(selectedDate + 'T00:00:00').getDate()}日の予約
+                  {(() => { const d = new Date(selectedDate + 'T00:00:00'); return `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）の予約` })()}
                 </div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
-                  残り {getDayInfo(selectedDate).remaining}名
-                </div>
+                {activeBinInfo && (
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+                    残り {activeBinInfo.remaining}名
+                  </div>
+                )}
               </div>
               <button
-                onClick={() => { setSelectedDate(null); setResult(null) }}
-                style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', color: '#fff', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={() => { setSelectedDate(null); setCompleted(null) }}
+                style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', color: '#fff', fontSize: '16px', cursor: 'pointer' }}
               >✕</button>
             </div>
 
@@ -380,6 +406,72 @@ export default function ReservePage() {
               {formError && (
                 <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '13px', color: '#B91C1C' }}>
                   {formError}
+                </div>
+              )}
+
+              {/* 便の種類（複数便がある日のみ表示） */}
+              {selectedBins.length > 1 && (
+                <>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', marginBottom: '8px' }}>便の種類</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
+                    {selectedBins.map(b => {
+                      const isDay = b.setting.bin_type === 'day'
+                      const isActive = form.bin_type === b.setting.bin_type
+                      return (
+                        <button
+                          key={b.setting.bin_type}
+                          onClick={() => !b.isFull && setForm(f => ({ ...f, bin_type: b.setting.bin_type, count: 1 }))}
+                          disabled={b.isFull}
+                          style={{
+                            padding: '14px 8px', textAlign: 'center', borderRadius: '10px',
+                            cursor: b.isFull ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                            background: b.isFull ? '#F8F9FA' : isActive ? (isDay ? '#E8F4FD' : '#EEF2FF') : '#fff',
+                            border: isActive
+                              ? `2px solid ${isDay ? '#2E86C1' : '#4338CA'}`
+                              : '2px solid #E5E7EB',
+                            opacity: b.isFull ? 0.5 : 1,
+                          }}
+                        >
+                          <div style={{ fontSize: '15px', fontWeight: 700, color: b.isFull ? '#9CA3AF' : isActive ? (isDay ? '#0A3D62' : '#4338CA') : '#6B7280' }}>
+                            {isDay ? '☀️ 昼便' : '🌙 夜便'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px' }}>
+                            {b.isFull ? '満員' : `残り${b.remaining}名`}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
+                            {b.setting.departure_time} 出発
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* 単便のとき出発時刻を表示 */}
+              {selectedBins.length === 1 && activeBinInfo && (
+                <div style={{ background: activeBinInfo.setting.bin_type === 'day' ? '#E8F4FD' : '#EEF2FF', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '18px' }}>{activeBinInfo.setting.bin_type === 'day' ? '☀️' : '🌙'}</span>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: activeBinInfo.setting.bin_type === 'day' ? '#0A3D62' : '#4338CA' }}>
+                      {activeBinInfo.setting.bin_type === 'day' ? '昼便' : '夜便'}　{activeBinInfo.setting.departure_time} 出発
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>残り {activeBinInfo.remaining}名</div>
+                  </div>
+                </div>
+              )}
+
+              {/* 魚種表示（設定されていれば） */}
+              {activeBinInfo && activeBinInfo.setting.fish_types.length > 0 && (
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 700, marginBottom: '6px' }}>この便で釣れる魚</div>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {activeBinInfo.setting.fish_types.map(f => (
+                      <span key={f} style={{ fontSize: '13px', background: '#F3F4F6', color: '#374151', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>
+                        {f}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -406,48 +498,23 @@ export default function ReservePage() {
                 onChange={e => setForm(f => ({ ...f, tel: e.target.value }))}
               />
 
-              {/* 人数（ステッパー） */}
+              {/* 人数 */}
               <label style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '10px' }}>
                 人数 <span style={{ background: '#B91C1C', color: '#fff', fontSize: '9px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
               </label>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '16px', padding: '12px', background: '#F8F9FA', borderRadius: '12px' }}>
                 <button
                   onClick={() => setForm(f => ({ ...f, count: Math.max(1, f.count - 1) }))}
-                  style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fff', border: '2px solid #E5E7EB', cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}
+                  style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fff', border: '2px solid #E5E7EB', cursor: 'pointer', fontSize: '20px', fontWeight: 700 }}
                 >－</button>
                 <div style={{ textAlign: 'center', minWidth: '60px' }}>
                   <span style={{ fontSize: '28px', fontWeight: 700, color: '#0A3D62' }}>{form.count}</span>
                   <span style={{ fontSize: '16px', fontWeight: 700, color: '#0A3D62' }}>名</span>
                 </div>
                 <button
-                  onClick={() => setForm(f => ({ ...f, count: Math.min(vessel.capacity, f.count + 1) }))}
-                  style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fff', border: '2px solid #E5E7EB', cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}
+                  onClick={() => setForm(f => ({ ...f, count: Math.min(maxCount, f.count + 1) }))}
+                  style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fff', border: '2px solid #E5E7EB', cursor: 'pointer', fontSize: '20px', fontWeight: 700 }}
                 >＋</button>
-              </div>
-
-              {/* 便の種類 */}
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '8px' }}>便の種類</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
-                {['昼便', '夜便'].map(bt => (
-                  <button
-                    key={bt}
-                    onClick={() => setForm(f => ({ ...f, bin_type: bt }))}
-                    style={{
-                      padding: '14px 8px',
-                      textAlign: 'center',
-                      background: form.bin_type === bt ? '#E8F4FD' : '#fff',
-                      border: form.bin_type === bt ? '2px solid #2E86C1' : '2px solid #E5E7EB',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      fontSize: '15px',
-                      fontWeight: 700,
-                      color: form.bin_type === bt ? '#0A3D62' : '#6B7280',
-                    }}
-                  >
-                    {bt === '昼便' ? '☀️ 昼便' : '🌙 夜便'}
-                  </button>
-                ))}
               </div>
 
               {/* 釣り方（任意） */}
@@ -477,16 +544,11 @@ export default function ReservePage() {
                 onClick={handleSubmit}
                 disabled={submitting}
                 style={{
-                  width: '100%',
-                  padding: '17px',
-                  fontSize: '17px',
-                  fontWeight: 700,
+                  width: '100%', padding: '17px', fontSize: '17px', fontWeight: 700,
                   background: submitting ? '#E5E7EB' : '#0A3D62',
                   color: submitting ? '#9CA3AF' : '#fff',
-                  border: 'none',
-                  borderRadius: '12px',
-                  cursor: submitting ? 'not-allowed' : 'pointer',
-                  fontFamily: 'inherit',
+                  border: 'none', borderRadius: '12px',
+                  cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                 }}
               >
                 {submitting ? '送信中...' : '予約リクエストを送る　→'}
@@ -495,43 +557,28 @@ export default function ReservePage() {
           </div>
         )}
 
-        {/* 予約完了メッセージ */}
-        {result && (
+        {/* 予約完了 */}
+        {completed && (
           <div
             id="reserve-form"
             style={{
-              background: result.isImmediate ? '#D4EDDA' : '#FEF3C7',
-              border: `1px solid ${result.isImmediate ? '#86EFAC' : '#FCD34D'}`,
-              borderRadius: '14px',
-              padding: '24px 20px',
-              marginBottom: '12px',
-              textAlign: 'center',
+              background: completed.isImmediate ? '#D4EDDA' : '#FEF3C7',
+              border: `1px solid ${completed.isImmediate ? '#86EFAC' : '#FCD34D'}`,
+              borderRadius: '14px', padding: '24px 20px', marginBottom: '12px', textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: '40px', marginBottom: '10px' }}>
-              {result.isImmediate ? '✅' : '⏳'}
+            <div style={{ fontSize: '40px', marginBottom: '10px' }}>{completed.isImmediate ? '✅' : '⏳'}</div>
+            <div style={{ fontSize: '17px', fontWeight: 700, color: completed.isImmediate ? '#1B6B3A' : '#92400E', marginBottom: '8px' }}>
+              {completed.isImmediate ? '予約が完了しました！' : '予約リクエストを受け付けました'}
             </div>
-            <div style={{ fontSize: '17px', fontWeight: 700, color: result.isImmediate ? '#1B6B3A' : '#92400E', marginBottom: '8px' }}>
-              {result.isImmediate ? '予約が完了しました！' : '予約リクエストを受け付けました'}
-            </div>
-            <div style={{ fontSize: '13px', color: result.isImmediate ? '#1B6B3A' : '#92400E', marginBottom: '16px', lineHeight: 1.6 }}>
-              {result.isImmediate
+            <div style={{ fontSize: '13px', color: completed.isImmediate ? '#1B6B3A' : '#92400E', marginBottom: '16px', lineHeight: 1.6 }}>
+              {completed.isImmediate
                 ? `${vessel.name}の予約が確定しました。\n当日はお気をつけてお越しください。`
                 : `船長が確認後、折り返しご連絡いたします。\nしばらくお待ちください。`}
             </div>
             <button
-              onClick={() => { setSelectedDate(null); setResult(null) }}
-              style={{
-                padding: '12px 28px',
-                fontSize: '14px',
-                fontWeight: 700,
-                background: '#0A3D62',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
+              onClick={() => { setSelectedDate(null); setCompleted(null) }}
+              style={{ padding: '12px 28px', fontSize: '14px', fontWeight: 700, background: '#0A3D62', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               別の日を予約する
             </button>
@@ -539,20 +586,12 @@ export default function ReservePage() {
         )}
 
         {/* アクセス情報 */}
-        {vessel.access ? (
+        {vessel.access && (
           <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
             <div style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', marginBottom: '8px' }}>アクセス</div>
             <div style={{ fontSize: '14px', color: '#111827', lineHeight: 1.6 }}>{vessel.access}</div>
           </div>
-        ) : null}
-
-        {/* 出船時刻 */}
-        {vessel.departure_time ? (
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', marginBottom: '4px' }}>出船時刻</div>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: '#0A3D62' }}>{vessel.departure_time}</div>
-          </div>
-        ) : null}
+        )}
 
       </div>
     </div>

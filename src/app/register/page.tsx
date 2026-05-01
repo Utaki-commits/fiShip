@@ -40,7 +40,8 @@ export default function RegisterPage() {
       setError('登録に失敗しました。もう一度お試しください。')
       setLoading(false)
     } else {
-      router.push('/dashboard')
+      // 完了画面（step4）へ進む
+      setStep(4)
     }
   }
 
@@ -68,7 +69,7 @@ export default function RegisterPage() {
           船の情報を登録する
         </div>
         <div style={{ fontSize:'12px', color:'rgba(255,255,255,0.75)' }}>
-          STEP {step} / 3
+          {step <= 3 ? `STEP ${step} / 3` : '登録完了'}
         </div>
         <div style={styles.headerAfter}></div>
       </div>
@@ -165,6 +166,32 @@ export default function RegisterPage() {
                 {loading ? '登録中...' : '登録する　✓'}
               </button>
             </div>
+          </div>
+        )}
+        {/* 登録完了・オンボーディング画面 */}
+        {step === 4 && (
+          <div style={{ textAlign:'center', paddingTop:'20px' }}>
+            <div style={{ fontSize:'56px', marginBottom:'16px' }}>🎉</div>
+            <div style={{ fontSize:'22px', fontWeight:700, color:'#111827', marginBottom:'10px' }}>
+              登録が完了しました！
+            </div>
+            <div style={{ fontSize:'14px', color:'#6B7280', lineHeight:1.7, marginBottom:'32px' }}>
+              次に出船スケジュールを設定してください。<br />
+              昼便・夜便の運航日や定員を登録することで<br />
+              予約を受け付けられるようになります。
+            </div>
+            <button
+              style={{ ...styles.btn, background:'#D4AC0D', color:'#0A3D62', marginBottom:'12px' }}
+              onClick={() => router.push('/dashboard/settings')}
+            >
+              出船スケジュールを設定する　→
+            </button>
+            <button
+              style={{ ...styles.btn, background:'transparent', color:'#6B7280', border:'2px solid #E5E7EB' }}
+              onClick={() => router.push('/dashboard')}
+            >
+              あとで設定する
+            </button>
           </div>
         )}
       </div>

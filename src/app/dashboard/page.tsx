@@ -65,7 +65,6 @@ export default function DashboardPage() {
   const router = useRouter()
 
   useEffect(() => {
-    console.log('useEffect triggered')
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
@@ -79,7 +78,6 @@ export default function DashboardPage() {
         supabase.from('bin_settings').select('*').eq('vessel_id', v.id),
       ])
       setBookings(bk || [])
-      console.log('binSettings:', bs)
       setBinSettings(bs || [])
       setLoading(false)
     }
@@ -300,25 +298,48 @@ export default function DashboardPage() {
 
       <div style={{ padding: '12px' }}>
 
-        {/* SNS・電話から取り込むボタン */}
-        <button
-          onClick={() => router.push('/dashboard/extract')}
-          style={{
-            width: '100%', padding: '14px 16px', marginBottom: '12px',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            background: '#fff', border: '2px solid #E5E7EB', borderRadius: '12px',
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', background: '#E8F4FD', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>💬</div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>SNS・電話から取り込む</div>
-              <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>メッセージを貼り付けるだけで自動入力</div>
+        {/* 出船スケジュール未設定バナー */}
+        {binSettings.length === 0 && (
+          <div
+            onClick={() => router.push('/dashboard/settings')}
+            style={{
+              background: '#FFF3CD', border: '1px solid #FFC107', borderRadius: '12px',
+              padding: '14px 16px', marginBottom: '12px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '12px',
+            }}
+          >
+            <div style={{ fontSize: '24px', flexShrink: 0 }}>⚠️</div>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#856404' }}>出船スケジュールが未設定です</div>
+              <div style={{ fontSize: '12px', color: '#856404', marginTop: '2px' }}>タップして昼便・夜便のスケジュールを登録してください</div>
             </div>
           </div>
-          <span style={{ fontSize: '16px', color: '#9CA3AF' }}>→</span>
-        </button>
+        )}
+
+        {/* クイックアクションボタン */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
+          {[
+            { icon: '💬', bg: '#E8F4FD', label: 'SNS・電話から\n取り込む', path: '/dashboard/extract' },
+            { icon: '👥', bg: '#F0FDF4', label: '顧客名簿\nを見る', path: '/dashboard/customers' },
+            { icon: '📋', bg: '#FFF7ED', label: '乗船名簿\nを記録する', path: '/dashboard/logs' },
+            { icon: '⚙️', bg: '#EEF2FF', label: '便の設定\nを変更する', path: '/dashboard/settings' },
+            { icon: '🔗', bg: '#FEF9C3', label: '予約URL\nを共有する', path: '/dashboard/vessel' },
+          ].map(({ icon, bg, label, path }) => (
+            <button
+              key={path}
+              onClick={() => router.push(path)}
+              style={{
+                padding: '12px 8px',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+                background: '#fff', border: '2px solid #E5E7EB', borderRadius: '12px',
+                cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center',
+              }}
+            >
+              <div style={{ width: '36px', height: '36px', background: bg, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>{icon}</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: '#111827', whiteSpace: 'pre-line', lineHeight: 1.4 }}>{label}</div>
+            </button>
+          ))}
+        </div>
 
         {/* カレンダー */}
         <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>

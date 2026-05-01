@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
       channel = 'page',
     } = body
 
-    // 必須項目のバリデーション
-    if (!vessel_id || !date || !bin_type || !name || !tel || !count) {
+    // 必須項目のバリデーション（tel はwebhook経由で空になる場合があるため任意）
+    if (!vessel_id || !date || !bin_type || !name || !count) {
       return NextResponse.json(
         { error: '必須項目が不足しています' },
         { status: 400 }

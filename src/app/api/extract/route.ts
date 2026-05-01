@@ -4,6 +4,15 @@ import { supabase } from '@/lib/supabase'
 
 const client = new Anthropic()
 
+type BinSetting = {
+  id: string
+  bin_type: 'day' | 'night'
+  start_month: number
+  end_month: number
+  days_of_week: number[]
+  max_capacity: number
+}
+
 // Claudeでメッセージから予約情報を抽出する
 async function extractBookingInfo(message: string, today: string) {
   const response = await client.messages.create({
@@ -42,14 +51,38 @@ ${message}
   const textBlock = response.content.find(b => b.type === 'text')
   const text = textBlock?.type === 'text' ? textBlock.text : ''
 
-  // JSONを抽出
   const match = text.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('JSON抽出に失敗しました')
   return JSON.parse(match[0])
 }
 
-// 代替日を取得（指定日以降7〜14日以内で空いている日を最大3件）
-async function getAltDates(vesselId: string, startDate: string, capacity: number) {
+// 指定日付に有効なbin_settingを返す
+function getMatchingBin(
+  binSettings: BinSetting[],
+  dateStr: string,
+  binPreference: string,
+): BinSetting | null {
+  const d = new Date(dateStr)
+  const month = d.getMonth()   // 0-indexed
+  const dow = d.getDay()       // 0=日〜6=土
+  const preferredType = binPreference === '夜' ? 'night' : 'day'
+
+  return binSettings.find(bin => {
+    if (bin.bin_type !== preferredType) return false
+    const inPeriod = bin.start_month <= bin.end_month
+      ? bin.start_month <= month && month <= bin.end_month
+      : month >= bin.start_month || month <= bin.end_month
+    return inPeriod && bin.days_of_week.map(Number).includes(dow)
+  }) ?? null
+}
+
+// 代替日を取得（指定日以降14日以内で空いている日を最大3件）
+async function getAltDates(
+  vesselId: string,
+  startDate: string,
+  binSettings: BinSetting[],
+  binPreference: string,
+): Promise<{ date: string; remaining: number }[]> {
   const start = new Date(startDate)
   const altDates: { date: string; remaining: number }[] = []
 
@@ -58,16 +91,22 @@ async function getAltDates(vesselId: string, startDate: string, capacity: number
     d.setDate(d.getDate() + i)
     const dateStr = d.toISOString().split('T')[0]
 
+    const bin = getMatchingBin(binSettings, dateStr, binPreference)
+    if (!bin) continue  // その日は運航なし
+
+    const binType = bin.bin_type
     const { data: bk } = await supabase
       .from('bookings')
       .select('count')
       .eq('vessel_id', vesselId)
       .eq('date', dateStr)
+      .eq('bin_type', binType)
       .in('status', ['confirmed', 'pending'])
 
-    const total = (bk || []).reduce((s, b) => s + (b.count as number), 0)
-    if (total < capacity) {
-      altDates.push({ date: dateStr, remaining: capacity - total })
+    const used = (bk || []).reduce((s, b) => s + (b.count as number), 0)
+    const remaining = bin.max_capacity - used
+    if (remaining > 0) {
+      altDates.push({ date: dateStr, remaining })
     }
   }
 
@@ -97,41 +136,46 @@ export async function POST(req: NextRequest) {
     // Claudeで解析
     const extracted = await extractBookingInfo(message, today)
 
-    // 船の定員を取得
-    const { data: vessel } = await supabase
-      .from('vessels')
-      .select('capacity')
-      .eq('id', vessel_id)
-      .single()
+    // bin_settings を取得（空き判定に使用）
+    const { data: binSettings } = await supabase
+      .from('bin_settings')
+      .select('id, bin_type, start_month, end_month, days_of_week, max_capacity')
+      .eq('vessel_id', vessel_id)
 
-    const capacity = vessel?.capacity ?? 4
+    const bins: BinSetting[] = binSettings || []
+
     let availability: 'open' | 'full' | 'charter' = 'open'
     let altDates: { date: string; remaining: number }[] = []
 
-    // 日付が判明している場合は空き状況を確認
     if (extracted.date) {
-      const binType = extracted.bin_preference === '夜' ? 'night' : 'day'
+      const bin = getMatchingBin(bins, extracted.date, extracted.bin_preference)
 
-      const { data: bk } = await supabase
-        .from('bookings')
-        .select('count, channel')
-        .eq('vessel_id', vessel_id)
-        .eq('date', extracted.date)
-        .eq('bin_type', binType)
-        .in('status', ['confirmed', 'pending'])
-
-      const total = (bk || []).reduce((s, b) => s + (b.count as number), 0)
-      const hasCharter = (bk || []).some((b) => (b.channel as string) === 'charter')
-
-      if (extracted.is_charter || hasCharter) {
-        availability = 'charter'
-      } else if (total >= capacity) {
+      if (!bin) {
+        // その日に該当便がない場合は「その日は運航なし」扱い
         availability = 'full'
-      }
+      } else {
+        const binType = bin.bin_type
+        const { data: bk } = await supabase
+          .from('bookings')
+          .select('count, channel')
+          .eq('vessel_id', vessel_id)
+          .eq('date', extracted.date)
+          .eq('bin_type', binType)
+          .in('status', ['confirmed', 'pending'])
 
-      // 満員・貸切の場合のみ代替日を返す（予約ページ経由では不要）
-      if (availability !== 'open' && channel !== 'page') {
-        altDates = await getAltDates(vessel_id, extracted.date, capacity)
+        const used = (bk || []).reduce((s, b) => s + (b.count as number), 0)
+        const hasCharter = (bk || []).some(b => (b.channel as string) === 'charter')
+
+        if (extracted.is_charter || hasCharter) {
+          availability = 'charter'
+        } else if (used >= bin.max_capacity) {
+          availability = 'full'
+        }
+
+        // 満員・貸切の場合のみ代替日を返す
+        if (availability !== 'open' && channel !== 'page') {
+          altDates = await getAltDates(vessel_id, extracted.date, bins, extracted.bin_preference)
+        }
       }
     }
 

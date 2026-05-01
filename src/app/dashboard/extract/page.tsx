@@ -55,6 +55,8 @@ export default function ExtractPage() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  // 解析結果から編集可能フィールドを保持する
+  const [editedFields, setEditedFields] = useState({ name: '', date: '', count: '' })
   const router = useRouter()
 
   // ログイン確認と vessel_id 取得
@@ -101,6 +103,12 @@ export default function ExtractPage() {
         return
       }
       setResult(data)
+      // 編集フィールドを解析結果で初期化
+      setEditedFields({
+        name: data.extracted.name || '',
+        date: data.extracted.date || '',
+        count: data.extracted.count ? String(data.extracted.count) : '',
+      })
     } catch {
       setError('通信エラーが発生しました。もう一度お試しください。')
     } finally {
@@ -108,9 +116,9 @@ export default function ExtractPage() {
     }
   }
 
-  // 予約を承認待ちとして登録
+  // 予約を承認待ちとして登録（editedFieldsの値を使用）
   const handleSave = async () => {
-    if (!result || !vesselId || !result.extracted.date) return
+    if (!result || !vesselId || !editedFields.date) return
     setSaving(true)
     try {
       const binType = result.extracted.bin_preference === '夜' ? 'night' : 'day'
@@ -119,11 +127,11 @@ export default function ExtractPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vessel_id: vesselId,
-          date: result.extracted.date,
+          date: editedFields.date,
           bin_type: binType,
-          name: result.extracted.name || '未確認',
+          name: editedFields.name || '未確認',
           tel: '',
-          count: result.extracted.count || 1,
+          count: parseInt(editedFields.count) || 1,
           fishing_style: result.extracted.fishing_style || null,
           channel: result.extracted.is_charter ? 'charter' : channel,
         }),
@@ -245,10 +253,51 @@ export default function ExtractPage() {
 
             {/* 各項目の表示 */}
             <div style={{ padding: '6px 14px' }}>
+              {/* 名前・日付・人数は編集可能入力フィールドで表示 */}
               {[
-                { label: '名前', value: result.extracted.name, missing: !result.extracted.name },
-                { label: '日付', value: result.extracted.date ? formatDate(result.extracted.date) : null, missing: !result.extracted.date },
-                { label: '人数', value: result.extracted.count ? `${result.extracted.count}名` : null, missing: !result.extracted.count },
+                {
+                  label: '名前',
+                  input: <input
+                    type="text"
+                    value={editedFields.name}
+                    onChange={e => setEditedFields(p => ({ ...p, name: e.target.value }))}
+                    placeholder="未確認"
+                    style={{ fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB', borderRadius: '6px', padding: '4px 8px', width: '160px', fontFamily: 'inherit', color: editedFields.name ? '#111827' : '#D97706' }}
+                  />,
+                },
+                {
+                  label: '日付',
+                  input: <input
+                    type="date"
+                    value={editedFields.date}
+                    onChange={e => setEditedFields(p => ({ ...p, date: e.target.value }))}
+                    style={{ fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB', borderRadius: '6px', padding: '4px 8px', fontFamily: 'inherit', color: editedFields.date ? '#111827' : '#D97706' }}
+                  />,
+                },
+                {
+                  label: '人数',
+                  input: <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={editedFields.count}
+                      onChange={e => setEditedFields(p => ({ ...p, count: e.target.value }))}
+                      placeholder="1"
+                      style={{ fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB', borderRadius: '6px', padding: '4px 8px', width: '60px', fontFamily: 'inherit', color: editedFields.count ? '#111827' : '#D97706' }}
+                    />
+                    <span style={{ fontSize: '13px', color: '#374151' }}>名</span>
+                  </div>,
+                },
+              ].map(({ label, input }) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F3F4F6' }}>
+                  <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>{label}</span>
+                  {input}
+                </div>
+              ))}
+
+              {/* 固定表示項目（釣り方・便・貸切） */}
+              {[
                 { label: '釣り方', value: result.extracted.fishing_style, missing: false },
                 { label: '便', value: result.extracted.bin_preference, missing: false },
                 { label: '貸切', value: result.extracted.is_charter ? 'はい' : 'いいえ', missing: false },
@@ -312,18 +361,18 @@ export default function ExtractPage() {
               <div style={{ padding: '14px', borderTop: '1px solid #E5E7EB' }}>
                 <button
                   onClick={handleSave}
-                  disabled={saving || !result.extracted.date}
+                  disabled={saving || !editedFields.date}
                   style={{
                     width: '100%', padding: '15px', fontSize: '15px', fontWeight: 700,
-                    background: saving || !result.extracted.date ? '#E5E7EB' : '#D4AC0D',
-                    color: saving || !result.extracted.date ? '#9CA3AF' : '#0A3D62',
-                    border: 'none', borderRadius: '10px', cursor: saving || !result.extracted.date ? 'not-allowed' : 'pointer',
+                    background: saving || !editedFields.date ? '#E5E7EB' : '#D4AC0D',
+                    color: saving || !editedFields.date ? '#9CA3AF' : '#0A3D62',
+                    border: 'none', borderRadius: '10px', cursor: saving || !editedFields.date ? 'not-allowed' : 'pointer',
                     fontFamily: 'inherit',
                   }}
                 >
                   {saving ? '登録中...' : '承認待ちに登録する　→'}
                 </button>
-                {!result.extracted.date && (
+                {!editedFields.date && (
                   <div style={{ fontSize: '12px', color: '#B91C1C', textAlign: 'center', marginTop: '8px', lineHeight: 1.5 }}>
                     日付が不明のため登録できません。<br />内容を確認してから再度入力してください
                   </div>
