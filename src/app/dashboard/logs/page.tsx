@@ -72,6 +72,8 @@ export default function LogsPage() {
   const [selectedDay, setSelectedDay] = useState<DayManifest | null>(null)
   const [forms, setForms] = useState<PassengerForm[]>([])
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming')
+  const [pastPage, setPastPage] = useState(0)
+  const PAST_PAGE_SIZE = 20
   const router = useRouter()
 
   useEffect(() => {
@@ -188,7 +190,11 @@ export default function LogsPage() {
   const today = todayStr()
   const upcoming = days.filter(d => d.date >= today)
   const past = days.filter(d => d.date < today)
-  const displayDays = tab === 'upcoming' ? upcoming : past
+  // 今後は直近1件のみ・過去は20件ページング
+  const upcomingDisplay = upcoming.slice(0, 1)
+  const pastTotalPages = Math.ceil(past.length / PAST_PAGE_SIZE)
+  const pastDisplay = past.slice(pastPage * PAST_PAGE_SIZE, (pastPage + 1) * PAST_PAGE_SIZE)
+  const displayDays = tab === 'upcoming' ? upcomingDisplay : pastDisplay
 
   if (loading) return (
     <main style={{ minHeight: '100vh', background: '#0A3D62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -238,7 +244,7 @@ export default function LogsPage() {
           {/* 今後/過去 タブ */}
           <div style={{ display: 'flex', gap: '4px', background: '#E5E7EB', borderRadius: '10px', padding: '3px', marginBottom: '12px' }}>
             {([
-              { key: 'upcoming' as const, label: `今後の出船（${upcoming.length}件）` },
+              { key: 'upcoming' as const, label: `今後の出船（直近1件）` },
               { key: 'past' as const, label: `過去の出船（${past.length}件）` },
             ]).map(t => (
               <button
@@ -343,6 +349,37 @@ export default function LogsPage() {
                   </button>
                 )
               })}
+
+              {/* 過去タブのページング */}
+              {tab === 'past' && pastTotalPages > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', marginTop: '4px' }}>
+                  <button
+                    onClick={() => setPastPage(p => Math.max(0, p - 1))}
+                    disabled={pastPage === 0}
+                    style={{
+                      padding: '10px 20px', fontSize: '14px', fontWeight: 700,
+                      background: pastPage === 0 ? '#F3F4F6' : '#fff',
+                      color: pastPage === 0 ? '#9CA3AF' : '#0A3D62',
+                      border: '2px solid #E5E7EB', borderRadius: '8px',
+                      cursor: pastPage === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                    }}
+                  >← 前へ</button>
+                  <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>
+                    {pastPage + 1} / {pastTotalPages}ページ
+                  </span>
+                  <button
+                    onClick={() => setPastPage(p => Math.min(pastTotalPages - 1, p + 1))}
+                    disabled={pastPage >= pastTotalPages - 1}
+                    style={{
+                      padding: '10px 20px', fontSize: '14px', fontWeight: 700,
+                      background: pastPage >= pastTotalPages - 1 ? '#F3F4F6' : '#fff',
+                      color: pastPage >= pastTotalPages - 1 ? '#9CA3AF' : '#0A3D62',
+                      border: '2px solid #E5E7EB', borderRadius: '8px',
+                      cursor: pastPage >= pastTotalPages - 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                    }}
+                  >次へ →</button>
+                </div>
+              )}
             </div>
           )}
         </div>

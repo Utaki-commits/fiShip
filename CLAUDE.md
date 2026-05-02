@@ -44,6 +44,12 @@
 - 残り2名以下で赤色表示
 - 代替日提案はSNS・電話経由のみ
 
+## ボタンの色統一ルール（全画面で必ず守る）
+- 編集ボタン：青色背景(#2E86C1)・白文字・border: none
+- 削除ボタン：赤色背景(#B91C1C)・白文字・border: none
+- 保存・登録ボタン：紺色背景(#0A3D62)・白文字
+- キャンセルボタン：白背景・グレー文字・グレーborder
+
 ## 環境変数
 - NEXT_PUBLIC_SUPABASE_URL
 - NEXT_PUBLIC_SUPABASE_ANON_KEY

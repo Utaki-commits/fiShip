@@ -72,6 +72,7 @@ export default function ReservePage() {
 
   const [loading, setLoading] = useState(true)
   const [vessel, setVessel] = useState<Vessel | null>(null)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [binSettings, setBinSettings] = useState<BinSetting[]>([])
   const [calYear, setCalYear] = useState(new Date().getFullYear())
@@ -83,9 +84,22 @@ export default function ReservePage() {
   const [completed, setCompleted] = useState<{ isImmediate: boolean } | null>(null)
   const [formError, setFormError] = useState('')
 
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
   useEffect(() => {
     const init = async () => {
-      const { data: v } = await supabase.from('vessels').select('*').eq('id', vesselId).single()
+      // UUID形式でない場合は早期リターン
+      if (!UUID_REGEX.test(vesselId || '')) {
+        console.error('Invalid vessel ID format:', vesselId)
+        setFetchError('URLが正しくありません')
+        setLoading(false)
+        return
+      }
+
+      const { data: v, error: vErr } = await supabase.from('vessels').select('*').eq('id', vesselId).single()
+      if (vErr) {
+        console.error('Vessel fetch error:', vErr.code, vErr.message, 'details:', vErr.details, 'hint:', vErr.hint)
+      }
       if (!v) { setLoading(false); return }
       setVessel(v)
 
@@ -301,8 +315,12 @@ export default function ReservePage() {
     <main style={{ minHeight: '100vh', background: '#F8F9FA', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚓</div>
-        <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>船の情報が見つかりません</div>
-        <div style={{ fontSize: '13px', color: '#6B7280' }}>URLが正しいか確認してください</div>
+        <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>
+          {fetchError || '船の情報が見つかりません'}
+        </div>
+        <div style={{ fontSize: '13px', color: '#6B7280' }}>
+          {fetchError ? 'QRコードや案内リンクからアクセスしてください' : 'URLが正しいか確認してください'}
+        </div>
       </div>
     </main>
   )

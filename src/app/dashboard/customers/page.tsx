@@ -41,6 +41,8 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 20
   const router = useRouter()
 
   useEffect(() => {
@@ -99,6 +101,13 @@ export default function CustomersPage() {
   const filtered = customers.filter(c =>
     c.name.includes(search) || c.tel.replace(/-/g, '').includes(search.replace(/-/g, ''))
   )
+  // 検索変更時はページをリセット
+  const handleSearchChange = (val: string) => {
+    setSearch(val)
+    setPage(0)
+  }
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   if (loading) return (
     <main style={{ minHeight: '100vh', background: '#0A3D62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -224,7 +233,7 @@ export default function CustomersPage() {
             <input
               type="search"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => handleSearchChange(e.target.value)}
               placeholder="名前・電話番号で検索"
               style={{
                 width: '100%', padding: '12px 12px 12px 38px',
@@ -249,7 +258,7 @@ export default function CustomersPage() {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {filtered.map(c => (
+              {paginated.map(c => (
                 <button
                   key={`${c.name}__${c.tel}`}
                   onClick={() => setSelectedCustomer(c)}
@@ -283,6 +292,37 @@ export default function CustomersPage() {
                   </div>
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* ページング */}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', marginTop: '8px' }}>
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                style={{
+                  padding: '10px 20px', fontSize: '14px', fontWeight: 700,
+                  background: page === 0 ? '#F3F4F6' : '#fff',
+                  color: page === 0 ? '#9CA3AF' : '#0A3D62',
+                  border: '2px solid #E5E7EB', borderRadius: '8px',
+                  cursor: page === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                }}
+              >← 前へ</button>
+              <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>
+                {page + 1} / {totalPages}ページ
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                style={{
+                  padding: '10px 20px', fontSize: '14px', fontWeight: 700,
+                  background: page >= totalPages - 1 ? '#F3F4F6' : '#fff',
+                  color: page >= totalPages - 1 ? '#9CA3AF' : '#0A3D62',
+                  border: '2px solid #E5E7EB', borderRadius: '8px',
+                  cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                }}
+              >次へ →</button>
             </div>
           )}
         </div>

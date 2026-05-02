@@ -19,6 +19,12 @@ function getAdminClient() {
   )
 }
 
+// 管理者として許可されたメールアドレスリストを返す（複数設定対応）
+function getAllowedAdminEmails(): string[] {
+  const raw = process.env.NEXT_PUBLIC_ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAIL || ''
+  return raw.split(',').map(e => e.trim()).filter(Boolean)
+}
+
 // リクエストのBearerトークンを検証し、管理者かどうかを確認する
 // 共通クライアント（@/lib/supabase）でトークンを検証する
 async function verifyAdmin(req: NextRequest): Promise<{ ok: boolean; error?: string }> {
@@ -26,8 +32,8 @@ async function verifyAdmin(req: NextRequest): Promise<{ ok: boolean; error?: str
   if (!token) return { ok: false, error: '認証が必要です' }
 
   const { data: { user } } = await supabase.auth.getUser(token)
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL
-  if (!user || (adminEmail && user.email !== adminEmail)) {
+  const adminEmails = getAllowedAdminEmails()
+  if (!user || (adminEmails.length > 0 && !adminEmails.includes(user.email || ''))) {
     return { ok: false, error: '管理者権限がありません' }
   }
   return { ok: true }

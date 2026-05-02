@@ -18,12 +18,32 @@ type ExtractResult = {
   altDates: { date: string; remaining: number }[]
 }
 
+type Tab = 'line' | 'instagram' | 'tel'
+
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土']
 
-const SNS_CHANNELS = [
-  { key: 'line', label: 'LINE' },
-  { key: 'instagram', label: 'Instagram' },
-  { key: 'other', label: 'その他' },
+const TABS: { key: Tab; label: string; buttonLabel: string; placeholder: string; icon: string }[] = [
+  {
+    key: 'line',
+    label: 'LINE',
+    buttonLabel: 'LINEのメッセージを取り込む',
+    placeholder: 'LINEのメッセージをそのまま貼り付けてください\n\n例：来週の土曜に3人で行きたいです。一つテンヤお願いします',
+    icon: '💬',
+  },
+  {
+    key: 'instagram',
+    label: 'Instagram',
+    buttonLabel: 'Instagramのメッセージを取り込む',
+    placeholder: 'InstagramのDMをそのまま貼り付けてください\n\n例：5/20の昼便で2名お願いしたいです！',
+    icon: '📸',
+  },
+  {
+    key: 'tel',
+    label: '電話メモ',
+    buttonLabel: '電話メモを解析する',
+    placeholder: '電話でメモした内容を入力してください\n\n例：山田さん、5/3、2名、泳がせ希望',
+    icon: '📞',
+  },
 ]
 
 const AVAILABILITY_STYLE = {
@@ -47,15 +67,13 @@ const formatDate = (dateStr: string) => {
 
 export default function ExtractPage() {
   const [vesselId, setVesselId] = useState<string | null>(null)
-  const [tab, setTab] = useState<'sns' | 'phone'>('sns')
-  const [channel, setChannel] = useState('line')
+  const [tab, setTab] = useState<Tab>('line')
   const [message, setMessage] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [result, setResult] = useState<ExtractResult | null>(null)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  // 解析結果から編集可能フィールドを保持する
   const [editedFields, setEditedFields] = useState({ name: '', date: '', count: '' })
   const router = useRouter()
 
@@ -75,16 +93,16 @@ export default function ExtractPage() {
     init()
   }, [router])
 
-  // タブ切り替え時にチャネルをリセット
-  const handleTabChange = (newTab: 'sns' | 'phone') => {
+  // タブ切り替え時に入力・結果をリセット
+  const handleTabChange = (newTab: Tab) => {
     setTab(newTab)
-    setChannel(newTab === 'phone' ? 'tel' : 'line')
+    setMessage('')
     setResult(null)
     setSaved(false)
     setError('')
   }
 
-  // メッセージ解析
+  // メッセージ解析：タブに応じてchannelを自動設定
   const handleAnalyze = async () => {
     if (!message.trim() || !vesselId) return
     setAnalyzing(true)
@@ -95,7 +113,7 @@ export default function ExtractPage() {
       const res = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, vessel_id: vesselId, channel }),
+        body: JSON.stringify({ message, vessel_id: vesselId, channel: tab }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -103,7 +121,7 @@ export default function ExtractPage() {
         return
       }
       setResult(data)
-      // 編集フィールドを解析結果で初期化
+      // 解析結果で編集フィールドを初期化
       setEditedFields({
         name: data.extracted.name || '',
         date: data.extracted.date || '',
@@ -116,7 +134,7 @@ export default function ExtractPage() {
     }
   }
 
-  // 予約を承認待ちとして登録（editedFieldsの値を使用）
+  // 予約を承認待ちとして登録
   const handleSave = async () => {
     if (!result || !vesselId || !editedFields.date) return
     setSaving(true)
@@ -133,7 +151,7 @@ export default function ExtractPage() {
           tel: '',
           count: parseInt(editedFields.count) || 1,
           fishing_style: result.extracted.fishing_style || null,
-          channel: result.extracted.is_charter ? 'charter' : channel,
+          channel: result.extracted.is_charter ? 'charter' : tab,
         }),
       })
       if (res.ok) setSaved(true)
@@ -142,9 +160,7 @@ export default function ExtractPage() {
     }
   }
 
-  const currentChannels = tab === 'phone'
-    ? [{ key: 'tel', label: '電話' }, { key: 'other', label: 'その他' }]
-    : SNS_CHANNELS
+  const currentTab = TABS.find(t => t.key === tab)!
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F8F9FA', fontFamily: 'sans-serif' }}>
@@ -157,90 +173,70 @@ export default function ExtractPage() {
         >←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>メッセージから予約を取り込む</div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>SNS・電話メモを貼り付けて解析</div>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>メッセージを貼り付けて予約情報を読み取ります</div>
         </div>
       </div>
 
       <div style={{ padding: '12px' }}>
 
-        {/* SNS / 電話メモ タブ */}
+        {/* 3タブ：LINE / Instagram / 電話メモ */}
         <div style={{ display: 'flex', gap: '4px', background: '#E5E7EB', borderRadius: '10px', padding: '3px', marginBottom: '12px' }}>
-          {([{ key: 'sns' as const, label: 'SNS・LINEメッセージ' }, { key: 'phone' as const, label: '電話メモ' }]).map(t => (
+          {TABS.map(t => (
             <button
               key={t.key}
               onClick={() => handleTabChange(t.key)}
               style={{
-                flex: 1, padding: '14px 10px', fontSize: '13px', fontWeight: 700,
+                flex: 1, padding: '12px 6px', fontSize: '13px', fontWeight: 700,
                 background: tab === t.key ? '#fff' : 'transparent',
                 color: tab === t.key ? '#0A3D62' : '#9CA3AF',
                 border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
                 boxShadow: tab === t.key ? '0 1px 3px rgba(0,0,0,.1)' : 'none',
                 transition: 'all .15s',
               }}
-            >{t.label}</button>
+            >
+              <div style={{ fontSize: '16px', marginBottom: '2px' }}>{t.icon}</div>
+              {t.label}
+            </button>
           ))}
         </div>
 
-        {/* チャネル選択 */}
+        {/* メッセージ入力エリア */}
         <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', marginBottom: '10px' }}>
-            どこからの連絡ですか？
-          </div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {currentChannels.map(ch => (
-              <button
-                key={ch.key}
-                onClick={() => setChannel(ch.key)}
-                style={{
-                  flex: 1, padding: '14px 8px', fontSize: '14px', fontWeight: 700,
-                  background: channel === ch.key ? '#E8F4FD' : '#F8F9FA',
-                  color: channel === ch.key ? '#0A3D62' : '#6B7280',
-                  border: channel === ch.key ? '2px solid #2E86C1' : '2px solid transparent',
-                  borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >{ch.label}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* メッセージ入力 */}
-        <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', marginBottom: '8px' }}>
-            {tab === 'sns'
-              ? 'メッセージをそのまま貼り付けてください'
-              : '電話でメモした内容を入力してください'}
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '8px' }}>
+            {tab === 'tel'
+              ? '電話でメモした内容を入力してください'
+              : `${currentTab.label}のメッセージをそのまま貼り付けてください`}
           </div>
           <textarea
             value={message}
             onChange={e => { setMessage(e.target.value); setResult(null); setSaved(false) }}
-            placeholder={tab === 'sns'
-              ? '例：来週の土曜に3人で行きたいです。一つテンヤお願いします'
-              : '例：山田さん、5/3、2名、泳がせ希望'}
+            placeholder={currentTab.placeholder}
             style={{
               width: '100%', padding: '12px', fontSize: '14px', lineHeight: 1.6,
               border: '2px solid #E5E7EB', borderRadius: '8px', outline: 'none',
-              fontFamily: 'inherit', resize: 'none', height: '120px',
+              fontFamily: 'inherit', resize: 'none', height: '130px', boxSizing: 'border-box',
             }}
           />
 
           {error && (
-            <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: '8px', padding: '10px', marginTop: '8px', fontSize: '13px', color: '#B91C1C' }}>
-              {error}
-            </div>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: '#B91C1C', margin: '8px 0 0', padding: 0, lineHeight: 1.5 }}>
+              ⚠ {error}
+            </p>
           )}
 
           <button
             onClick={handleAnalyze}
             disabled={analyzing || !message.trim()}
             style={{
-              width: '100%', padding: '15px', marginTop: '10px', fontSize: '15px', fontWeight: 700,
+              width: '100%', padding: '16px', marginTop: '10px', fontSize: '15px', fontWeight: 700,
               background: analyzing || !message.trim() ? '#E5E7EB' : '#0A3D62',
               color: analyzing || !message.trim() ? '#9CA3AF' : '#fff',
-              border: 'none', borderRadius: '10px', cursor: analyzing || !message.trim() ? 'not-allowed' : 'pointer',
+              border: 'none', borderRadius: '10px',
+              cursor: analyzing || !message.trim() ? 'not-allowed' : 'pointer',
               fontFamily: 'inherit',
             }}
           >
-            {analyzing ? '解析中...' : '予約情報を読み取る　→'}
+            {analyzing ? '読み取り中...' : `${currentTab.icon} ${currentTab.buttonLabel} →`}
           </button>
         </div>
 
@@ -251,43 +247,60 @@ export default function ExtractPage() {
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>読み取り結果</div>
             </div>
 
-            {/* 各項目の表示 */}
             <div style={{ padding: '6px 14px' }}>
-              {/* 名前・日付・人数は編集可能入力フィールドで表示 */}
+              {/* 名前・日付・人数は編集可能 */}
               {[
                 {
                   label: '名前',
-                  input: <input
-                    type="text"
-                    value={editedFields.name}
-                    onChange={e => setEditedFields(p => ({ ...p, name: e.target.value }))}
-                    placeholder="未確認"
-                    style={{ fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB', borderRadius: '6px', padding: '4px 8px', width: '160px', fontFamily: 'inherit', color: editedFields.name ? '#111827' : '#D97706' }}
-                  />,
+                  input: (
+                    <input
+                      type="text"
+                      value={editedFields.name}
+                      onChange={e => setEditedFields(p => ({ ...p, name: e.target.value }))}
+                      placeholder="未確認"
+                      style={{
+                        fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB',
+                        borderRadius: '6px', padding: '6px 10px', width: '160px',
+                        fontFamily: 'inherit', color: editedFields.name ? '#111827' : '#D97706',
+                      }}
+                    />
+                  ),
                 },
                 {
                   label: '日付',
-                  input: <input
-                    type="date"
-                    value={editedFields.date}
-                    onChange={e => setEditedFields(p => ({ ...p, date: e.target.value }))}
-                    style={{ fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB', borderRadius: '6px', padding: '4px 8px', fontFamily: 'inherit', color: editedFields.date ? '#111827' : '#D97706' }}
-                  />,
+                  input: (
+                    <input
+                      type="date"
+                      value={editedFields.date}
+                      onChange={e => setEditedFields(p => ({ ...p, date: e.target.value }))}
+                      style={{
+                        fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB',
+                        borderRadius: '6px', padding: '6px 10px', fontFamily: 'inherit',
+                        color: editedFields.date ? '#111827' : '#D97706',
+                      }}
+                    />
+                  ),
                 },
                 {
                   label: '人数',
-                  input: <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <input
-                      type="number"
-                      min={1}
-                      max={20}
-                      value={editedFields.count}
-                      onChange={e => setEditedFields(p => ({ ...p, count: e.target.value }))}
-                      placeholder="1"
-                      style={{ fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB', borderRadius: '6px', padding: '4px 8px', width: '60px', fontFamily: 'inherit', color: editedFields.count ? '#111827' : '#D97706' }}
-                    />
-                    <span style={{ fontSize: '13px', color: '#374151' }}>名</span>
-                  </div>,
+                  input: (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <input
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={editedFields.count}
+                        onChange={e => setEditedFields(p => ({ ...p, count: e.target.value }))}
+                        placeholder="1"
+                        style={{
+                          fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB',
+                          borderRadius: '6px', padding: '6px 8px', width: '60px',
+                          fontFamily: 'inherit', color: editedFields.count ? '#111827' : '#D97706',
+                        }}
+                      />
+                      <span style={{ fontSize: '13px', color: '#374151' }}>名</span>
+                    </div>
+                  ),
                 },
               ].map(({ label, input }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F3F4F6' }}>
@@ -296,21 +309,21 @@ export default function ExtractPage() {
                 </div>
               ))}
 
-              {/* 固定表示項目（釣り方・便・貸切） */}
+              {/* 固定表示項目 */}
               {[
-                { label: '釣り方', value: result.extracted.fishing_style, missing: false },
-                { label: '便', value: result.extracted.bin_preference, missing: false },
-                { label: '貸切', value: result.extracted.is_charter ? 'はい' : 'いいえ', missing: false },
-              ].map(({ label, value, missing }) => (
+                { label: '釣り方', value: result.extracted.fishing_style },
+                { label: '便', value: result.extracted.bin_preference },
+                { label: '貸切', value: result.extracted.is_charter ? 'はい' : 'いいえ' },
+              ].map(({ label, value }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F3F4F6' }}>
                   <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>{label}</span>
-                  <span style={{ fontSize: '14px', fontWeight: 700, color: missing ? '#D97706' : '#111827' }}>
-                    {value ?? (missing ? '不明（要確認）' : '未指定')}
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>
+                    {value ?? '未指定'}
                   </span>
                 </div>
               ))}
 
-              {/* 空き状況（日付が判明している場合のみ） */}
+              {/* 空き状況 */}
               {result.extracted.date && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F3F4F6' }}>
                   <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>空き状況</span>
@@ -325,7 +338,7 @@ export default function ExtractPage() {
               )}
             </div>
 
-            {/* 代替日提案（満員・貸切の場合） */}
+            {/* 代替日提案 */}
             {result.altDates.length > 0 && (
               <div style={{ padding: '12px 14px', background: '#FEF9C3', borderTop: '1px solid #FDE68A' }}>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: '#854D0E', marginBottom: '8px' }}>
@@ -363,10 +376,11 @@ export default function ExtractPage() {
                   onClick={handleSave}
                   disabled={saving || !editedFields.date}
                   style={{
-                    width: '100%', padding: '15px', fontSize: '15px', fontWeight: 700,
+                    width: '100%', padding: '16px', fontSize: '15px', fontWeight: 700,
                     background: saving || !editedFields.date ? '#E5E7EB' : '#D4AC0D',
                     color: saving || !editedFields.date ? '#9CA3AF' : '#0A3D62',
-                    border: 'none', borderRadius: '10px', cursor: saving || !editedFields.date ? 'not-allowed' : 'pointer',
+                    border: 'none', borderRadius: '10px',
+                    cursor: saving || !editedFields.date ? 'not-allowed' : 'pointer',
                     fontFamily: 'inherit',
                   }}
                 >

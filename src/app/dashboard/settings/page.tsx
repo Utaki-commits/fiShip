@@ -196,7 +196,7 @@ export default function SettingsPage() {
       <div style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
         <button
           onClick={() => view === 'form' ? setView('list') : router.push('/dashboard')}
-          style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
@@ -283,8 +283,8 @@ export default function SettingsPage() {
                           onClick={() => handleEditClick(s)}
                           style={{
                             flex: 1, padding: '15px', fontSize: '14px', fontWeight: 700,
-                            background: '#fff', color: '#0A3D62', border: 'none',
-                            borderRight: '1px solid #F3F4F6', cursor: 'pointer', fontFamily: 'inherit',
+                            background: '#2E86C1', color: '#fff', border: 'none',
+                            borderRight: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', fontFamily: 'inherit',
                           }}
                         >編集</button>
                         <button
@@ -292,7 +292,8 @@ export default function SettingsPage() {
                           disabled={deleting === s.id}
                           style={{
                             flex: 1, padding: '15px', fontSize: '14px', fontWeight: 700,
-                            background: '#fff', color: deleting === s.id ? '#9CA3AF' : '#B91C1C',
+                            background: deleting === s.id ? '#E5E7EB' : '#B91C1C',
+                            color: deleting === s.id ? '#9CA3AF' : '#fff',
                             border: 'none', cursor: deleting === s.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                           }}
                         >{deleting === s.id ? '削除中...' : '削除'}</button>
@@ -388,7 +389,7 @@ export default function SettingsPage() {
                     key={i}
                     onClick={() => toggleDay(i)}
                     style={{
-                      flex: 1, height: '44px', borderRadius: '8px', fontSize: '14px', fontWeight: 700,
+                      flex: 1, height: '44px', minWidth: '44px', borderRadius: '8px', fontSize: '14px', fontWeight: 700,
                       cursor: 'pointer', fontFamily: 'inherit', border: 'none',
                       background: form.days_of_week.includes(i)
                         ? (form.bin_type === 'day' ? '#0A3D62' : '#4338CA')

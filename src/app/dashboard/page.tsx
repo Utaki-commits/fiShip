@@ -179,7 +179,7 @@ export default function DashboardPage() {
           onClick={() => setSelectedDate(isSelected ? null : dateStr)}
           style={{
             borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-            cursor: 'pointer', minHeight: '58px', transition: 'border-color .15s', position: 'relative',
+            cursor: 'pointer', minHeight: '80px', transition: 'border-color .15s', position: 'relative',
             border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
           }}
         >
@@ -240,7 +240,7 @@ export default function DashboardPage() {
       const totalDays = new Date(calYear, calM + 1, 0).getDate()
       const cells = []
       for (let i = 0; i < firstDow; i++) {
-        cells.push(<div key={`e${i}`} style={{ minHeight: '58px' }} />)
+        cells.push(<div key={`e${i}`} style={{ minHeight: '80px' }} />)
       }
       for (let d = 1; d <= totalDays; d++) {
         cells.push(renderCell(calYear, calM, d))

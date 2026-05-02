@@ -4,6 +4,24 @@ import { QRCodeSVG } from 'qrcode.react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
+type Facilities = {
+  tackle: boolean       // タックル貸出
+  life_jacket: boolean  // ライフジャケット
+  toilet: boolean       // トイレ
+  cooler: boolean       // クーラーボックス
+  parking: boolean      // 駐車場
+  payment: string       // 支払方法
+}
+
+const defaultFacilities = (): Facilities => ({
+  tackle: false,
+  life_jacket: false,
+  toilet: false,
+  cooler: false,
+  parking: false,
+  payment: '',
+})
+
 type Vessel = {
   id: string
   name: string
@@ -16,6 +34,7 @@ type Vessel = {
   charter_accepted: boolean
   beginner_accepted: boolean
   price: string
+  facilities?: Facilities | null
 }
 
 type View = 'top' | 'edit'
@@ -85,6 +104,7 @@ export default function VesselPage() {
           charter_accepted: form.charter_accepted,
           beginner_accepted: form.beginner_accepted,
           price: form.price,
+          facilities: form.facilities || defaultFacilities(),
         })
         .eq('id', vessel.id)
       if (err) { setError('保存に失敗しました。もう一度お試しください。'); return }
@@ -151,7 +171,13 @@ export default function VesselPage() {
 
   if (!vessel) return null
 
-  const reserveUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/reserve/${vessel.id}`
+  // 本番URLを優先し、未設定時はブラウザのoriginを使用
+  const reserveUrl = `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/reserve/${vessel.id}`
+  const facilities: Facilities = vessel.facilities || defaultFacilities()
+
+  const updateFacility = (key: keyof Facilities, val: boolean | string) => {
+    setForm(f => f ? { ...f, facilities: { ...(f.facilities || defaultFacilities()), [key]: val } } : f)
+  }
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F8F9FA', fontFamily: 'sans-serif' }}>
@@ -252,6 +278,28 @@ export default function VesselPage() {
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 16px', borderBottom: '1px solid #F3F4F6' }}>
                     <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700, flexShrink: 0, marginRight: '12px' }}>{label}</span>
                     <span style={{ fontSize: '14px', color: '#111827', fontWeight: 600, textAlign: 'right' }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 設備・サービスカード */}
+            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
+              <div style={{ background: '#F8F9FA', padding: '10px 16px', borderBottom: '1px solid #E5E7EB' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151' }}>設備・サービス</div>
+              </div>
+              <div style={{ padding: '4px 0' }}>
+                {[
+                  { label: 'タックル貸出', value: facilities.tackle ? 'あり' : 'なし' },
+                  { label: 'ライフジャケット', value: facilities.life_jacket ? 'あり' : 'なし' },
+                  { label: 'トイレ', value: facilities.toilet ? 'あり' : 'なし' },
+                  { label: 'クーラーボックス', value: facilities.cooler ? 'あり' : 'なし' },
+                  { label: '駐車場', value: facilities.parking ? 'あり' : 'なし' },
+                  { label: '支払方法', value: facilities.payment || '未設定' },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #F3F4F6' }}>
+                    <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>{label}</span>
+                    <span style={{ fontSize: '14px', color: '#111827', fontWeight: 600 }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -367,6 +415,48 @@ export default function VesselPage() {
                 onChange={e => update('price', e.target.value)}
                 style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
                 placeholder="例：お一人様 15,000円（エサ・氷代込み）"
+              />
+            </div>
+
+            {/* 設備・サービス */}
+            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>設備・サービス</div>
+
+              {([
+                { key: 'tackle' as const, label: 'タックル貸出' },
+                { key: 'life_jacket' as const, label: 'ライフジャケット' },
+                { key: 'toilet' as const, label: 'トイレ' },
+                { key: 'cooler' as const, label: 'クーラーボックス' },
+                { key: 'parking' as const, label: '駐車場' },
+              ]).map(({ key, label }) => {
+                const val = (form?.facilities || defaultFacilities())[key] as boolean
+                return (
+                  <div
+                    key={key}
+                    onClick={() => updateFacility(key, !val)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px',
+                      background: val ? '#E8F4FD' : '#F8F9FA',
+                      border: val ? '2px solid #2E86C1' : '2px solid transparent',
+                    }}
+                  >
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{label}</span>
+                    <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: val ? '#2E86C1' : '#E5E7EB', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
+                      <div style={{ position: 'absolute', top: '3px', left: val ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
+                    </div>
+                  </div>
+                )
+              })}
+
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px', marginTop: '10px' }}>
+                支払方法 <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
+              </label>
+              <input
+                value={(form?.facilities || defaultFacilities()).payment}
+                onChange={e => updateFacility('payment', e.target.value)}
+                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                placeholder="例：現金のみ、PayPay・現金"
               />
             </div>
 
