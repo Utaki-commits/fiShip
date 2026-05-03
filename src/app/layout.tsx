@@ -1,9 +1,12 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: '遊漁船予約システム',
   description: '遊漁船の予約管理システム',
+}
+
+export const viewport: Viewport = {
   themeColor: '#0A3D62',
 }
 

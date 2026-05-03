@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { getHolidayInfo } from 'holidays-jp'
 
 type Vessel = {
   id: string
@@ -84,8 +83,16 @@ export default function ReservePage() {
   const [submitting, setSubmitting] = useState(false)
   const [completed, setCompleted] = useState<{ isImmediate: boolean } | null>(null)
   const [formError, setFormError] = useState('')
+  // holidays-jpはSSRで動作しないためクライアント側でのみ動的importする
+  const [getHoliday, setGetHoliday] = useState<((d: Date) => { name: string } | null) | null>(null)
 
   const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+  useEffect(() => {
+    import('holidays-jp')
+      .then(mod => setGetHoliday(() => mod.getHolidayInfo))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -234,8 +241,8 @@ export default function ReservePage() {
     const nightBin = bins.find(b => b.setting.bin_type === 'night') ?? null
     const allFull = bins.length > 0 && bins.every(b => b.isFull)
     const hasAvailable = bins.some(b => !b.isFull)
-    // 祝日判定
-    const holiday = getHolidayInfo(new Date(year, month, day))
+    // 祝日判定（クライアント側でのみ有効）
+    const holiday = getHoliday ? getHoliday(new Date(year, month, day)) : null
 
     // 昼便バンドの色・ラベル
     const dayBg = dayBin

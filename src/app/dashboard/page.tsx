@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { getHolidayInfo } from 'holidays-jp'
 
 type Vessel = {
   id: string
@@ -63,7 +62,15 @@ export default function DashboardPage() {
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekSunday(new Date()))
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  // holidays-jpはSSRで動作しないためクライアント側でのみ動的importする
+  const [getHoliday, setGetHoliday] = useState<((d: Date) => { name: string } | null) | null>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    import('holidays-jp')
+      .then(mod => setGetHoliday(() => mod.getHolidayInfo))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -145,8 +152,8 @@ export default function DashboardPage() {
       const dayBin = bins.find(b => b.bin_type === 'day') ?? null
       const nightBin = bins.find(b => b.bin_type === 'night') ?? null
       const hasPending = bookings.some(b => b.date === dateStr && b.status === 'pending')
-      // 祝日判定
-      const holiday = getHolidayInfo(new Date(year, month, day))
+      // 祝日判定（クライアント側でのみ有効）
+      const holiday = getHoliday ? getHoliday(new Date(year, month, day)) : null
 
       // 昼便の色・ラベルを決定
       let dayBg = '#E8F4FD'
