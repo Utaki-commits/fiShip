@@ -26,17 +26,24 @@ type PassengerLog = {
   emergency_contact: string
 }
 
+type BinSetting = {
+  id: string
+  bin_type: string
+  max_capacity: number
+}
+
 // 日付ごとの乗船情報
 type DayManifest = {
   date: string
   bookings: Booking[]
   logs: PassengerLog[]
-  isCompleted: boolean  // 全乗客に住所が記録されていれば完了扱い
+  isCompleted: boolean
 }
 
-// 1乗客分の編集フォーム
+// 1乗客分の編集フォーム（同伴者含む）
 type PassengerForm = {
-  booking_id: string
+  formKey: string          // 一意キー（booking_id または booking_id_companion_N）
+  booking_id: string | null  // 同伴者は null
   name: string
   tel: string
   count: number
@@ -45,6 +52,8 @@ type PassengerForm = {
   emergency_contact: string
   saved: boolean
   saving: boolean
+  isCompanion: boolean
+  representativeName: string
 }
 
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土']
@@ -68,6 +77,7 @@ const todayStr = () => {
 export default function LogsPage() {
   const [vesselId, setVesselId] = useState<string | null>(null)
   const [days, setDays] = useState<DayManifest[]>([])
+  const [binSettings, setBinSettings] = useState<BinSetting[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState<DayManifest | null>(null)
   const [forms, setForms] = useState<PassengerForm[]>([])
@@ -86,12 +96,14 @@ export default function LogsPage() {
       if (!vessel) { router.push('/register'); return }
       setVesselId(vessel.id)
 
-      // 確認済み予約と既存の乗船名簿を並行取得
-      const [{ data: bookings }, { data: logs }] = await Promise.all([
+      // 確認済み予約・乗船名簿・便設定を並行取得
+      const [{ data: bookings }, { data: logs }, { data: bs }] = await Promise.all([
         supabase.from('bookings').select('id, date, bin_type, name, tel, count, fishing_style, status')
           .eq('vessel_id', vessel.id).eq('status', 'confirmed').order('date', { ascending: false }),
         supabase.from('passenger_logs').select('*').eq('vessel_id', vessel.id),
+        supabase.from('bin_settings').select('id, bin_type, max_capacity').eq('vessel_id', vessel.id),
       ])
+      setBinSettings(bs || [])
 
       // 日付ごとにグループ化
       const map = new Map<string, DayManifest>()
@@ -118,7 +130,6 @@ export default function LogsPage() {
         return { ...day, isCompleted: hasAllAddresses && day.bookings.length > 0 }
       })
 
-      // 日付降順で並べる
       result.sort((a, b) => b.date.localeCompare(a.date))
       setDays(result)
       setLoading(false)
@@ -126,36 +137,61 @@ export default function LogsPage() {
     init()
   }, [router])
 
-  // 日付を選択して名簿フォームを開く
+  // 日付を選択して名簿フォームを開く（複数名予約は代表者＋同伴者に展開）
   const openDay = (day: DayManifest) => {
     setSelectedDay(day)
-    // 各予約に対応するフォームを初期化
-    const initialized = day.bookings.map(b => {
+    const initialized: PassengerForm[] = []
+
+    for (const b of day.bookings) {
       const log = day.logs.find(l => l.booking_id === b.id)
-      return {
+
+      // 代表者フォーム
+      initialized.push({
+        formKey: b.id,
         booking_id: b.id,
         name: b.name,
         tel: b.tel,
-        count: b.count,
+        count: 1,
         bin_type: b.bin_type,
         address: log?.address || '',
         emergency_contact: log?.emergency_contact || '',
         saved: !!log?.address,
         saving: false,
+        isCompanion: false,
+        representativeName: b.name,
+      })
+
+      // 同伴者フォーム（count > 1 の場合に追加）
+      for (let i = 1; i < b.count; i++) {
+        initialized.push({
+          formKey: `${b.id}_companion_${i}`,
+          booking_id: null,
+          name: `（代表：${b.name}様のご同行）`,
+          tel: '',
+          count: 1,
+          bin_type: b.bin_type,
+          address: '',
+          emergency_contact: '',
+          saved: false,
+          saving: false,
+          isCompanion: true,
+          representativeName: b.name,
+        })
       }
-    })
+    }
+
     setForms(initialized)
   }
 
   // フォームフィールドを更新する
-  const updateForm = (bookingId: string, field: keyof PassengerForm, value: string) => {
-    setForms(prev => prev.map(f => f.booking_id === bookingId ? { ...f, [field]: value, saved: false } : f))
+  const updateForm = (formKey: string, field: keyof PassengerForm, value: string) => {
+    setForms(prev => prev.map(f => f.formKey === formKey ? { ...f, [field]: value, saved: false } : f))
   }
 
   // 1乗客の名簿を保存する
   const savePassenger = async (form: PassengerForm) => {
     if (!vesselId || !selectedDay) return
-    setForms(prev => prev.map(f => f.booking_id === form.booking_id ? { ...f, saving: true } : f))
+    setForms(prev => prev.map(f => f.formKey === form.formKey ? { ...f, saving: true } : f))
 
     try {
       const res = await fetch('/api/passenger-logs', {
@@ -175,15 +211,15 @@ export default function LogsPage() {
       })
 
       if (res.ok) {
-        setForms(prev => prev.map(f => f.booking_id === form.booking_id ? { ...f, saved: true, saving: false } : f))
-        // デイリストを再集計して完了フラグを更新
-        const allSaved = forms.every(f => f.booking_id === form.booking_id ? true : f.saved)
+        setForms(prev => prev.map(f => f.formKey === form.formKey ? { ...f, saved: true, saving: false } : f))
+        // デイリストの完了フラグを更新
+        const allSaved = forms.every(f => f.formKey === form.formKey ? true : f.saved)
         setDays(prev => prev.map(d =>
           d.date === selectedDay.date ? { ...d, isCompleted: allSaved } : d
         ))
       }
     } finally {
-      setForms(prev => prev.map(f => f.booking_id === form.booking_id ? { ...f, saving: false } : f))
+      setForms(prev => prev.map(f => f.formKey === form.formKey ? { ...f, saving: false } : f))
     }
   }
 
@@ -220,7 +256,7 @@ export default function LogsPage() {
       <div className="no-print" style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
         <button
           onClick={() => selectedDay ? setSelectedDay(null) : router.push('/dashboard')}
-          style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
@@ -232,7 +268,7 @@ export default function LogsPage() {
               : '出船日ごとの乗船者記録'}
           </div>
         </div>
-        {selectedDay && selectedDay.bookings.every((_, i) => forms[i]?.saved) && (
+        {selectedDay && forms.every(f => f.saved) && forms.length > 0 && (
           <span style={{ background: '#D4EDDA', color: '#1B6B3A', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px' }}>記録完了</span>
         )}
       </div>
@@ -389,7 +425,7 @@ export default function LogsPage() {
       {selectedDay && (
         <div style={{ padding: '12px' }}>
 
-          {/* 印刷用タイトル（画面では非表示、印刷時のみ表示） */}
+          {/* 印刷用タイトル */}
           <div className="print-title" style={{ marginBottom: '16px', borderBottom: '2px solid #000', paddingBottom: '8px' }}>
             <div style={{ fontSize: '18px', fontWeight: 700 }}>乗船名簿</div>
             <div style={{ fontSize: '14px', marginTop: '4px' }}>{formatDate(selectedDay.date)}</div>
@@ -406,39 +442,60 @@ export default function LogsPage() {
             </div>
           </div>
 
+          {/* 定員超過の警告 */}
+          {selectedDay.bookings.length > 0 && (() => {
+            const binType = selectedDay.bookings[0].bin_type
+            const bin = binSettings.find(b => b.bin_type === binType)
+            const total = selectedDay.bookings.reduce((s, b) => s + b.count, 0)
+            if (bin && total > bin.max_capacity) {
+              return (
+                <div style={{ background: '#FEF9C3', border: '1px solid #FCD34D', borderRadius: '10px', padding: '12px 14px', marginBottom: '12px', fontSize: '13px', color: '#854D0E', fontWeight: 700 }}>
+                  ⚠ 定員（{bin.max_capacity}名）を超えて登録されています（合計{total}名）
+                </div>
+              )
+            }
+            return null
+          })()}
+
           {/* 乗客ごとのフォーム */}
-          {forms.map((form, idx) => {
-            const booking = selectedDay.bookings.find(b => b.id === form.booking_id)!
+          {forms.map((form) => {
             return (
               <div
-                key={form.booking_id}
+                key={form.formKey}
                 style={{
-                  background: '#fff', border: form.saved ? '2px solid #86EFAC' : '1px solid #E5E7EB',
+                  background: '#fff',
+                  border: form.saved ? '2px solid #86EFAC' : form.isCompanion ? '1px dashed #D1D5DB' : '1px solid #E5E7EB',
                   borderRadius: '12px', overflow: 'hidden', marginBottom: '12px',
                 }}
               >
                 {/* 乗客ヘッダー */}
                 <div style={{
-                  background: form.saved ? '#D4EDDA' : (booking.bin_type === 'day' ? '#E8F4FD' : '#EEF2FF'),
+                  background: form.saved ? '#D4EDDA' : form.isCompanion ? '#F8F9FA' : (form.bin_type === 'day' ? '#E8F4FD' : '#EEF2FF'),
                   padding: '10px 14px',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{
                       fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px',
-                      background: booking.bin_type === 'day' ? '#0A3D62' : '#4338CA', color: '#fff',
+                      background: form.bin_type === 'day' ? '#0A3D62' : '#4338CA', color: '#fff',
                     }}>
-                      {booking.bin_type === 'day' ? '昼便' : '夜便'}
+                      {form.bin_type === 'day' ? '昼便' : '夜便'}
                     </span>
-                    <span style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>{form.name}</span>
-                    <span style={{ fontSize: '12px', color: '#6B7280' }}>{form.count}名</span>
+                    {form.isCompanion && (
+                      <span style={{ fontSize: '11px', fontWeight: 700, background: '#E5E7EB', color: '#6B7280', padding: '2px 8px', borderRadius: '99px' }}>
+                        同伴者
+                      </span>
+                    )}
+                    <span style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>
+                      {form.isCompanion ? `（代表：${form.representativeName}様のご同行）` : form.name}
+                    </span>
                   </div>
                   {form.saved && <span style={{ fontSize: '12px', fontWeight: 700, color: '#1B6B3A' }}>保存済 ✓</span>}
                 </div>
 
                 <div style={{ padding: '14px' }}>
-                  {/* 電話番号（表示のみ） */}
-                  {form.tel && (
+                  {/* 電話番号（代表者のみ表示） */}
+                  {!form.isCompanion && form.tel && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', padding: '10px 12px', background: '#F8F9FA', borderRadius: '8px' }}>
                       <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700, flexShrink: 0 }}>電話番号</span>
                       <a href={`tel:${form.tel}`} style={{ fontSize: '14px', color: '#0A3D62', fontWeight: 700, textDecoration: 'none' }}>{form.tel}</a>
@@ -452,7 +509,7 @@ export default function LogsPage() {
                   </label>
                   <input
                     value={form.address}
-                    onChange={e => updateForm(form.booking_id, 'address', e.target.value)}
+                    onChange={e => updateForm(form.formKey, 'address', e.target.value)}
                     placeholder="例：福岡県福岡市博多区〇〇1-2-3"
                     style={{
                       width: '100%', padding: '12px', fontSize: '15px',
@@ -468,7 +525,7 @@ export default function LogsPage() {
                   </label>
                   <input
                     value={form.emergency_contact}
-                    onChange={e => updateForm(form.booking_id, 'emergency_contact', e.target.value)}
+                    onChange={e => updateForm(form.formKey, 'emergency_contact', e.target.value)}
                     placeholder="例：妻・090-0000-0000"
                     type="tel"
                     style={{
@@ -493,7 +550,7 @@ export default function LogsPage() {
                       fontFamily: 'inherit',
                     }}
                   >
-                    {form.saving ? '保存中...' : form.saved ? '保存済み ✓' : `${form.name}の情報を保存する`}
+                    {form.saving ? '保存中...' : form.saved ? '保存済み ✓' : `${form.isCompanion ? '同伴者の' : `${form.name}の`}情報を保存する`}
                   </button>
                 </div>
               </div>

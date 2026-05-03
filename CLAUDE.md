@@ -48,8 +48,8 @@
 - 代替日提案はSNS・電話経由のみ
 
 ## ボタンの色統一ルール（全画面で必ず守る）
-- 編集ボタン：青色背景(#2E86C1)・白文字・border: none
-- 削除ボタン：赤色背景(#B91C1C)・白文字・border: none
+- 編集ボタン：アウトライン形式・青色(#2E86C1)・文字のみ（background: #fff, color: #2E86C1, border: 2px solid #2E86C1）
+- 削除ボタン：アウトライン形式・赤色(#B91C1C)・文字のみ（background: #fff, color: #B91C1C, border: 2px solid #B91C1C）
 - 保存・登録ボタン：紺色背景(#0A3D62)・白文字
 - キャンセルボタン：白背景・グレー文字・グレーborder
 

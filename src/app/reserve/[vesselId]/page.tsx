@@ -158,10 +158,20 @@ export default function ReservePage() {
     }, 100)
   }
 
+  // 電話番号バリデーション（ハイフンを除いて11桁）
+  const isValidTel = (tel: string): boolean => {
+    const digits = tel.replace(/-/g, '')
+    return /^\d{11}$/.test(digits)
+  }
+
   // フォーム送信
   const handleSubmit = async () => {
     if (!form.name.trim() || !form.tel.trim()) {
       setFormError('お名前と電話番号を入力してください')
+      return
+    }
+    if (!isValidTel(form.tel)) {
+      setFormError('電話番号は11桁（例：09012345678）または13桁（例：090-1234-5678）で入力してください')
       return
     }
     if (!selectedDate) return
@@ -224,23 +234,23 @@ export default function ReservePage() {
     const allFull = bins.length > 0 && bins.every(b => b.isFull)
     const hasAvailable = bins.some(b => !b.isFull)
 
-    // 昼便バンドの色
+    // 昼便バンドの色・ラベル
     const dayBg = dayBin
       ? (dayBin.isFull ? '#FEE2E2' : '#E8F4FD')
       : null
     const dayLabel = dayBin
-      ? (dayBin.isFull ? '満員' : dayBin.remaining <= 2 ? `残${dayBin.remaining}` : '空き')
+      ? (dayBin.isFull ? '昼　満員' : `昼　残${dayBin.remaining}`)
       : null
     const dayTextColor = dayBin
       ? (dayBin.isFull || dayBin.remaining <= 2 ? '#B91C1C' : '#0A3D62')
       : null
 
-    // 夜便バンドの色
+    // 夜便バンドの色・ラベル
     const nightBg = nightBin
       ? (nightBin.isFull ? '#FEE2E2' : '#EEF2FF')
       : null
     const nightLabel = nightBin
-      ? (nightBin.isFull ? '満員' : nightBin.remaining <= 2 ? `残${nightBin.remaining}` : '空き')
+      ? (nightBin.isFull ? '夜　満員' : `夜　残${nightBin.remaining}`)
       : null
     const nightTextColor = nightBin
       ? (nightBin.isFull || nightBin.remaining <= 2 ? '#B91C1C' : '#4338CA')
@@ -252,33 +262,37 @@ export default function ReservePage() {
         onClick={() => !isPast && hasAvailable && handleDateSelect(year, month, day)}
         style={{
           borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          minHeight: '58px', transition: 'border-color .15s', position: 'relative',
+          minHeight: '72px', transition: 'border-color .15s',
           cursor: isPast || (!hasAvailable && bins.length > 0) ? 'default' : bins.length === 0 ? 'default' : 'pointer',
           opacity: isPast ? 0.4 : 1,
           border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
         }}
       >
-        {/* 日付：左上に絶対位置で表示（z-index で便バンドの上に重ねる） */}
-        <div style={{ position: 'absolute', top: '2px', left: '3px', zIndex: 1, pointerEvents: 'none' }}>
+        {/* 上段：日付（絶対配置を廃止してフレックス行で管理） */}
+        <div style={{
+          display: 'flex', alignItems: 'center', padding: '2px 3px', flexShrink: 0,
+          background: bins.length === 0 ? (isPast ? '#F8F9FA' : '#F3F4F6') : '#fff',
+          borderBottom: bins.length > 0 ? '1px solid rgba(0,0,0,0.05)' : 'none',
+        }}>
           <span style={{
-            fontSize: '12px', fontWeight: 700,
+            fontSize: '11px', fontWeight: 700,
             color: dow === 0 ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
           }}>{day}</span>
         </div>
 
-        {/* 便バンド：セルを均等分割して中央寄せ */}
+        {/* 中・下段：便バンドを均等分割して中央寄せ */}
         {bins.length === 0 ? (
           <div style={{ flex: 1, background: isPast ? '#F8F9FA' : '#F3F4F6' }} />
         ) : (
           <>
             {dayBin && (
               <div style={{ flex: 1, background: dayBg!, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: nightBin ? '1px solid rgba(0,0,0,0.05)' : undefined }}>
-                <span style={{ fontSize: '8px', fontWeight: 700, color: dayTextColor!, whiteSpace: 'nowrap' }}>{dayLabel}</span>
+                <span style={{ fontSize: '10px', fontWeight: 700, color: dayTextColor!, whiteSpace: 'nowrap' }}>{dayLabel}</span>
               </div>
             )}
             {nightBin && (
               <div style={{ flex: 1, background: nightBg!, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '8px', fontWeight: 700, color: nightTextColor!, whiteSpace: 'nowrap' }}>{nightLabel}</span>
+                <span style={{ fontSize: '10px', fontWeight: 700, color: nightTextColor!, whiteSpace: 'nowrap' }}>{nightLabel}</span>
               </div>
             )}
           </>
@@ -293,7 +307,7 @@ export default function ReservePage() {
     const totalDays = new Date(calYear, calM + 1, 0).getDate()
     const cells = []
     for (let i = 0; i < firstDow; i++) {
-      cells.push(<div key={`e${i}`} style={{ minHeight: '58px' }} />)
+      cells.push(<div key={`e${i}`} style={{ minHeight: '72px' }} />)
     }
     for (let d = 1; d <= totalDays; d++) {
       cells.push(renderCell(calYear, calM, d))

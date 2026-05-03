@@ -179,18 +179,19 @@ export default function DashboardPage() {
           onClick={() => setSelectedDate(isSelected ? null : dateStr)}
           style={{
             borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-            cursor: 'pointer', minHeight: '80px', transition: 'border-color .15s', position: 'relative',
+            cursor: 'pointer', minHeight: '80px', transition: 'border-color .15s',
             border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
           }}
         >
-          {/* 日付 + 承認待ちドット：左上に絶対位置で表示 */}
+          {/* 上段：日付 + 承認待ちドット（絶対配置を廃止してフレックス行で管理） */}
           <div style={{
-            position: 'absolute', top: '2px', left: '3px', right: '3px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            zIndex: 1, pointerEvents: 'none',
+            padding: '3px 4px', flexShrink: 0,
+            background: !dayBin && !nightBin ? '#F8F9FA' : '#fff',
+            borderBottom: (dayBin || nightBin) ? '1px solid rgba(0,0,0,0.05)' : 'none',
           }}>
             <span style={{
-              fontSize: '12px', fontWeight: 700,
+              fontSize: '11px', fontWeight: 700,
               color: dow === 0 ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
             }}>{day}</span>
             {hasPending && (
@@ -198,7 +199,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* 便エリア：セル全体を均等分割して中央寄せ */}
+          {/* 中・下段：便エリアを均等分割して中央寄せ */}
           {!dayBin && !nightBin ? (
             <div style={{ flex: 1, background: '#F8F9FA' }} />
           ) : (
@@ -210,7 +211,7 @@ export default function DashboardPage() {
                   borderBottom: nightBin ? '1px solid rgba(0,0,0,0.06)' : undefined,
                 }}>
                   {dayLabel && (
-                    <span style={{ fontSize: '9px', fontWeight: 700, color: dayTextColor, whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: dayTextColor, whiteSpace: 'nowrap' }}>
                       {dayLabel}
                     </span>
                   )}
@@ -222,7 +223,7 @@ export default function DashboardPage() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   {nightLabel && (
-                    <span style={{ fontSize: '9px', fontWeight: 700, color: nightTextColor, whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 700, color: nightTextColor, whiteSpace: 'nowrap' }}>
                       {nightLabel}
                     </span>
                   )}

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 type BinSetting = {
   id: string
   vessel_id: string
+  name: string         // 便の名称（例：タイラバ便）
   bin_type: 'day' | 'night'
   start_month: number
   end_month: number
@@ -16,6 +17,7 @@ type BinSetting = {
 }
 
 type FormState = {
+  name: string         // 便の名称
   bin_type: 'day' | 'night'
   start_month: number
   end_month: number
@@ -30,10 +32,11 @@ const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9�
 const DAY_NAMES = ['日','月','火','水','木','金','土']
 
 const defaultForm = (): FormState => ({
+  name: '',
   bin_type: 'day',
   start_month: 0,
   end_month: 11,
-  days_of_week: [],
+  days_of_week: [0, 1, 2, 3, 4, 5, 6],  // デフォルトで全曜日を選択
   departure_time: '06:00',
   fish_input: '',
   fish_types: [],
@@ -81,6 +84,7 @@ export default function SettingsPage() {
   const handleEditClick = (s: BinSetting) => {
     setEditingId(s.id)
     setForm({
+      name: s.name || '',
       bin_type: s.bin_type,
       start_month: s.start_month,
       end_month: s.end_month,
@@ -120,7 +124,8 @@ export default function SettingsPage() {
   const validate = (): string => {
     if (!form.days_of_week.length) return '出る曜日を1つ以上選んでください'
     if (!form.departure_time) return '出発時刻を入力してください'
-    if (!form.max_capacity || Number(form.max_capacity) < 1) return '定員を入力してください'
+    const cap = Number(form.max_capacity)
+    if (!form.max_capacity || cap < 1 || cap > 30) return '定員は1〜30名の範囲で入力してください'
     return ''
   }
 
@@ -134,6 +139,7 @@ export default function SettingsPage() {
     try {
       const payload = {
         vessel_id: vesselId,
+        name: form.name,
         bin_type: form.bin_type,
         start_month: form.start_month,
         end_month: form.end_month,
@@ -234,9 +240,12 @@ export default function SettingsPage() {
                         display: 'flex', alignItems: 'center', gap: '8px',
                       }}>
                         <span style={{ fontSize: '18px' }}>{s.bin_type === 'day' ? '☀️' : '🌙'}</span>
-                        <span style={{ fontSize: '15px', fontWeight: 700, color: s.bin_type === 'day' ? '#0A3D62' : '#4338CA', flex: 1 }}>
-                          {s.bin_type === 'day' ? '昼便' : '夜便'}
-                        </span>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: '15px', fontWeight: 700, color: s.bin_type === 'day' ? '#0A3D62' : '#4338CA' }}>
+                            {s.bin_type === 'day' ? '昼便' : '夜便'}
+                            {s.name ? `　${s.name}` : ''}
+                          </span>
+                        </div>
                         <span style={{ fontSize: '13px', fontWeight: 700, color: s.bin_type === 'day' ? '#0A3D62' : '#4338CA' }}>
                           {s.departure_time} 出発
                         </span>
@@ -277,14 +286,14 @@ export default function SettingsPage() {
                           </div>
                         )}
                       </div>
-                      {/* 操作ボタン（最小44px高さ） */}
+                      {/* 操作ボタン（アウトライン形式・最小44px高さ） */}
                       <div style={{ display: 'flex', gap: '0', borderTop: '1px solid #F3F4F6' }}>
                         <button
                           onClick={() => handleEditClick(s)}
                           style={{
                             flex: 1, padding: '15px', fontSize: '14px', fontWeight: 700,
-                            background: '#2E86C1', color: '#fff', border: 'none',
-                            borderRight: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer', fontFamily: 'inherit',
+                            background: '#fff', color: '#2E86C1', border: 'none',
+                            borderRight: '1px solid #E5E7EB', cursor: 'pointer', fontFamily: 'inherit',
                           }}
                         >編集</button>
                         <button
@@ -292,8 +301,8 @@ export default function SettingsPage() {
                           disabled={deleting === s.id}
                           style={{
                             flex: 1, padding: '15px', fontSize: '14px', fontWeight: 700,
-                            background: deleting === s.id ? '#E5E7EB' : '#B91C1C',
-                            color: deleting === s.id ? '#9CA3AF' : '#fff',
+                            background: deleting === s.id ? '#E5E7EB' : '#fff',
+                            color: deleting === s.id ? '#9CA3AF' : '#B91C1C',
                             border: 'none', cursor: deleting === s.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                           }}
                         >{deleting === s.id ? '削除中...' : '削除'}</button>
@@ -320,6 +329,20 @@ export default function SettingsPage() {
         {/* ===== 追加・編集フォームビュー ===== */}
         {view === 'form' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+            {/* 便の名前 */}
+            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>
+                便の名前 <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
+              </div>
+              <input
+                type="text"
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="例：タイラバ便、イカメタル便"
+                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+              />
+            </div>
 
             {/* 便の種類 */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
@@ -389,7 +412,7 @@ export default function SettingsPage() {
                     key={i}
                     onClick={() => toggleDay(i)}
                     style={{
-                      flex: 1, height: '44px', minWidth: '44px', borderRadius: '8px', fontSize: '14px', fontWeight: 700,
+                      flex: 1, height: '64px', minWidth: '40px', borderRadius: '10px', fontSize: '15px', fontWeight: 700,
                       cursor: 'pointer', fontFamily: 'inherit', border: 'none',
                       background: form.days_of_week.includes(i)
                         ? (form.bin_type === 'day' ? '#0A3D62' : '#4338CA')
@@ -421,7 +444,7 @@ export default function SettingsPage() {
                   value={form.max_capacity}
                   onChange={e => setForm(f => ({ ...f, max_capacity: e.target.value }))}
                   min={1}
-                  max={99}
+                  max={30}
                   placeholder="例：8"
                   style={{ flex: 1, padding: '12px', fontSize: '24px', fontWeight: 700, border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', color: '#111827', textAlign: 'center' }}
                 />
