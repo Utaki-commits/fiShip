@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
+import { createClient } from '@supabase/supabase-js'
 
 // ---- 型定義 ----
 
 type LineEvent = {
   type: string
   replyToken: string
+  source?: {
+    type: string
+    userId?: string
+  }
   message?: {
     type: string
     text?: string
@@ -20,6 +25,7 @@ type ExtractedInfo = {
   bin_preference: string
   is_charter: boolean
   missing_fields: string[]
+  confidence: number
 }
 
 type ExtractResult = {
@@ -28,12 +34,23 @@ type ExtractResult = {
   altDates: { date: string; remaining: number }[]
 }
 
+// ---- サービスロールクライアント（RLS bypass・webhookからのDB書き込みに使用） ----
+
+function getAdminClient() {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY が未設定')
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    serviceRoleKey,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+}
+
 // ---- ヘルパー関数 ----
 
 // LINE署名検証（HMAC-SHA256）
 function verifySignature(body: string, signature: string, secret: string): boolean {
   const computed = createHmac('SHA256', secret).update(body).digest('base64')
-  // タイミング攻撃対策: 長さが一致する場合のみ比較
   if (computed.length !== signature.length) return false
   return computed === signature
 }
@@ -42,7 +59,6 @@ function verifySignature(body: string, signature: string, secret: string): boole
 async function replyToLine(replyToken: string, text: string): Promise<void> {
   const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
   if (!accessToken) return
-
   await fetch('https://api.line.me/v2/bot/message/reply', {
     method: 'POST',
     headers: {
@@ -68,6 +84,60 @@ function formatAltDates(altDates: { date: string; remaining: number }[]): string
   return altDates
     .map(a => `・${formatDate(a.date)}（残${a.remaining}名）`)
     .join('\n')
+}
+
+// sns_messagesにメッセージを保存し、IDを返す
+async function saveSnsMessage(
+  vesselId: string,
+  senderId: string,
+  messageText: string,
+): Promise<string | null> {
+  try {
+    const adminClient = getAdminClient()
+    const { data } = await adminClient
+      .from('sns_messages')
+      .insert({
+        vessel_id: vesselId,
+        channel: 'line',
+        sender_id: senderId,
+        message_text: messageText,
+        received_at: new Date().toISOString(),
+        status: 'unprocessed',
+      })
+      .select('id')
+      .single()
+    return data?.id ?? null
+  } catch (err) {
+    console.error('LINE: sns_messages INSERT エラー:', err)
+    return null
+  }
+}
+
+// sns_messagesのai_resultとstatusを更新する
+async function updateSnsMessage(
+  id: string,
+  extracted: ExtractedInfo,
+  isBooking: boolean,
+): Promise<void> {
+  try {
+    const adminClient = getAdminClient()
+    await adminClient
+      .from('sns_messages')
+      .update({
+        ai_result: {
+          name: extracted.name,
+          date: extracted.date,
+          count: extracted.count,
+          fishing_style: extracted.fishing_style,
+          is_booking: isBooking,
+          confidence: extracted.confidence,
+        },
+        status: isBooking ? 'unprocessed' : 'ignored',
+      })
+      .eq('id', id)
+  } catch (err) {
+    console.error('LINE: sns_messages UPDATE エラー:', err)
+  }
 }
 
 // ---- Webhook本体 ----
@@ -99,7 +169,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'JSONパースに失敗しました' }, { status: 400 })
   }
 
-  // ベースURL（内部API呼び出しに使用）
   const origin = new URL(req.url).origin
 
   for (const event of events) {
@@ -108,71 +177,53 @@ export async function POST(req: NextRequest) {
 
     const messageText = event.message.text ?? ''
     const replyToken = event.replyToken
+    const senderId = event.source?.userId || 'unknown'
+
+    // Step 1: メッセージをsns_messagesに即時保存（解析失敗しても記録が残る）
+    const snsMessageId = await saveSnsMessage(vesselId, senderId, messageText)
 
     try {
-      // /api/extract でメッセージから予約情報を抽出
+      // Step 2: /api/extractでAI解析
       const extractRes = await fetch(`${origin}/api/extract`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: messageText,
-          vessel_id: vesselId,
-          channel: 'line',
-        }),
+        body: JSON.stringify({ message: messageText, vessel_id: vesselId, channel: 'line' }),
       })
 
-      // 抽出API失敗時はフォールバック返信
+      // 解析失敗時はフォールバック返信
       if (!extractRes.ok) {
         await replyToLine(replyToken, 'ご予約ありがとうございます。\nご希望の日程とお人数を教えていただけますか？')
         continue
       }
 
       const { extracted, availability, altDates }: ExtractResult = await extractRes.json()
+      const isBooking = !!(extracted.date && extracted.count)
 
+      // Step 3: AI解析結果をsns_messagesに保存・予約でない場合はignoredに更新
+      if (snsMessageId) {
+        await updateSnsMessage(snsMessageId, extracted, isBooking)
+      }
+
+      // Step 4: 返信メッセージを決定して送信
+      // ※新フローでは予約の自動登録は行わず、船長がダッシュボードから確認・登録する
       let replyText: string
 
       if (!extracted.date || !extracted.count) {
-        // 日付または人数が不明 → 再確認を求める
         replyText = 'ご予約ありがとうございます。\nご希望の日程とお人数を教えていただけますか？'
-
       } else if (availability === 'full' || availability === 'charter') {
-        // 満員または貸切 → 代替日を提案
         if (altDates.length > 0) {
           replyText = `ご希望の${formatDate(extracted.date)}は満員です。\n以下の日程はいかがでしょうか？\n${formatAltDates(altDates)}`
         } else {
           replyText = `ご希望の${formatDate(extracted.date)}は満員です。\n別の日程でご連絡ください。`
         }
-
       } else {
-        // 空きあり → 承認待ちとして予約登録してから返信
-        const binType = extracted.bin_preference === '夜' ? 'night' : 'day'
-        const bookRes = await fetch(`${origin}/api/bookings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            vessel_id: vesselId,
-            date: extracted.date,
-            bin_type: binType,
-            name: extracted.name || '未確認',
-            tel: '',
-            count: extracted.count,
-            fishing_style: extracted.fishing_style || null,
-            channel: extracted.is_charter ? 'charter' : 'line',
-          }),
-        })
-
-        if (bookRes.ok) {
-          replyText = `ご予約のリクエストを受け付けました。\n${formatDate(extracted.date)} ${extracted.count}名様\n船長が確認してご連絡します。`
-        } else {
-          replyText = 'ご予約ありがとうございます。\nご希望の日程とお人数を教えていただけますか？'
-        }
+        replyText = `ご予約のリクエストを受け付けました。\n${formatDate(extracted.date)} ${extracted.count}名様\n船長が確認してご連絡します。`
       }
 
       await replyToLine(replyToken, replyText)
 
     } catch (err) {
       console.error('LINE webhook イベント処理エラー:', err)
-      // エラーが起きても返信は試みる
       await replyToLine(replyToken, 'ご予約ありがとうございます。\nご希望の日程とお人数を教えていただけますか？')
     }
   }
