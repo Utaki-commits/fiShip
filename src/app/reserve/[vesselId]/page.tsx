@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { getHolidayInfo } from 'holidays-jp'
+import { getHolidayInfo } from '@/lib/holidays'
 
 type Vessel = {
   id: string
