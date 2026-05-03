@@ -335,7 +335,7 @@ export default function DashboardPage() {
             { icon: '👥', bg: '#F0FDF4', label: '顧客名簿\nを見る', path: '/dashboard/customers' },
             { icon: '📋', bg: '#FFF7ED', label: '乗船名簿\nを記録する', path: '/dashboard/logs' },
             { icon: '⚙️', bg: '#EEF2FF', label: '便の設定\nを変更する', path: '/dashboard/settings' },
-            { icon: '🔗', bg: '#FEF9C3', label: '予約URL\nを共有する', path: '/dashboard/vessel' },
+            { icon: '🔗', bg: '#FEF9C3', label: '予約リンク\nを共有する', path: '/dashboard/vessel' },
           ].map(({ icon, bg, label, path }) => (
             <button
               key={path}
@@ -375,7 +375,10 @@ export default function DashboardPage() {
                 {(['month', 'week'] as const).map(v => (
                   <button
                     key={v}
-                    onClick={() => setView(v)}
+                    onClick={() => {
+                      if (v === 'week') setWeekStart(getWeekSunday(new Date(calYear, calM, 1)))
+                      setView(v)
+                    }}
                     style={{
                       padding: '4px 16px', fontSize: '12px', fontWeight: 700,
                       background: view === v ? '#fff' : 'transparent',

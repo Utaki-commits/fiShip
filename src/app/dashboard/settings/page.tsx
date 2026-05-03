@@ -189,6 +189,10 @@ export default function SettingsPage() {
     return `${MONTH_NAMES[s.start_month]}〜${MONTH_NAMES[s.end_month]}`
   }
 
+  // 便名の重複チェック（編集中の便は除外）
+  const isDuplicateName = form.name.trim() !== '' &&
+    settings.some(s => s.name.trim() === form.name.trim() && s.id !== editingId)
+
   if (loading) return (
     <main style={{ minHeight: '100vh', background: '#0A3D62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: '#fff', fontSize: '16px' }}>読み込み中...</div>
@@ -287,23 +291,23 @@ export default function SettingsPage() {
                         )}
                       </div>
                       {/* 操作ボタン（アウトライン形式・最小44px高さ） */}
-                      <div style={{ display: 'flex', gap: '0', borderTop: '1px solid #F3F4F6' }}>
+                      <div style={{ display: 'flex', gap: '8px', padding: '12px 14px', borderTop: '1px solid #F3F4F6' }}>
                         <button
                           onClick={() => handleEditClick(s)}
                           style={{
-                            flex: 1, padding: '15px', fontSize: '14px', fontWeight: 700,
-                            background: '#fff', color: '#2E86C1', border: 'none',
-                            borderRight: '1px solid #E5E7EB', cursor: 'pointer', fontFamily: 'inherit',
+                            flex: 1, padding: '12px', fontSize: '14px', fontWeight: 700,
+                            background: '#fff', color: '#2E86C1', border: '2px solid #2E86C1',
+                            borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
                           }}
                         >編集</button>
                         <button
                           onClick={() => handleDelete(s.id)}
                           disabled={deleting === s.id}
                           style={{
-                            flex: 1, padding: '15px', fontSize: '14px', fontWeight: 700,
-                            background: deleting === s.id ? '#E5E7EB' : '#fff',
-                            color: deleting === s.id ? '#9CA3AF' : '#B91C1C',
-                            border: 'none', cursor: deleting === s.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                            flex: 1, padding: '12px', fontSize: '14px', fontWeight: 700,
+                            background: '#fff', color: deleting === s.id ? '#9CA3AF' : '#B91C1C',
+                            border: deleting === s.id ? '2px solid #E5E7EB' : '2px solid #B91C1C',
+                            borderRadius: '8px', cursor: deleting === s.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                           }}
                         >{deleting === s.id ? '削除中...' : '削除'}</button>
                       </div>
@@ -340,8 +344,13 @@ export default function SettingsPage() {
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="例：タイラバ便、イカメタル便"
-                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', fontSize: '15px', border: `2px solid ${isDuplicateName ? '#B91C1C' : '#E5E7EB'}`, borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
+              {isDuplicateName && (
+                <div style={{ fontSize: '12px', color: '#B91C1C', marginTop: '6px', fontWeight: 700 }}>
+                  ⚠ 同じ名前の便がすでに登録されています
+                </div>
+              )}
             </div>
 
             {/* 便の種類 */}
@@ -503,13 +512,13 @@ export default function SettingsPage() {
             {/* 保存ボタン */}
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || isDuplicateName}
               style={{
                 width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700,
-                background: saving ? '#E5E7EB' : '#0A3D62',
-                color: saving ? '#9CA3AF' : '#fff',
+                background: (saving || isDuplicateName) ? '#E5E7EB' : '#0A3D62',
+                color: (saving || isDuplicateName) ? '#9CA3AF' : '#fff',
                 border: 'none', borderRadius: '12px',
-                cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                cursor: (saving || isDuplicateName) ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
               }}
             >
               {saving ? '保存中...' : editingId ? '変更を保存する' : 'この便を登録する'}

@@ -52,7 +52,7 @@ const defaultFacilities = (): Facilities => ({
   ike_jime: false,
   cleaning: 'none',
   parking: 'none',
-  cash: false,
+  cash: true,
   credit: false,
   paypay: false,
   payment: '',
@@ -222,7 +222,7 @@ export default function VesselPage() {
       <div style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
         <button
           onClick={() => view === 'edit' ? setView('top') : router.push('/dashboard')}
-          style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
@@ -291,7 +291,7 @@ export default function VesselPage() {
                   transition: 'background .2s',
                 }}
               >
-                {copied ? 'コピーしました ✓' : 'URLをコピーする'}
+                {copied ? 'コピーしました ✓' : 'リンクをコピーする'}
               </button>
             </div>
 
@@ -319,42 +319,88 @@ export default function VesselPage() {
               </div>
             </div>
 
-            {/* 設備・サービスカード */}
+            {/* 設備・サービスカード（カテゴリ別） */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
               <div style={{ background: '#F8F9FA', padding: '10px 16px', borderBottom: '1px solid #E5E7EB' }}>
                 <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151' }}>設備・サービス</div>
               </div>
-              <div style={{ padding: '4px 0' }}>
-                {[
-                  { label: 'タックル貸出', value: facilities.tackle_rental === 'free' ? '無料' : facilities.tackle_rental === 'paid' ? '有料' : 'なし' },
-                  { label: '餌', value: facilities.bait ? 'あり' : 'なし' },
-                  { label: '氷', value: facilities.ice === 'sale' ? '販売' : facilities.ice === 'free' ? '無料' : 'なし' },
-                  { label: 'ライフジャケット', value: facilities.life_jacket ? 'あり' : 'なし' },
-                  { label: 'ロッドホルダー', value: facilities.rod_holder ? 'あり' : 'なし' },
-                  { label: '夜焚き用集魚灯', value: facilities.metal_light ? 'あり' : 'なし' },
-                  { label: 'トイレ', value: facilities.toilet ? 'あり' : 'なし' },
-                  { label: 'クーラーボックス', value: facilities.cooler ? 'あり' : 'なし' },
-                  { label: '生け簀', value: facilities.live_well ? 'あり' : 'なし' },
-                  { label: '海水循環装置', value: facilities.water_circulation ? 'あり' : 'なし' },
-                  { label: '電子レンジ', value: facilities.microwave ? 'あり' : 'なし' },
-                  { label: '湯沸かし器', value: facilities.kettle ? 'あり' : 'なし' },
-                  { label: '屋根日よけ', value: facilities.roof ? 'あり' : 'なし' },
-                  { label: 'キャスティングデッキ', value: facilities.casting_deck ? 'あり' : 'なし' },
-                  { label: 'アンチローリングジャイロ', value: facilities.gyro ? 'あり' : 'なし' },
-                  { label: 'ロッドキーパー', value: facilities.rod_keeper ? 'あり' : 'なし' },
-                  { label: '血抜き', value: facilities.bloodletting ? 'あり' : 'なし' },
-                  { label: '神経締め', value: facilities.ike_jime ? 'あり' : 'なし' },
-                  { label: '下処理', value: facilities.cleaning === 'free' ? '無料' : facilities.cleaning === 'paid' ? '有料' : 'なし' },
-                  { label: '駐車場', value: facilities.parking === 'free' ? '無料' : facilities.parking === 'paid' ? '有料' : 'なし' },
-                  { label: 'お支払い', value: [facilities.cash ? '現金' : '', facilities.credit ? 'クレジット' : '', facilities.paypay ? 'PayPay' : ''].filter(Boolean).join('・') || '未設定' },
-                  ...(facilities.payment ? [{ label: 'その他', value: facilities.payment }] : []),
-                ].map(({ label, value }) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #F3F4F6' }}>
-                    <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>{label}</span>
-                    <span style={{ fontSize: '13px', color: '#111827', fontWeight: 600 }}>{value}</span>
+
+              {/* カテゴリヘッダー共通スタイル helper */}
+              {([
+                {
+                  cat: '釣り道具',
+                  rows: [
+                    { label: 'タックル貸出', value: facilities.tackle_rental === 'free' ? '無料' : facilities.tackle_rental === 'paid' ? '有料' : 'なし' },
+                    { label: 'ライフジャケット', value: facilities.life_jacket ? 'あり' : 'なし' },
+                    { label: 'ロッドホルダー', value: facilities.rod_holder ? 'あり' : 'なし' },
+                    { label: '夜焚き用集魚灯', value: facilities.metal_light ? 'あり' : 'なし' },
+                  ],
+                },
+                {
+                  cat: '船内設備',
+                  rows: [
+                    { label: '駐車場', value: facilities.parking === 'free' ? '無料' : facilities.parking === 'paid' ? '有料' : 'なし' },
+                    { label: 'トイレ', value: facilities.toilet ? 'あり' : 'なし' },
+                    { label: 'クーラーボックス', value: facilities.cooler ? 'あり' : 'なし' },
+                    { label: '生け簀', value: facilities.live_well ? 'あり' : 'なし' },
+                    { label: '海水循環装置', value: facilities.water_circulation ? 'あり' : 'なし' },
+                    { label: '電子レンジ', value: facilities.microwave ? 'あり' : 'なし' },
+                    { label: '湯沸かし器', value: facilities.kettle ? 'あり' : 'なし' },
+                    { label: '屋根日よけ', value: facilities.roof ? 'あり' : 'なし' },
+                  ],
+                },
+                {
+                  cat: '魚の処理',
+                  rows: [
+                    { label: '血抜き', value: facilities.bloodletting ? 'あり' : 'なし' },
+                    { label: '神経締め', value: facilities.ike_jime ? 'あり' : 'なし' },
+                    { label: '下処理', value: facilities.cleaning === 'free' ? '無料' : facilities.cleaning === 'paid' ? '有料' : 'なし' },
+                  ],
+                },
+                {
+                  cat: '販売品',
+                  rows: [
+                    { label: '氷', value: facilities.ice === 'sale' ? '販売' : facilities.ice === 'free' ? '無料' : 'なし' },
+                    { label: '餌', value: facilities.bait ? 'あり' : 'なし' },
+                  ],
+                },
+                {
+                  cat: 'こだわり設備',
+                  rows: [
+                    { label: 'キャスティングデッキ', value: facilities.casting_deck ? 'あり' : 'なし' },
+                    { label: 'アンチローリングジャイロ', value: facilities.gyro ? 'あり' : 'なし' },
+                    { label: 'ロッドキーパー', value: facilities.rod_keeper ? 'あり' : 'なし' },
+                  ],
+                },
+              ] as { cat: string; rows: { label: string; value: string }[] }[]).map(({ cat, rows }) => (
+                <div key={cat}>
+                  <div style={{ background: '#EEF6FF', padding: '5px 16px', borderBottom: '1px solid #E5E7EB', borderTop: '1px solid #E5E7EB' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#0A3D62' }}>{cat}</span>
                   </div>
-                ))}
+                  {rows.map(({ label, value }) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #F3F4F6' }}>
+                      <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>{label}</span>
+                      <span style={{ fontSize: '13px', color: '#111827', fontWeight: 600 }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+
+              {/* 支払方法 */}
+              <div style={{ background: '#EEF6FF', padding: '5px 16px', borderBottom: '1px solid #E5E7EB', borderTop: '1px solid #E5E7EB' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#0A3D62' }}>支払方法</span>
               </div>
+              <div style={{ padding: '10px 16px', borderBottom: '1px solid #F3F4F6' }}>
+                <span style={{ fontSize: '13px', color: '#111827', fontWeight: 600 }}>
+                  {[facilities.cash ? '現金' : '', facilities.credit ? 'クレジット' : '', facilities.paypay ? 'PayPay' : ''].filter(Boolean).join('・') || '未設定'}
+                </span>
+              </div>
+              {facilities.payment && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #F3F4F6' }}>
+                  <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>その他</span>
+                  <span style={{ fontSize: '13px', color: '#111827', fontWeight: 600 }}>{facilities.payment}</span>
+                </div>
+              )}
             </div>
 
             {/* 変更ボタン */}
@@ -472,71 +518,33 @@ export default function VesselPage() {
               />
             </div>
 
-            {/* 設備・サービス */}
+            {/* 設備・サービス（カテゴリ別編集） */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>設備・サービス</div>
 
-              {/* タックル貸出（3択） */}
-              {([
-                { key: 'tackle_rental' as const, label: 'タックル貸出', opts: [{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }] as const },
-                { key: 'ice' as const, label: '氷', opts: [{ v: 'sale', l: '販売' }, { v: 'free', l: '無料' }, { v: 'none', l: 'なし' }] as const },
-                { key: 'parking' as const, label: '駐車場', opts: [{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }] as const },
-                { key: 'cleaning' as const, label: '下処理', opts: [{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }] as const },
-              ]).map(({ key, label, opts }) => {
-                const cur = ((form?.facilities || defaultFacilities()) as Record<string, unknown>)[key] as string
-                return (
-                  <div key={key} style={{ marginBottom: '10px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>{label}</div>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      {opts.map(o => (
-                        <button
-                          key={o.v}
-                          onClick={() => updateFacility(key, o.v)}
-                          style={{
-                            flex: 1, padding: '10px 4px', borderRadius: '8px', fontSize: '13px', fontWeight: 700,
-                            background: cur === o.v ? '#E8F4FD' : '#F8F9FA',
-                            color: cur === o.v ? '#0A3D62' : '#9CA3AF',
-                            border: cur === o.v ? '2px solid #2E86C1' : '2px solid transparent',
-                            cursor: 'pointer', fontFamily: 'inherit',
-                          }}
-                        >{o.l}</button>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
+              {/* === 釣り道具 === */}
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#0A3D62', marginBottom: '8px', paddingBottom: '4px', borderBottom: '2px solid #E8F4FD' }}>釣り道具</div>
 
-              {/* ブール設備トグル */}
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>タックル貸出</div>
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                {([{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }] as const).map(o => {
+                  const cur = (form?.facilities || defaultFacilities()).tackle_rental
+                  return (
+                    <button key={o.v} onClick={() => updateFacility('tackle_rental', o.v)}
+                      style={{ flex: 1, padding: '10px 4px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: cur === o.v ? '#E8F4FD' : '#F8F9FA', color: cur === o.v ? '#0A3D62' : '#9CA3AF', border: cur === o.v ? '2px solid #2E86C1' : '2px solid transparent' }}
+                    >{o.l}</button>
+                  )
+                })}
+              </div>
+
               {([
                 { key: 'life_jacket' as const, label: 'ライフジャケット' },
-                { key: 'bait' as const, label: '餌' },
                 { key: 'rod_holder' as const, label: 'ロッドホルダー' },
                 { key: 'metal_light' as const, label: '夜焚き用集魚灯（メタハラ）' },
-                { key: 'toilet' as const, label: 'トイレ' },
-                { key: 'cooler' as const, label: 'クーラーボックス' },
-                { key: 'live_well' as const, label: '生け簀' },
-                { key: 'water_circulation' as const, label: '海水循環装置' },
-                { key: 'microwave' as const, label: '電子レンジ' },
-                { key: 'kettle' as const, label: '湯沸かし器' },
-                { key: 'roof' as const, label: '屋根日よけ' },
-                { key: 'bloodletting' as const, label: '血抜き' },
-                { key: 'ike_jime' as const, label: '神経締め' },
-                { key: 'casting_deck' as const, label: 'キャスティングデッキ' },
-                { key: 'gyro' as const, label: 'アンチローリングジャイロ' },
-                { key: 'rod_keeper' as const, label: 'ロッドキーパー' },
               ]).map(({ key, label }) => {
                 const val = ((form?.facilities || defaultFacilities()) as Record<string, unknown>)[key] as boolean
                 return (
-                  <div
-                    key={key}
-                    onClick={() => updateFacility(key, !val)}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '10px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px',
-                      background: val ? '#E8F4FD' : '#F8F9FA',
-                      border: val ? '2px solid #2E86C1' : '2px solid transparent',
-                    }}
-                  >
+                  <div key={key} onClick={() => updateFacility(key, !val)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px', background: val ? '#E8F4FD' : '#F8F9FA', border: val ? '2px solid #2E86C1' : '2px solid transparent' }}>
                     <span style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{label}</span>
                     <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: val ? '#2E86C1' : '#E5E7EB', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
                       <div style={{ position: 'absolute', top: '3px', left: val ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
@@ -545,31 +553,113 @@ export default function VesselPage() {
                 )
               })}
 
-              {/* お支払い方法 */}
-              <div style={{ marginTop: '10px', marginBottom: '10px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', marginBottom: '8px' }}>お支払い方法</div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {([
-                    { key: 'cash' as const, label: '現金' },
-                    { key: 'credit' as const, label: 'クレジット' },
-                    { key: 'paypay' as const, label: 'PayPay' },
-                  ]).map(({ key, label }) => {
-                    const val = ((form?.facilities || defaultFacilities()) as Record<string, unknown>)[key] as boolean
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => updateFacility(key, !val)}
-                        style={{
-                          padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 700,
-                          background: val ? '#E8F4FD' : '#F8F9FA',
-                          color: val ? '#0A3D62' : '#9CA3AF',
-                          border: val ? '2px solid #2E86C1' : '2px solid transparent',
-                          cursor: 'pointer', fontFamily: 'inherit',
-                        }}
-                      >{label}</button>
-                    )
-                  })}
-                </div>
+              {/* === 船内設備 === */}
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#0A3D62', margin: '14px 0 8px', paddingBottom: '4px', borderBottom: '2px solid #E8F4FD' }}>船内設備</div>
+
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>駐車場</div>
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                {([{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }] as const).map(o => {
+                  const cur = (form?.facilities || defaultFacilities()).parking
+                  return (
+                    <button key={o.v} onClick={() => updateFacility('parking', o.v)}
+                      style={{ flex: 1, padding: '10px 4px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: cur === o.v ? '#E8F4FD' : '#F8F9FA', color: cur === o.v ? '#0A3D62' : '#9CA3AF', border: cur === o.v ? '2px solid #2E86C1' : '2px solid transparent' }}
+                    >{o.l}</button>
+                  )
+                })}
+              </div>
+
+              {([
+                { key: 'toilet' as const, label: 'トイレ' },
+                { key: 'cooler' as const, label: 'クーラーボックス' },
+                { key: 'live_well' as const, label: '生け簀' },
+                { key: 'water_circulation' as const, label: '海水循環装置' },
+                { key: 'microwave' as const, label: '電子レンジ' },
+                { key: 'kettle' as const, label: '湯沸かし器' },
+                { key: 'roof' as const, label: '屋根日よけ' },
+              ]).map(({ key, label }) => {
+                const val = ((form?.facilities || defaultFacilities()) as Record<string, unknown>)[key] as boolean
+                return (
+                  <div key={key} onClick={() => updateFacility(key, !val)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px', background: val ? '#E8F4FD' : '#F8F9FA', border: val ? '2px solid #2E86C1' : '2px solid transparent' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{label}</span>
+                    <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: val ? '#2E86C1' : '#E5E7EB', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
+                      <div style={{ position: 'absolute', top: '3px', left: val ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
+                    </div>
+                  </div>
+                )
+              })}
+
+              {/* === 魚の処理 === */}
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#0A3D62', margin: '14px 0 8px', paddingBottom: '4px', borderBottom: '2px solid #E8F4FD' }}>魚の処理</div>
+
+              {([
+                { key: 'bloodletting' as const, label: '血抜き' },
+                { key: 'ike_jime' as const, label: '神経締め' },
+              ]).map(({ key, label }) => {
+                const val = ((form?.facilities || defaultFacilities()) as Record<string, unknown>)[key] as boolean
+                return (
+                  <div key={key} onClick={() => updateFacility(key, !val)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px', background: val ? '#E8F4FD' : '#F8F9FA', border: val ? '2px solid #2E86C1' : '2px solid transparent' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{label}</span>
+                    <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: val ? '#2E86C1' : '#E5E7EB', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
+                      <div style={{ position: 'absolute', top: '3px', left: val ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
+                    </div>
+                  </div>
+                )
+              })}
+
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>下処理</div>
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                {([{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }] as const).map(o => {
+                  const cur = (form?.facilities || defaultFacilities()).cleaning
+                  return (
+                    <button key={o.v} onClick={() => updateFacility('cleaning', o.v)}
+                      style={{ flex: 1, padding: '10px 4px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: cur === o.v ? '#E8F4FD' : '#F8F9FA', color: cur === o.v ? '#0A3D62' : '#9CA3AF', border: cur === o.v ? '2px solid #2E86C1' : '2px solid transparent' }}
+                    >{o.l}</button>
+                  )
+                })}
+              </div>
+
+              {/* === 販売品 === */}
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#0A3D62', margin: '14px 0 8px', paddingBottom: '4px', borderBottom: '2px solid #E8F4FD' }}>販売品</div>
+
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>氷</div>
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                {([{ v: 'sale', l: '販売' }, { v: 'free', l: '無料' }, { v: 'none', l: 'なし' }] as const).map(o => {
+                  const cur = (form?.facilities || defaultFacilities()).ice
+                  return (
+                    <button key={o.v} onClick={() => updateFacility('ice', o.v)}
+                      style={{ flex: 1, padding: '10px 4px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: cur === o.v ? '#E8F4FD' : '#F8F9FA', color: cur === o.v ? '#0A3D62' : '#9CA3AF', border: cur === o.v ? '2px solid #2E86C1' : '2px solid transparent' }}
+                    >{o.l}</button>
+                  )
+                })}
+              </div>
+
+              {(() => {
+                const val = (form?.facilities || defaultFacilities()).bait
+                return (
+                  <div onClick={() => updateFacility('bait', !val)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px', background: val ? '#E8F4FD' : '#F8F9FA', border: val ? '2px solid #2E86C1' : '2px solid transparent' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>餌</span>
+                    <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: val ? '#2E86C1' : '#E5E7EB', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
+                      <div style={{ position: 'absolute', top: '3px', left: val ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* === 支払方法 === */}
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#0A3D62', margin: '14px 0 8px', paddingBottom: '4px', borderBottom: '2px solid #E8F4FD' }}>支払方法</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                {([
+                  { key: 'cash' as const, label: '現金' },
+                  { key: 'credit' as const, label: 'クレジット' },
+                  { key: 'paypay' as const, label: 'PayPay' },
+                ]).map(({ key, label }) => {
+                  const val = ((form?.facilities || defaultFacilities()) as Record<string, unknown>)[key] as boolean
+                  return (
+                    <button key={key} onClick={() => updateFacility(key, !val)}
+                      style={{ padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', background: val ? '#E8F4FD' : '#F8F9FA', color: val ? '#0A3D62' : '#9CA3AF', border: val ? '2px solid #2E86C1' : '2px solid transparent' }}
+                    >{label}</button>
+                  )
+                })}
               </div>
 
               <label style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
@@ -578,9 +668,28 @@ export default function VesselPage() {
               <input
                 value={(form?.facilities || defaultFacilities()).payment}
                 onChange={e => updateFacility('payment', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: '2px' }}
                 placeholder="例：ポイント支払い可"
               />
+
+              {/* === こだわり設備 === */}
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#0A3D62', margin: '14px 0 8px', paddingBottom: '4px', borderBottom: '2px solid #E8F4FD' }}>こだわり設備</div>
+
+              {([
+                { key: 'casting_deck' as const, label: 'キャスティングデッキ' },
+                { key: 'gyro' as const, label: 'アンチローリングジャイロ' },
+                { key: 'rod_keeper' as const, label: 'ロッドキーパー' },
+              ]).map(({ key, label }) => {
+                const val = ((form?.facilities || defaultFacilities()) as Record<string, unknown>)[key] as boolean
+                return (
+                  <div key={key} onClick={() => updateFacility(key, !val)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px', background: val ? '#E8F4FD' : '#F8F9FA', border: val ? '2px solid #2E86C1' : '2px solid transparent' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{label}</span>
+                    <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: val ? '#2E86C1' : '#E5E7EB', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
+                      <div style={{ position: 'absolute', top: '3px', left: val ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
+                    </div>
+                  </div>
+                )
+              })}
             </div>
 
             {/* オプション */}
