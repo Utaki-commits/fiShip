@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { getHolidayInfo } from 'holidays-jp'
 
 type Vessel = {
   id: string
@@ -144,6 +145,8 @@ export default function DashboardPage() {
       const dayBin = bins.find(b => b.bin_type === 'day') ?? null
       const nightBin = bins.find(b => b.bin_type === 'night') ?? null
       const hasPending = bookings.some(b => b.date === dateStr && b.status === 'pending')
+      // 祝日判定
+      const holiday = getHolidayInfo(new Date(year, month, day))
 
       // 昼便の色・ラベルを決定
       let dayBg = '#E8F4FD'
@@ -183,19 +186,26 @@ export default function DashboardPage() {
             border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
           }}
         >
-          {/* 上段：日付 + 承認待ちドット（絶対配置を廃止してフレックス行で管理） */}
+          {/* 上段：日付 + 祝日名 + 承認待ちドット */}
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
             padding: '3px 4px', flexShrink: 0,
             background: !dayBin && !nightBin ? '#F8F9FA' : '#fff',
             borderBottom: (dayBin || nightBin) ? '1px solid rgba(0,0,0,0.05)' : 'none',
           }}>
-            <span style={{
-              fontSize: '11px', fontWeight: 700,
-              color: dow === 0 ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
-            }}>{day}</span>
+            <div>
+              <span style={{
+                fontSize: '11px', fontWeight: 700,
+                color: (holiday || dow === 0) ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
+              }}>{day}</span>
+              {holiday && (
+                <div style={{ fontSize: '7px', color: '#B91C1C', fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '30px' }}>
+                  {holiday.name}
+                </div>
+              )}
+            </div>
             {hasPending && (
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D97706', flexShrink: 0 }} />
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D97706', flexShrink: 0, marginTop: '2px' }} />
             )}
           </div>
 

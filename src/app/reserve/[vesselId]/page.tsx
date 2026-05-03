@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getHolidayInfo } from 'holidays-jp'
 
 type Vessel = {
   id: string
@@ -233,6 +234,8 @@ export default function ReservePage() {
     const nightBin = bins.find(b => b.setting.bin_type === 'night') ?? null
     const allFull = bins.length > 0 && bins.every(b => b.isFull)
     const hasAvailable = bins.some(b => !b.isFull)
+    // 祝日判定
+    const holiday = getHolidayInfo(new Date(year, month, day))
 
     // 昼便バンドの色・ラベル
     const dayBg = dayBin
@@ -268,16 +271,23 @@ export default function ReservePage() {
           border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
         }}
       >
-        {/* 上段：日付（絶対配置を廃止してフレックス行で管理） */}
+        {/* 上段：日付 + 祝日名 */}
         <div style={{
-          display: 'flex', alignItems: 'center', padding: '2px 3px', flexShrink: 0,
+          display: 'flex', alignItems: 'flex-start', padding: '2px 3px', flexShrink: 0,
           background: bins.length === 0 ? (isPast ? '#F8F9FA' : '#F3F4F6') : '#fff',
           borderBottom: bins.length > 0 ? '1px solid rgba(0,0,0,0.05)' : 'none',
         }}>
-          <span style={{
-            fontSize: '11px', fontWeight: 700,
-            color: dow === 0 ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
-          }}>{day}</span>
+          <div>
+            <span style={{
+              fontSize: '11px', fontWeight: 700,
+              color: (holiday || dow === 0) ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
+            }}>{day}</span>
+            {holiday && (
+              <div style={{ fontSize: '7px', color: '#B91C1C', fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '30px' }}>
+                {holiday.name}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 中・下段：便バンドを均等分割して中央寄せ */}
