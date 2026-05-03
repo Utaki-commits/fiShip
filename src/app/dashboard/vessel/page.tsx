@@ -52,7 +52,7 @@ const defaultFacilities = (): Facilities => ({
   ike_jime: false,
   cleaning: 'none',
   parking: 'none',
-  cash: false,
+  cash: true,
   credit: false,
   paypay: false,
   payment: '',
@@ -100,10 +100,11 @@ export default function VesselPage() {
     init()
   }, [router])
 
-  // 編集開始：フォームに現在値をセット
+  // 編集開始：フォームに現在値をセット（現金は常にON）
   const startEdit = () => {
     if (!vessel) return
-    setForm({ ...vessel })
+    const currentFacilities = vessel.facilities || defaultFacilities()
+    setForm({ ...vessel, facilities: { ...currentFacilities, cash: true } })
     setError('')
     setSaved(false)
     setView('edit')
@@ -225,10 +226,10 @@ export default function VesselPage() {
           style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>
             {view === 'top' ? '船の情報・予約リンク' : '船の情報を変更する'}
           </div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
+          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
             {view === 'top' ? vessel.name : '変更内容を入力して保存してください'}
           </div>
         </div>
@@ -241,14 +242,14 @@ export default function VesselPage() {
           <>
             {/* 保存完了バナー */}
             {saved && (
-              <div style={{ background: '#D4EDDA', border: '1px solid #86EFAC', borderRadius: '10px', padding: '12px 16px', marginBottom: '12px', fontSize: '14px', fontWeight: 700, color: '#1B6B3A', textAlign: 'center' }}>
+              <div style={{ background: '#D4EDDA', border: '1px solid #86EFAC', borderRadius: '10px', padding: '12px 16px', marginBottom: '12px', fontSize: '16px', fontWeight: 700, color: '#1B6B3A', textAlign: 'center' }}>
                 変更を保存しました ✓
               </div>
             )}
 
             {/* 予約URL カード */}
             <div style={{ background: '#fff', border: '2px solid #2E86C1', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#0A3D62', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#0A3D62', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ fontSize: '16px' }}>🔗</span> お客さんへの予約リンク
               </div>
 
@@ -259,7 +260,7 @@ export default function VesselPage() {
                 </div>
               </div>
 
-              <div style={{ fontSize: '11px', color: '#6B7280', textAlign: 'center', marginBottom: '10px', lineHeight: 1.5 }}>
+              <div style={{ fontSize: '14px', color: '#6B7280', textAlign: 'center', marginBottom: '10px', lineHeight: 1.5 }}>
                 このQRコードをLINEやインスタで送ると<br />お客さんがすぐに予約できます
               </div>
 
@@ -267,7 +268,7 @@ export default function VesselPage() {
               <button
                 onClick={handleDownloadQR}
                 style={{
-                  width: '100%', padding: '12px', marginBottom: '12px', fontSize: '14px', fontWeight: 700,
+                  width: '100%', padding: '12px', marginBottom: '12px', fontSize: '16px', fontWeight: 700,
                   background: '#F8F9FA', color: '#374151',
                   border: '2px solid #E5E7EB', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit',
                 }}
@@ -276,7 +277,7 @@ export default function VesselPage() {
               </button>
 
               {/* URL表示 */}
-              <div style={{ background: '#F8F9FA', borderRadius: '8px', padding: '10px 12px', marginBottom: '10px', wordBreak: 'break-all', fontSize: '12px', color: '#374151' }}>
+              <div style={{ background: '#F8F9FA', borderRadius: '8px', padding: '10px 12px', marginBottom: '10px', wordBreak: 'break-all', fontSize: '14px', color: '#374151' }}>
                 {reserveUrl}
               </div>
 
@@ -284,7 +285,7 @@ export default function VesselPage() {
               <button
                 onClick={() => handleCopy(reserveUrl)}
                 style={{
-                  width: '100%', padding: '14px', fontSize: '15px', fontWeight: 700,
+                  width: '100%', padding: '14px', fontSize: '16px', fontWeight: 700,
                   background: copied ? '#D4EDDA' : '#0A3D62',
                   color: copied ? '#1B6B3A' : '#fff',
                   border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit',
@@ -298,7 +299,7 @@ export default function VesselPage() {
             {/* 船の情報カード */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
               <div style={{ background: '#F8F9FA', padding: '10px 16px', borderBottom: '1px solid #E5E7EB' }}>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151' }}>現在の船の情報</div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151' }}>現在の船の情報</div>
               </div>
               <div style={{ padding: '4px 0' }}>
                 {[
@@ -312,8 +313,8 @@ export default function VesselPage() {
                   { label: '貸切OK', value: vessel.charter_accepted ? 'はい' : 'いいえ' },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 16px', borderBottom: '1px solid #F3F4F6' }}>
-                    <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700, flexShrink: 0, marginRight: '12px' }}>{label}</span>
-                    <span style={{ fontSize: '14px', color: '#111827', fontWeight: 600, textAlign: 'right' }}>{value}</span>
+                    <span style={{ fontSize: '16px', color: '#6B7280', fontWeight: 700, flexShrink: 0, marginRight: '12px' }}>{label}</span>
+                    <span style={{ fontSize: '16px', color: '#111827', fontWeight: 600, textAlign: 'right' }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -322,7 +323,7 @@ export default function VesselPage() {
             {/* 設備・サービスカード */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
               <div style={{ background: '#F8F9FA', padding: '10px 16px', borderBottom: '1px solid #E5E7EB' }}>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151' }}>設備・サービス</div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151' }}>設備・サービス</div>
               </div>
               <div style={{ padding: '4px 0' }}>
                 {[
@@ -350,8 +351,8 @@ export default function VesselPage() {
                   ...(facilities.payment ? [{ label: 'その他', value: facilities.payment }] : []),
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #F3F4F6' }}>
-                    <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>{label}</span>
-                    <span style={{ fontSize: '13px', color: '#111827', fontWeight: 600 }}>{value}</span>
+                    <span style={{ fontSize: '16px', color: '#6B7280', fontWeight: 700 }}>{label}</span>
+                    <span style={{ fontSize: '16px', color: '#111827', fontWeight: 600 }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -361,7 +362,7 @@ export default function VesselPage() {
             <button
               onClick={startEdit}
               style={{
-                width: '100%', padding: '16px', fontSize: '15px', fontWeight: 700,
+                width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700,
                 background: '#fff', color: '#0A3D62', border: '2px solid #0A3D62',
                 borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit',
               }}
@@ -383,32 +384,32 @@ export default function VesselPage() {
 
             {/* 基本情報 */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>基本情報</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>基本情報</div>
 
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
-                船の名前 <span style={{ background: '#B91C1C', color: '#fff', fontSize: '9px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
+              <label style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
+                船の名前 <span style={{ background: '#B91C1C', color: '#fff', fontSize: '11px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
               </label>
               <input
                 value={form.name}
                 onChange={e => update('name', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
                 placeholder="例：海皇丸"
               />
 
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
-                船長名 <span style={{ background: '#B91C1C', color: '#fff', fontSize: '9px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
+              <label style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
+                船長名 <span style={{ background: '#B91C1C', color: '#fff', fontSize: '11px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
               </label>
               <input
                 value={form.captain_name}
                 onChange={e => update('captain_name', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '0', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '0', boxSizing: 'border-box' }}
                 placeholder="例：山田 太郎"
               />
             </div>
 
             {/* 定員 */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>最大乗船人数</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>最大乗船人数</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px' }}>
                 {[4, 6, 8, 10].map(n => (
                   <button
@@ -416,7 +417,7 @@ export default function VesselPage() {
                     onClick={() => update('capacity', n)}
                     style={{
                       padding: '14px 8px', textAlign: 'center', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
-                      fontSize: '15px', fontWeight: 700,
+                      fontSize: '16px', fontWeight: 700,
                       background: form.capacity === n ? '#E8F4FD' : '#F8F9FA',
                       color: form.capacity === n ? '#0A3D62' : '#9CA3AF',
                       border: form.capacity === n ? '2px solid #2E86C1' : '2px solid transparent',
@@ -428,53 +429,53 @@ export default function VesselPage() {
 
             {/* 出船場所 */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>出船場所</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>出船場所</div>
 
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>都道府県</label>
+              <label style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>都道府県</label>
               <input
                 value={form.prefecture}
                 onChange={e => update('prefecture', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
                 placeholder="例：福岡県"
               />
 
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>漁港・出船場所</label>
+              <label style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>漁港・出船場所</label>
               <input
                 value={form.port_name}
                 onChange={e => update('port_name', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
                 placeholder="例：糸島市志摩野北漁港"
               />
 
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
-                アクセスのメモ <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
+              <label style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
+                アクセスのメモ <span style={{ fontSize: '14px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
               </label>
               <input
                 value={form.access}
                 onChange={e => update('access', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '0', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '0', boxSizing: 'border-box' }}
                 placeholder="例：筑前前原駅から車で15分"
               />
             </div>
 
             {/* 乗船料金（釣り物別に設定可） */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>
-                乗船料金 <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 400 }}>（任意・釣り物別に改行で入力可）</span>
+              <label style={{ fontSize: '16px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '4px' }}>
+                乗船料金 <span style={{ fontSize: '14px', color: '#9CA3AF', fontWeight: 400 }}>（任意・釣り物別に改行で入力可）</span>
               </label>
-              <div style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '8px' }}>例：タイラバ 15,000円　イカメタル 12,000円</div>
+              <div style={{ fontSize: '14px', color: '#9CA3AF', marginBottom: '8px' }}>例：タイラバ 15,000円　イカメタル 12,000円</div>
               <textarea
                 value={form.price}
                 onChange={e => update('price', e.target.value)}
                 rows={3}
-                style={{ width: '100%', padding: '12px', fontSize: '14px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'none', lineHeight: 1.6 }}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'none', lineHeight: 1.6 }}
                 placeholder={'例：\nタイラバ　15,000円\nイカメタル　12,000円\n（エサ・氷代込み）'}
               />
             </div>
 
             {/* 設備・サービス */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>設備・サービス</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>設備・サービス</div>
 
               {/* タックル貸出（3択） */}
               {([
@@ -486,14 +487,14 @@ export default function VesselPage() {
                 const cur = ((form?.facilities || defaultFacilities()) as Record<string, unknown>)[key] as string
                 return (
                   <div key={key} style={{ marginBottom: '10px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>{label}</div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>{label}</div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       {opts.map(o => (
                         <button
                           key={o.v}
                           onClick={() => updateFacility(key, o.v)}
                           style={{
-                            flex: 1, padding: '10px 4px', borderRadius: '8px', fontSize: '13px', fontWeight: 700,
+                            flex: 1, padding: '10px 4px', borderRadius: '8px', fontSize: '16px', fontWeight: 700,
                             background: cur === o.v ? '#E8F4FD' : '#F8F9FA',
                             color: cur === o.v ? '#0A3D62' : '#9CA3AF',
                             border: cur === o.v ? '2px solid #2E86C1' : '2px solid transparent',
@@ -537,7 +538,7 @@ export default function VesselPage() {
                       border: val ? '2px solid #2E86C1' : '2px solid transparent',
                     }}
                   >
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{label}</span>
+                    <span style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>{label}</span>
                     <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: val ? '#2E86C1' : '#E5E7EB', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
                       <div style={{ position: 'absolute', top: '3px', left: val ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
                     </div>
@@ -547,10 +548,18 @@ export default function VesselPage() {
 
               {/* お支払い方法 */}
               <div style={{ marginTop: '10px', marginBottom: '10px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', marginBottom: '8px' }}>お支払い方法</div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', marginBottom: '8px' }}>お支払い方法</div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {/* 現金は常にON・変更不可 */}
+                  <button
+                    disabled
+                    style={{
+                      padding: '10px 16px', borderRadius: '8px', fontSize: '16px', fontWeight: 700,
+                      background: '#E8F4FD', color: '#0A3D62',
+                      border: '2px solid #2E86C1', cursor: 'not-allowed', fontFamily: 'inherit',
+                    }}
+                  >現金</button>
                   {([
-                    { key: 'cash' as const, label: '現金' },
                     { key: 'credit' as const, label: 'クレジット' },
                     { key: 'paypay' as const, label: 'PayPay' },
                   ]).map(({ key, label }) => {
@@ -560,7 +569,7 @@ export default function VesselPage() {
                         key={key}
                         onClick={() => updateFacility(key, !val)}
                         style={{
-                          padding: '10px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 700,
+                          padding: '10px 16px', borderRadius: '8px', fontSize: '16px', fontWeight: 700,
                           background: val ? '#E8F4FD' : '#F8F9FA',
                           color: val ? '#0A3D62' : '#9CA3AF',
                           border: val ? '2px solid #2E86C1' : '2px solid transparent',
@@ -572,20 +581,20 @@ export default function VesselPage() {
                 </div>
               </div>
 
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
-                その他・備考 <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
+              <label style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
+                その他・備考 <span style={{ fontSize: '14px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
               </label>
               <input
                 value={(form?.facilities || defaultFacilities()).payment}
                 onChange={e => updateFacility('payment', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
                 placeholder="例：ポイント支払い可"
               />
             </div>
 
             {/* オプション */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>予約ページの表示設定</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>予約ページの表示設定</div>
 
               {([
                 { key: 'beginner_accepted' as const, label: '初心者歓迎', sub: '予約ページに「初心者歓迎」と表示されます' },
@@ -602,8 +611,8 @@ export default function VesselPage() {
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{label}</div>
-                    <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>{sub}</div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>{label}</div>
+                    <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '2px' }}>{sub}</div>
                   </div>
                   <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: form[key] ? '#2E86C1' : '#E5E7EB', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
                     <div style={{ position: 'absolute', top: '3px', left: form[key] ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
@@ -628,7 +637,7 @@ export default function VesselPage() {
 
             <button
               onClick={() => setView('top')}
-              style={{ width: '100%', padding: '14px', fontSize: '14px', fontWeight: 700, background: 'transparent', color: '#6B7280', border: '2px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: 700, background: 'transparent', color: '#6B7280', border: '2px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               キャンセル
             </button>

@@ -36,7 +36,7 @@ const defaultForm = (): FormState => ({
   bin_type: 'day',
   start_month: 0,
   end_month: 11,
-  days_of_week: [0, 1, 2, 3, 4, 5, 6],  // デフォルトで全曜日を選択
+  days_of_week: [0, 1, 2, 3, 4, 5, 6],
   departure_time: '06:00',
   fish_input: '',
   fish_types: [],
@@ -55,7 +55,6 @@ export default function SettingsPage() {
   const [error, setError] = useState('')
   const router = useRouter()
 
-  // ログイン確認と vessel_id・便設定取得
   useEffect(() => {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -72,7 +71,6 @@ export default function SettingsPage() {
     init()
   }, [router])
 
-  // 追加ボタン
   const handleAddClick = () => {
     setEditingId(null)
     setForm(defaultForm())
@@ -80,7 +78,6 @@ export default function SettingsPage() {
     setView('form')
   }
 
-  // 編集ボタン
   const handleEditClick = (s: BinSetting) => {
     setEditingId(s.id)
     setForm({
@@ -98,7 +95,6 @@ export default function SettingsPage() {
     setView('form')
   }
 
-  // 曜日トグル
   const toggleDay = (dow: number) => {
     setForm(f => ({
       ...f,
@@ -108,19 +104,16 @@ export default function SettingsPage() {
     }))
   }
 
-  // 魚種タグ追加
   const addFish = () => {
     const val = form.fish_input.trim()
     if (!val || form.fish_types.includes(val)) return
     setForm(f => ({ ...f, fish_types: [...f.fish_types, val], fish_input: '' }))
   }
 
-  // 魚種タグ削除
   const removeFish = (fish: string) => {
     setForm(f => ({ ...f, fish_types: f.fish_types.filter(t => t !== fish) }))
   }
 
-  // バリデーション
   const validate = (): string => {
     if (!form.days_of_week.length) return '出る曜日を1つ以上選んでください'
     if (!form.departure_time) return '出発時刻を入力してください'
@@ -129,7 +122,6 @@ export default function SettingsPage() {
     return ''
   }
 
-  // 保存
   const handleSave = async () => {
     const err = validate()
     if (err) { setError(err); return }
@@ -156,7 +148,6 @@ export default function SettingsPage() {
       const data = await res.json()
       if (!res.ok) { setError(data.error || '保存に失敗しました'); return }
 
-      // リスト更新
       if (editingId) {
         setSettings(prev => prev.map(s => s.id === editingId ? data.setting : s))
       } else {
@@ -170,7 +161,6 @@ export default function SettingsPage() {
     }
   }
 
-  // 削除
   const handleDelete = async (id: string) => {
     setDeleting(id)
     try {
@@ -183,7 +173,6 @@ export default function SettingsPage() {
     }
   }
 
-  // 便設定カードのシーズン表示
   const seasonLabel = (s: BinSetting) => {
     if (s.start_month === 0 && s.end_month === 11) return '通年'
     return `${MONTH_NAMES[s.start_month]}〜${MONTH_NAMES[s.end_month]}`
@@ -202,13 +191,13 @@ export default function SettingsPage() {
       <div style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
         <button
           onClick={() => view === 'form' ? setView('list') : router.push('/dashboard')}
-          style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>
             {view === 'list' ? '便の設定' : editingId ? '便を編集する' : '便を追加する'}
           </div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
+          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
             {view === 'list' ? '昼便・夜便の運航スケジュールを管理' : '営業する便の情報を入力してください'}
           </div>
         </div>
@@ -222,8 +211,8 @@ export default function SettingsPage() {
             {settings.length === 0 ? (
               <div style={{ background: '#fff', border: '2px dashed #E5E7EB', borderRadius: '14px', padding: '40px 20px', textAlign: 'center', marginBottom: '12px' }}>
                 <div style={{ fontSize: '36px', marginBottom: '12px' }}>⛵</div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '6px' }}>まだ便が設定されていません</div>
-                <div style={{ fontSize: '13px', color: '#9CA3AF', lineHeight: 1.6 }}>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '6px' }}>まだ便が設定されていません</div>
+                <div style={{ fontSize: '14px', color: '#9CA3AF', lineHeight: 1.6 }}>
                   「便を追加する」から<br />昼便・夜便を登録してください
                 </div>
               </div>
@@ -241,12 +230,12 @@ export default function SettingsPage() {
                       }}>
                         <span style={{ fontSize: '18px' }}>{s.bin_type === 'day' ? '☀️' : '🌙'}</span>
                         <div style={{ flex: 1 }}>
-                          <span style={{ fontSize: '15px', fontWeight: 700, color: s.bin_type === 'day' ? '#0A3D62' : '#4338CA' }}>
+                          <span style={{ fontSize: '16px', fontWeight: 700, color: s.bin_type === 'day' ? '#0A3D62' : '#4338CA' }}>
                             {s.bin_type === 'day' ? '昼便' : '夜便'}
                             {s.name ? `　${s.name}` : ''}
                           </span>
                         </div>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: s.bin_type === 'day' ? '#0A3D62' : '#4338CA' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: s.bin_type === 'day' ? '#0A3D62' : '#4338CA' }}>
                           {s.departure_time} 出発
                         </span>
                       </div>
@@ -254,20 +243,20 @@ export default function SettingsPage() {
                       <div style={{ padding: '12px 14px' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
                           <div>
-                            <div style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 700, marginBottom: '2px' }}>シーズン</div>
-                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{seasonLabel(s)}</div>
+                            <div style={{ fontSize: '14px', color: '#9CA3AF', fontWeight: 700, marginBottom: '2px' }}>シーズン</div>
+                            <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>{seasonLabel(s)}</div>
                           </div>
                           <div>
-                            <div style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 700, marginBottom: '2px' }}>定員</div>
-                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{s.max_capacity}名</div>
+                            <div style={{ fontSize: '14px', color: '#9CA3AF', fontWeight: 700, marginBottom: '2px' }}>定員</div>
+                            <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>{s.max_capacity}名</div>
                           </div>
                         </div>
                         {/* 曜日バッジ */}
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: s.fish_types.length > 0 ? '10px' : '0' }}>
                           {DAY_NAMES.map((name, i) => (
                             <span key={i} style={{
-                              width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              borderRadius: '6px', fontSize: '12px', fontWeight: 700,
+                              width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              borderRadius: '6px', fontSize: '14px', fontWeight: 700,
                               background: s.days_of_week.includes(i)
                                 ? (s.bin_type === 'day' ? '#0A3D62' : '#4338CA')
                                 : '#F3F4F6',
@@ -279,19 +268,19 @@ export default function SettingsPage() {
                         {s.fish_types.length > 0 && (
                           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                             {s.fish_types.map(f => (
-                              <span key={f} style={{ fontSize: '12px', background: '#F3F4F6', color: '#374151', padding: '3px 8px', borderRadius: '99px', fontWeight: 600 }}>
+                              <span key={f} style={{ fontSize: '14px', background: '#F3F4F6', color: '#374151', padding: '3px 8px', borderRadius: '99px', fontWeight: 600 }}>
                                 {f}
                               </span>
                             ))}
                           </div>
                         )}
                       </div>
-                      {/* 操作ボタン（アウトライン形式・最小44px高さ） */}
+                      {/* 操作ボタン */}
                       <div style={{ display: 'flex', gap: '0', borderTop: '1px solid #F3F4F6' }}>
                         <button
                           onClick={() => handleEditClick(s)}
                           style={{
-                            flex: 1, padding: '15px', fontSize: '14px', fontWeight: 700,
+                            flex: 1, padding: '15px', fontSize: '16px', fontWeight: 700,
                             background: '#fff', color: '#2E86C1', border: 'none',
                             borderRight: '1px solid #E5E7EB', cursor: 'pointer', fontFamily: 'inherit',
                           }}
@@ -300,7 +289,7 @@ export default function SettingsPage() {
                           onClick={() => handleDelete(s.id)}
                           disabled={deleting === s.id}
                           style={{
-                            flex: 1, padding: '15px', fontSize: '14px', fontWeight: 700,
+                            flex: 1, padding: '15px', fontSize: '16px', fontWeight: 700,
                             background: deleting === s.id ? '#E5E7EB' : '#fff',
                             color: deleting === s.id ? '#9CA3AF' : '#B91C1C',
                             border: 'none', cursor: deleting === s.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
@@ -316,7 +305,7 @@ export default function SettingsPage() {
             <button
               onClick={handleAddClick}
               style={{
-                width: '100%', padding: '16px', fontSize: '15px', fontWeight: 700,
+                width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700,
                 background: '#0A3D62', color: '#fff', border: 'none', borderRadius: '12px',
                 cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               }}
@@ -332,21 +321,21 @@ export default function SettingsPage() {
 
             {/* 便の名前 */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>
-                便の名前 <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>
+                便の名前 <span style={{ fontSize: '14px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
               </div>
               <input
                 type="text"
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="例：タイラバ便、イカメタル便"
-                style={{ width: '100%', padding: '12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
             </div>
 
             {/* 便の種類 */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>便の種類</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>便の種類</div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {([{ key: 'day', label: '☀️ 昼便', desc: '朝〜夕方' }, { key: 'night', label: '🌙 夜便', desc: '夕方〜深夜' }] as const).map(opt => (
                   <button
@@ -362,10 +351,10 @@ export default function SettingsPage() {
                         : '2px solid transparent',
                     }}
                   >
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: form.bin_type === opt.key ? (opt.key === 'day' ? '#0A3D62' : '#4338CA') : '#9CA3AF' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: form.bin_type === opt.key ? (opt.key === 'day' ? '#0A3D62' : '#4338CA') : '#9CA3AF' }}>
                       {opt.label}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px' }}>{opt.desc}</div>
+                    <div style={{ fontSize: '14px', color: '#9CA3AF', marginTop: '4px' }}>{opt.desc}</div>
                   </button>
                 ))}
               </div>
@@ -373,31 +362,30 @@ export default function SettingsPage() {
 
             {/* 営業シーズン */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>営業シーズン</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>営業シーズン</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <select
                   value={form.start_month}
                   onChange={e => setForm(f => ({ ...f, start_month: Number(e.target.value) }))}
-                  style={{ flex: 1, padding: '12px 8px', fontSize: '15px', fontWeight: 700, border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', color: '#111827', background: '#fff' }}
+                  style={{ flex: 1, padding: '12px 8px', fontSize: '16px', fontWeight: 700, border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', color: '#111827', background: '#fff' }}
                 >
                   {MONTH_NAMES.map((name, i) => (
                     <option key={i} value={i}>{name}</option>
                   ))}
                 </select>
-                <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: 700 }}>〜</span>
+                <span style={{ fontSize: '16px', color: '#6B7280', fontWeight: 700 }}>〜</span>
                 <select
                   value={form.end_month}
                   onChange={e => setForm(f => ({ ...f, end_month: Number(e.target.value) }))}
-                  style={{ flex: 1, padding: '12px 8px', fontSize: '15px', fontWeight: 700, border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', color: '#111827', background: '#fff' }}
+                  style={{ flex: 1, padding: '12px 8px', fontSize: '16px', fontWeight: 700, border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', color: '#111827', background: '#fff' }}
                 >
                   {MONTH_NAMES.map((name, i) => (
                     <option key={i} value={i}>{name}</option>
                   ))}
                 </select>
               </div>
-              {/* 年またぎ注意書き */}
               {form.start_month > form.end_month && (
-                <div style={{ fontSize: '11px', color: '#D97706', marginTop: '8px', padding: '6px 8px', background: '#FEF9C3', borderRadius: '6px' }}>
+                <div style={{ fontSize: '14px', color: '#D97706', marginTop: '8px', padding: '6px 8px', background: '#FEF9C3', borderRadius: '6px' }}>
                   ※ 年またぎシーズンとして設定されます（例：11月〜3月）
                 </div>
               )}
@@ -405,14 +393,14 @@ export default function SettingsPage() {
 
             {/* 出る曜日 */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>出る曜日</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>出る曜日</div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 {DAY_NAMES.map((name, i) => (
                   <button
                     key={i}
                     onClick={() => toggleDay(i)}
                     style={{
-                      flex: 1, height: '64px', minWidth: '40px', borderRadius: '10px', fontSize: '15px', fontWeight: 700,
+                      flex: 1, height: '64px', minWidth: '40px', borderRadius: '10px', fontSize: '16px', fontWeight: 700,
                       cursor: 'pointer', fontFamily: 'inherit', border: 'none',
                       background: form.days_of_week.includes(i)
                         ? (form.bin_type === 'day' ? '#0A3D62' : '#4338CA')
@@ -426,7 +414,7 @@ export default function SettingsPage() {
 
             {/* 出発時刻 */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>出発時刻</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>出発時刻</div>
               <input
                 type="time"
                 value={form.departure_time}
@@ -437,7 +425,7 @@ export default function SettingsPage() {
 
             {/* 定員 */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>定員（最大人数）</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>定員（最大人数）</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input
                   type="number"
@@ -454,23 +442,21 @@ export default function SettingsPage() {
 
             {/* 魚種（任意） */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '4px' }}>釣れる魚種（任意）</div>
-              <div style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '10px' }}>予約フォームに表示されます</div>
-              {/* タグ一覧 */}
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '4px' }}>釣れる魚種（任意）</div>
+              <div style={{ fontSize: '14px', color: '#9CA3AF', marginBottom: '10px' }}>予約フォームに表示されます</div>
               {form.fish_types.length > 0 && (
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
                   {form.fish_types.map(f => (
-                    <span key={f} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', background: '#E8F4FD', color: '#0A3D62', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>
+                    <span key={f} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '16px', background: '#E8F4FD', color: '#0A3D62', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>
                       {f}
                       <button
                         onClick={() => removeFish(f)}
-                        style={{ background: 'none', border: 'none', color: '#2E86C1', cursor: 'pointer', padding: '0', fontSize: '14px', lineHeight: 1 }}
+                        style={{ background: 'none', border: 'none', color: '#2E86C1', cursor: 'pointer', padding: '0', fontSize: '16px', lineHeight: 1 }}
                       >×</button>
                     </span>
                   ))}
                 </div>
               )}
-              {/* 魚種入力 */}
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="text"
@@ -478,13 +464,13 @@ export default function SettingsPage() {
                   onChange={e => setForm(f => ({ ...f, fish_input: e.target.value }))}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addFish() } }}
                   placeholder="例：マダイ"
-                  style={{ flex: 1, padding: '10px 12px', fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', color: '#111827' }}
+                  style={{ flex: 1, padding: '10px 12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', color: '#111827' }}
                 />
                 <button
                   onClick={addFish}
                   disabled={!form.fish_input.trim()}
                   style={{
-                    padding: '10px 16px', fontSize: '14px', fontWeight: 700,
+                    padding: '10px 16px', fontSize: '16px', fontWeight: 700,
                     background: form.fish_input.trim() ? '#0A3D62' : '#E5E7EB',
                     color: form.fish_input.trim() ? '#fff' : '#9CA3AF',
                     border: 'none', borderRadius: '8px', cursor: form.fish_input.trim() ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
@@ -495,7 +481,7 @@ export default function SettingsPage() {
 
             {/* エラー */}
             {error && (
-              <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: '8px', padding: '12px', fontSize: '13px', color: '#B91C1C' }}>
+              <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: '8px', padding: '12px', fontSize: '16px', color: '#B91C1C' }}>
                 {error}
               </div>
             )}
@@ -519,7 +505,7 @@ export default function SettingsPage() {
             <button
               onClick={() => setView('list')}
               style={{
-                width: '100%', padding: '14px', fontSize: '14px', fontWeight: 700,
+                width: '100%', padding: '14px', fontSize: '16px', fontWeight: 700,
                 background: 'transparent', color: '#6B7280',
                 border: '2px solid #E5E7EB', borderRadius: '12px',
                 cursor: 'pointer', fontFamily: 'inherit',
