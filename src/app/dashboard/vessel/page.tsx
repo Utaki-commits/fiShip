@@ -71,6 +71,7 @@ type Vessel = {
   beginner_accepted: boolean
   price: string
   facilities?: Facilities | null
+  max_bookings_per_customer: number
 }
 
 type View = 'top' | 'edit'
@@ -104,7 +105,7 @@ export default function VesselPage() {
   const startEdit = () => {
     if (!vessel) return
     const currentFacilities = vessel.facilities || defaultFacilities()
-    setForm({ ...vessel, facilities: { ...currentFacilities, cash: true } })
+    setForm({ ...vessel, facilities: { ...currentFacilities, cash: true }, max_bookings_per_customer: vessel.max_bookings_per_customer ?? 5 })
     setError('')
     setSaved(false)
     setView('edit')
@@ -142,6 +143,7 @@ export default function VesselPage() {
           beginner_accepted: form.beginner_accepted,
           price: form.price,
           facilities: form.facilities || defaultFacilities(),
+          max_bookings_per_customer: form.max_bookings_per_customer ?? 5,
         })
         .eq('id', vessel.id)
       if (err) { setError('保存に失敗しました。もう一度お試しください。'); return }
@@ -474,122 +476,104 @@ export default function VesselPage() {
             </div>
 
             {/* 設備・サービス */}
-            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '12px' }}>設備・サービス</div>
-
-              {/* タックル貸出（3択） */}
-              {([
-                { key: 'tackle_rental' as const, label: 'タックル貸出', opts: [{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }] as const },
-                { key: 'ice' as const, label: '氷', opts: [{ v: 'sale', l: '販売' }, { v: 'free', l: '無料' }, { v: 'none', l: 'なし' }] as const },
-                { key: 'parking' as const, label: '駐車場', opts: [{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }] as const },
-                { key: 'cleaning' as const, label: '下処理', opts: [{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }] as const },
-              ]).map(({ key, label, opts }) => {
-                const cur = ((form?.facilities || defaultFacilities()) as Record<string, unknown>)[key] as string
+            {(() => {
+              const fac = form?.facilities || defaultFacilities()
+              const threeChoice = (key: 'tackle_rental' | 'ice' | 'parking' | 'cleaning', label: string, opts: readonly { v: string; l: string }[]) => {
+                const cur = (fac as Record<string, unknown>)[key] as string
                 return (
                   <div key={key} style={{ marginBottom: '10px' }}>
                     <div style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>{label}</div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       {opts.map(o => (
-                        <button
-                          key={o.v}
-                          onClick={() => updateFacility(key, o.v)}
-                          style={{
-                            flex: 1, padding: '10px 4px', borderRadius: '8px', fontSize: '16px', fontWeight: 700,
-                            background: cur === o.v ? '#E8F4FD' : '#F8F9FA',
-                            color: cur === o.v ? '#0A3D62' : '#9CA3AF',
-                            border: cur === o.v ? '2px solid #2E86C1' : '2px solid transparent',
-                            cursor: 'pointer', fontFamily: 'inherit',
-                          }}
-                        >{o.l}</button>
+                        <button key={o.v} onClick={() => updateFacility(key, o.v)} style={{ flex: 1, padding: '10px 4px', borderRadius: '8px', fontSize: '16px', fontWeight: 700, background: cur === o.v ? '#E8F4FD' : '#F8F9FA', color: cur === o.v ? '#0A3D62' : '#9CA3AF', border: cur === o.v ? '2px solid #2E86C1' : '2px solid transparent', cursor: 'pointer', fontFamily: 'inherit' }}>{o.l}</button>
                       ))}
                     </div>
                   </div>
                 )
-              })}
-
-              {/* ブール設備トグル */}
-              {([
-                { key: 'life_jacket' as const, label: 'ライフジャケット' },
-                { key: 'bait' as const, label: '餌' },
-                { key: 'rod_holder' as const, label: 'ロッドホルダー' },
-                { key: 'metal_light' as const, label: '夜焚き用集魚灯（メタハラ）' },
-                { key: 'toilet' as const, label: 'トイレ' },
-                { key: 'cooler' as const, label: 'クーラーボックス' },
-                { key: 'live_well' as const, label: '生け簀' },
-                { key: 'water_circulation' as const, label: '海水循環装置' },
-                { key: 'microwave' as const, label: '電子レンジ' },
-                { key: 'kettle' as const, label: '湯沸かし器' },
-                { key: 'roof' as const, label: '屋根日よけ' },
-                { key: 'bloodletting' as const, label: '血抜き' },
-                { key: 'ike_jime' as const, label: '神経締め' },
-                { key: 'casting_deck' as const, label: 'キャスティングデッキ' },
-                { key: 'gyro' as const, label: 'アンチローリングジャイロ' },
-                { key: 'rod_keeper' as const, label: 'ロッドキーパー' },
-              ]).map(({ key, label }) => {
-                const val = ((form?.facilities || defaultFacilities()) as Record<string, unknown>)[key] as boolean
+              }
+              const toggle = (key: keyof Facilities, label: string) => {
+                const val = (fac as Record<string, unknown>)[key] as boolean
                 return (
-                  <div
-                    key={key}
-                    onClick={() => updateFacility(key, !val)}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '10px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px',
-                      background: val ? '#E8F4FD' : '#F8F9FA',
-                      border: val ? '2px solid #2E86C1' : '2px solid transparent',
-                    }}
-                  >
+                  <div key={key} onClick={() => updateFacility(key, !val)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px', background: val ? '#E8F4FD' : '#F8F9FA', border: val ? '2px solid #2E86C1' : '2px solid transparent' }}>
                     <span style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>{label}</span>
                     <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: val ? '#2E86C1' : '#E5E7EB', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
                       <div style={{ position: 'absolute', top: '3px', left: val ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
                     </div>
                   </div>
                 )
-              })}
+              }
+              const catHeader = (label: string) => (
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#9CA3AF', marginTop: '14px', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid #F3F4F6' }}>{label}</div>
+              )
+              return (
+                <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '4px' }}>設備・サービス</div>
 
-              {/* お支払い方法 */}
-              <div style={{ marginTop: '10px', marginBottom: '10px' }}>
-                <div style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', marginBottom: '8px' }}>お支払い方法</div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {/* 現金は常にON・変更不可 */}
-                  <button
-                    disabled
-                    style={{
-                      padding: '10px 16px', borderRadius: '8px', fontSize: '16px', fontWeight: 700,
-                      background: '#E8F4FD', color: '#0A3D62',
-                      border: '2px solid #2E86C1', cursor: 'not-allowed', fontFamily: 'inherit',
-                    }}
-                  >現金</button>
-                  {([
-                    { key: 'credit' as const, label: 'クレジット' },
-                    { key: 'paypay' as const, label: 'PayPay' },
-                  ]).map(({ key, label }) => {
-                    const val = ((form?.facilities || defaultFacilities()) as Record<string, unknown>)[key] as boolean
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => updateFacility(key, !val)}
-                        style={{
-                          padding: '10px 16px', borderRadius: '8px', fontSize: '16px', fontWeight: 700,
-                          background: val ? '#E8F4FD' : '#F8F9FA',
-                          color: val ? '#0A3D62' : '#9CA3AF',
-                          border: val ? '2px solid #2E86C1' : '2px solid transparent',
-                          cursor: 'pointer', fontFamily: 'inherit',
-                        }}
-                      >{label}</button>
-                    )
-                  })}
+                  {catHeader('釣り道具')}
+                  {threeChoice('tackle_rental', 'タックル貸出', [{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }])}
+                  {toggle('life_jacket', 'ライフジャケット')}
+                  {toggle('rod_holder', 'ロッドホルダー')}
+
+                  {catHeader('船内設備')}
+                  {threeChoice('parking', '駐車場', [{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }])}
+                  {toggle('toilet', 'トイレ')}
+                  {toggle('cooler', 'クーラーボックス')}
+                  {toggle('live_well', '生け簀')}
+                  {toggle('water_circulation', '海水循環装置')}
+                  {toggle('microwave', '電子レンジ')}
+                  {toggle('kettle', '湯沸かし器')}
+                  {toggle('roof', '屋根日よけ')}
+                  {toggle('metal_light', '夜焚き用メタハラ集魚灯')}
+
+                  {catHeader('魚の処理')}
+                  {toggle('bloodletting', '血抜き')}
+                  {toggle('ike_jime', '神経締め')}
+                  {threeChoice('cleaning', '下処理', [{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }])}
+
+                  {catHeader('販売品')}
+                  {threeChoice('ice', '氷', [{ v: 'sale', l: '販売' }, { v: 'free', l: '無料' }, { v: 'none', l: 'なし' }])}
+                  {toggle('bait', '餌')}
+
+                  {catHeader('支払方法')}
+                  <div style={{ marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button disabled style={{ padding: '10px 16px', borderRadius: '8px', fontSize: '16px', fontWeight: 700, background: '#E8F4FD', color: '#0A3D62', border: '2px solid #2E86C1', cursor: 'not-allowed', fontFamily: 'inherit' }}>現金</button>
+                      {([{ key: 'credit' as const, label: 'クレジット' }, { key: 'paypay' as const, label: 'PayPay' }]).map(({ key, label }) => {
+                        const val = (fac as Record<string, unknown>)[key] as boolean
+                        return (
+                          <button key={key} onClick={() => updateFacility(key, !val)} style={{ padding: '10px 16px', borderRadius: '8px', fontSize: '16px', fontWeight: 700, background: val ? '#E8F4FD' : '#F8F9FA', color: val ? '#0A3D62' : '#9CA3AF', border: val ? '2px solid #2E86C1' : '2px solid transparent', cursor: 'pointer', fontFamily: 'inherit' }}>{label}</button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  <label style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
+                    その他・備考 <span style={{ fontSize: '14px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
+                  </label>
+                  <input value={fac.payment} onChange={e => updateFacility('payment', e.target.value)} style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }} placeholder="例：ポイント支払い可" />
+
+                  {catHeader('こだわり設備')}
+                  {toggle('casting_deck', 'キャスティングデッキ')}
+                  {toggle('gyro', 'アンチローリングジャイロ')}
+                  {toggle('rod_keeper', 'ロッドキーパー')}
                 </div>
-              </div>
+              )
+            })()}
 
-              <label style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
-                その他・備考 <span style={{ fontSize: '14px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
-              </label>
-              <input
-                value={(form?.facilities || defaultFacilities()).payment}
-                onChange={e => updateFacility('payment', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
-                placeholder="例：ポイント支払い可"
-              />
+            {/* お客さん一人あたりの最大予約件数 */}
+            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '4px' }}>お客さん一人あたりの最大予約件数</div>
+              <div style={{ fontSize: '14px', color: '#9CA3AF', marginBottom: '10px' }}>同じ電話番号で受け付ける予約の上限です</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input
+                  type="number"
+                  value={form.max_bookings_per_customer ?? 5}
+                  onChange={e => update('max_bookings_per_customer', Math.max(1, Math.min(99, Number(e.target.value) || 1)))}
+                  min={1}
+                  max={99}
+                  style={{ flex: 1, padding: '12px', fontSize: '24px', fontWeight: 700, border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', color: '#111827', textAlign: 'center' }}
+                />
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#374151' }}>件まで</span>
+              </div>
             </div>
 
             {/* オプション */}

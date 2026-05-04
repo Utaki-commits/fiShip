@@ -360,10 +360,11 @@ export default function DashboardPage() {
                     key={v}
                     onClick={() => {
                       if (v === 'week') {
-                        const now = new Date()
-                        const lastDay = new Date(calYear, calM + 1, 0).getDate()
-                        const day = Math.min(now.getDate(), lastDay)
-                        setWeekStart(getWeekSunday(new Date(calYear, calM, day)))
+                        if (selectedDate) {
+                          setWeekStart(getWeekSunday(new Date(selectedDate + 'T00:00:00')))
+                        } else {
+                          setWeekStart(getWeekSunday(new Date(calYear, calM, 1)))
+                        }
                       }
                       setView(v)
                     }}

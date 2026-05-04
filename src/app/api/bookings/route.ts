@@ -62,6 +62,28 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // 同一電話番号の予約件数が上限を超えていないか確認
+    if (tel) {
+      const { data: vesselData } = await supabase
+        .from('vessels')
+        .select('max_bookings_per_customer')
+        .eq('id', vessel_id)
+        .single()
+      const maxPerCustomer = vesselData?.max_bookings_per_customer ?? 5
+      const { count: customerCount } = await supabase
+        .from('bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('vessel_id', vessel_id)
+        .eq('tel', tel)
+        .in('status', ['confirmed', 'pending'])
+      if ((customerCount ?? 0) >= maxPerCustomer) {
+        return NextResponse.json(
+          { error: 'ご予約の上限に達しています。お電話でお問い合わせください', code: 'LIMIT_EXCEEDED' },
+          { status: 409 }
+        )
+      }
+    }
+
     // 同じ日・同じ便の承認待ち件数を確認
     const { data: pendingBookings } = await supabase
       .from('bookings')
