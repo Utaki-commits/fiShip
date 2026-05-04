@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getHolidayInfo } from '@/lib/holidays'
 
 type Vessel = {
   id: string
@@ -83,16 +84,8 @@ export default function ReservePage() {
   const [submitting, setSubmitting] = useState(false)
   const [completed, setCompleted] = useState<{ isImmediate: boolean } | null>(null)
   const [formError, setFormError] = useState('')
-  // holidays-jpはSSRで動作しないためクライアント側でのみ動的importする
-  const [getHoliday, setGetHoliday] = useState<((d: Date) => { name: string } | null) | null>(null)
 
   const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-  useEffect(() => {
-    import('holidays-jp')
-      .then(mod => setGetHoliday(() => mod.getHolidayInfo))
-      .catch(() => {})
-  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -241,8 +234,8 @@ export default function ReservePage() {
     const nightBin = bins.find(b => b.setting.bin_type === 'night') ?? null
     const allFull = bins.length > 0 && bins.every(b => b.isFull)
     const hasAvailable = bins.some(b => !b.isFull)
-    // 祝日判定（クライアント側でのみ有効）
-    const holiday = getHoliday ? getHoliday(new Date(year, month, day)) : null
+    // 祝日判定
+    const holiday = getHolidayInfo(new Date(year, month, day))
 
     // 昼便バンドの色・ラベル
     const dayBg = dayBin
@@ -272,7 +265,7 @@ export default function ReservePage() {
         onClick={() => !isPast && hasAvailable && handleDateSelect(year, month, day)}
         style={{
           borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          height: '72px', transition: 'border-color .15s',
+          minHeight: '72px', transition: 'border-color .15s',
           cursor: isPast || (!hasAvailable && bins.length > 0) ? 'default' : bins.length === 0 ? 'default' : 'pointer',
           opacity: isPast ? 0.4 : 1,
           border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
@@ -324,7 +317,7 @@ export default function ReservePage() {
     const totalDays = new Date(calYear, calM + 1, 0).getDate()
     const cells = []
     for (let i = 0; i < firstDow; i++) {
-      cells.push(<div key={`e${i}`} style={{ height: '72px' }} />)
+      cells.push(<div key={`e${i}`} style={{ minHeight: '72px' }} />)
     }
     for (let d = 1; d <= totalDays; d++) {
       cells.push(renderCell(calYear, calM, d))
@@ -470,7 +463,7 @@ export default function ReservePage() {
               {selectedBins.length > 1 && (
                 <>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', marginBottom: '8px' }}>便の種類</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                     {selectedBins.map(b => {
                       const isDay = b.setting.bin_type === 'day'
                       const isActive = form.bin_type === b.setting.bin_type
@@ -480,8 +473,8 @@ export default function ReservePage() {
                           onClick={() => !b.isFull && setForm(f => ({ ...f, bin_type: b.setting.bin_type, count: 1 }))}
                           disabled={b.isFull}
                           style={{
-                            width: '100%', padding: '14px 8px', textAlign: 'center', borderRadius: '10px',
-                            cursor: b.isFull ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxSizing: 'border-box',
+                            padding: '14px 8px', textAlign: 'center', borderRadius: '10px',
+                            cursor: b.isFull ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                             background: b.isFull ? '#F8F9FA' : isActive ? (isDay ? '#E8F4FD' : '#EEF2FF') : '#fff',
                             border: isActive
                               ? `2px solid ${isDay ? '#2E86C1' : '#4338CA'}`
@@ -551,7 +544,6 @@ export default function ReservePage() {
                 style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
                 placeholder="例：090-1234-5678"
                 type="tel"
-                maxLength={13}
                 value={form.tel}
                 onChange={e => setForm(f => ({ ...f, tel: e.target.value }))}
               />

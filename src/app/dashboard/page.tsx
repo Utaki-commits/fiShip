@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { getHolidayInfo } from '@/lib/holidays'
 
 type Vessel = {
   id: string
@@ -62,15 +63,7 @@ export default function DashboardPage() {
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekSunday(new Date()))
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-  // holidays-jpはSSRで動作しないためクライアント側でのみ動的importする
-  const [getHoliday, setGetHoliday] = useState<((d: Date) => { name: string } | null) | null>(null)
   const router = useRouter()
-
-  useEffect(() => {
-    import('holidays-jp')
-      .then(mod => setGetHoliday(() => mod.getHolidayInfo))
-      .catch(() => {})
-  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -80,7 +73,6 @@ export default function DashboardPage() {
         .from('vessels').select('*').eq('user_id', session.user.id).single()
       if (!v) { router.push('/register'); return }
       setVessel(v)
-      // 予約データと便設定を並行取得
       const [{ data: bk }, { data: bs }] = await Promise.all([
         supabase.from('bookings').select('*').eq('vessel_id', v.id).order('date', { ascending: true }),
         supabase.from('bin_settings').select('*').eq('vessel_id', v.id),
@@ -97,7 +89,6 @@ export default function DashboardPage() {
     router.push('/login')
   }
 
-  // /api/bookings PATCH で承認・お断りを実行
   const updateStatus = async (id: string, status: 'confirmed' | 'rejected') => {
     setActionLoading(id)
     try {
@@ -116,23 +107,18 @@ export default function DashboardPage() {
 
   const getPendingCount = () => bookings.filter(b => b.status === 'pending').length
 
-  // カレンダーセルを描画（月・週共通）
   const renderCalendar = () => {
-    // その日に有効なbinSettingsを返す
-    // start/end_monthはDBスキーマ通り0始まり(0=1月, 11=12月)
-    // 年またぎシーズン（例: start=10 end=2 → 11〜3月）も正しく判定する
     const getBinsForDate = (year: number, month: number, day: number) => {
       const dow = new Date(year, month, day).getDay()
       return binSettings.filter(bin => {
         const isInPeriod = bin.start_month <= bin.end_month
-          ? bin.start_month <= month && month <= bin.end_month          // 通常（例: 3〜9 = 4〜10月）
-          : month >= bin.start_month || month <= bin.end_month          // 年またぎ（例: 10〜2 = 11〜3月）
+          ? bin.start_month <= month && month <= bin.end_month
+          : month >= bin.start_month || month <= bin.end_month
         const inDay = bin.days_of_week.map(Number).includes(dow)
         return isInPeriod && inDay
       })
     }
 
-    // confirmed + pending の使用人数を合算して残り人数を返す
     const getRemaining = (dateStr: string, binType: string, maxCap: number) => {
       const used = bookings
         .filter(b => b.date === dateStr && b.bin_type === binType && (b.status === 'confirmed' || b.status === 'pending'))
@@ -140,7 +126,6 @@ export default function DashboardPage() {
       return maxCap - used
     }
 
-    // 1セルを描画（year/month/day を個別に受け取りタイムゾーン問題を回避）
     const renderCell = (year: number, month: number, day: number) => {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
       const todayStr = toDateStr(new Date())
@@ -152,10 +137,8 @@ export default function DashboardPage() {
       const dayBin = bins.find(b => b.bin_type === 'day') ?? null
       const nightBin = bins.find(b => b.bin_type === 'night') ?? null
       const hasPending = bookings.some(b => b.date === dateStr && b.status === 'pending')
-      // 祝日判定（クライアント側でのみ有効）
-      const holiday = getHoliday ? getHoliday(new Date(year, month, day)) : null
+      const holiday = getHolidayInfo(new Date(year, month, day))
 
-      // 昼便の色・ラベルを決定
       let dayBg = '#E8F4FD'
       let dayLabel: string | null = null
       let dayTextColor = '#0A3D62'
@@ -169,7 +152,6 @@ export default function DashboardPage() {
         }
       }
 
-      // 夜便の色・ラベルを決定
       let nightBg = '#EEF2FF'
       let nightLabel: string | null = null
       let nightTextColor = '#4338CA'
@@ -193,7 +175,6 @@ export default function DashboardPage() {
             border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
           }}
         >
-          {/* 上段：日付 + 祝日名 + 承認待ちドット */}
           <div style={{
             display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
             padding: '3px 4px', flexShrink: 0,
@@ -202,7 +183,7 @@ export default function DashboardPage() {
           }}>
             <div>
               <span style={{
-                fontSize: '11px', fontWeight: 700,
+                fontSize: '12px', fontWeight: 700,
                 color: (holiday || dow === 0) ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
               }}>{day}</span>
               {holiday && (
@@ -216,7 +197,6 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* 中・下段：便エリアを均等分割して中央寄せ */}
           {!dayBin && !nightBin ? (
             <div style={{ flex: 1, background: '#F8F9FA' }} />
           ) : (
@@ -228,7 +208,7 @@ export default function DashboardPage() {
                   borderBottom: nightBin ? '1px solid rgba(0,0,0,0.06)' : undefined,
                 }}>
                   {dayLabel && (
-                    <span style={{ fontSize: '10px', fontWeight: 700, color: dayTextColor, whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: dayTextColor, whiteSpace: 'nowrap' }}>
                       {dayLabel}
                     </span>
                   )}
@@ -240,7 +220,7 @@ export default function DashboardPage() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   {nightLabel && (
-                    <span style={{ fontSize: '10px', fontWeight: 700, color: nightTextColor, whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: nightTextColor, whiteSpace: 'nowrap' }}>
                       {nightLabel}
                     </span>
                   )}
@@ -252,7 +232,6 @@ export default function DashboardPage() {
       )
     }
 
-    // 月表示：空白セル + 日付セル
     if (view === 'month') {
       const firstDow = new Date(calYear, calM, 1).getDay()
       const totalDays = new Date(calYear, calM + 1, 0).getDate()
@@ -266,7 +245,6 @@ export default function DashboardPage() {
       return cells
     }
 
-    // 週表示：weekStart から7日分
     const cells = []
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart)
@@ -276,14 +254,12 @@ export default function DashboardPage() {
     return cells
   }
 
-  // 週表示ヘッダーラベル
   const weekEnd = new Date(weekStart)
   weekEnd.setDate(weekStart.getDate() + 6)
   const weekLabel = weekStart.getMonth() === weekEnd.getMonth()
     ? `${weekStart.getFullYear()}年${MONTH_NAMES[weekStart.getMonth()]} ${weekStart.getDate()}〜${weekEnd.getDate()}日`
     : `${MONTH_NAMES[weekStart.getMonth()]}${weekStart.getDate()}日〜${MONTH_NAMES[weekEnd.getMonth()]}${weekEnd.getDate()}日`
 
-  // 選択日の予約（rejected除外・昼→夜の順）
   const selectedBookings = selectedDate
     ? bookings
         .filter(b => b.date === selectedDate && b.status !== 'rejected')
@@ -303,14 +279,14 @@ export default function DashboardPage() {
       <div style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
         <div style={{ width: '36px', height: '36px', background: '#D4AC0D', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>⚓</div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>{vessel?.name}</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>{vessel?.name}</div>
         </div>
         {getPendingCount() > 0 && (
-          <div style={{ background: '#D97706', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', whiteSpace: 'nowrap' }}>
+          <div style={{ background: '#D97706', color: '#fff', fontSize: '14px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', whiteSpace: 'nowrap' }}>
             承認待ち {getPendingCount()}件
           </div>
         )}
-        <button onClick={handleLogout} style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 700, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+        <button onClick={handleLogout} style={{ padding: '6px 12px', fontSize: '14px', fontWeight: 700, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
           ログアウト
         </button>
       </div>
@@ -329,8 +305,8 @@ export default function DashboardPage() {
           >
             <div style={{ fontSize: '24px', flexShrink: 0 }}>⚠️</div>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#856404' }}>出船スケジュールが未設定です</div>
-              <div style={{ fontSize: '12px', color: '#856404', marginTop: '2px' }}>タップして昼便・夜便のスケジュールを登録してください</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#856404' }}>出船スケジュールが未設定です</div>
+              <div style={{ fontSize: '14px', color: '#856404', marginTop: '2px' }}>タップして昼便・夜便のスケジュールを登録してください</div>
             </div>
           </div>
         )}
@@ -342,7 +318,7 @@ export default function DashboardPage() {
             { icon: '👥', bg: '#F0FDF4', label: '顧客名簿\nを見る', path: '/dashboard/customers' },
             { icon: '📋', bg: '#FFF7ED', label: '乗船名簿\nを記録する', path: '/dashboard/logs' },
             { icon: '⚙️', bg: '#EEF2FF', label: '便の設定\nを変更する', path: '/dashboard/settings' },
-            { icon: '🔗', bg: '#FEF9C3', label: '予約リンク\nを共有する', path: '/dashboard/vessel' },
+            { icon: '🔗', bg: '#FEF9C3', label: '予約URL\nを共有する', path: '/dashboard/vessel' },
           ].map(({ icon, bg, label, path }) => (
             <button
               key={path}
@@ -355,7 +331,7 @@ export default function DashboardPage() {
               }}
             >
               <div style={{ width: '36px', height: '36px', background: bg, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>{icon}</div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#111827', whiteSpace: 'pre-line', lineHeight: 1.4 }}>{label}</div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827', whiteSpace: 'pre-line', lineHeight: 1.4 }}>{label}</div>
             </button>
           ))}
         </div>
@@ -374,7 +350,7 @@ export default function DashboardPage() {
             >◀</button>
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>
+              <span style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>
                 {view === 'month' ? `${calYear}年${MONTH_NAMES[calM]}` : weekLabel}
               </span>
               {/* 月 / 週 切り替えトグル */}
@@ -383,11 +359,17 @@ export default function DashboardPage() {
                   <button
                     key={v}
                     onClick={() => {
-                      if (v === 'week') setWeekStart(getWeekSunday(new Date(calYear, calM, 1)))
+                      if (v === 'week') {
+                        if (selectedDate) {
+                          setWeekStart(getWeekSunday(new Date(selectedDate + 'T00:00:00')))
+                        } else {
+                          setWeekStart(getWeekSunday(new Date(calYear, calM, 1)))
+                        }
+                      }
                       setView(v)
                     }}
                     style={{
-                      padding: '4px 16px', fontSize: '12px', fontWeight: 700,
+                      padding: '4px 16px', fontSize: '14px', fontWeight: 700,
                       background: view === v ? '#fff' : 'transparent',
                       color: view === v ? '#0A3D62' : '#9CA3AF',
                       border: 'none', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit',
@@ -411,7 +393,7 @@ export default function DashboardPage() {
           {/* 曜日ヘッダー */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '2px', marginBottom: '4px' }}>
             {DAY_NAMES.map((d, i) => (
-              <div key={d} style={{ fontSize: '11px', fontWeight: 700, textAlign: 'center', color: i === 0 ? '#B91C1C' : i === 6 ? '#2E86C1' : '#9CA3AF' }}>{d}</div>
+              <div key={d} style={{ fontSize: '12px', fontWeight: 700, textAlign: 'center', color: i === 0 ? '#B91C1C' : i === 6 ? '#2E86C1' : '#9CA3AF' }}>{d}</div>
             ))}
           </div>
 
@@ -429,12 +411,12 @@ export default function DashboardPage() {
             ].map(({ bg, color, label }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: bg, border: `1px solid ${color}22` }} />
-                <span style={{ fontSize: '10px', color: '#6B7280' }}>{label}</span>
+                <span style={{ fontSize: '12px', color: '#6B7280' }}>{label}</span>
               </div>
             ))}
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D97706' }} />
-              <span style={{ fontSize: '10px', color: '#6B7280' }}>承認待ち</span>
+              <span style={{ fontSize: '12px', color: '#6B7280' }}>承認待ち</span>
             </div>
           </div>
         </div>
@@ -443,7 +425,7 @@ export default function DashboardPage() {
         {selectedDate && (
           <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', marginBottom: '12px', overflow: 'hidden' }}>
             <div style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
+              <span style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>
                 {(() => {
                   const d = new Date(selectedDate + 'T00:00:00')
                   return `${d.getMonth() + 1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）の予約`
@@ -456,18 +438,16 @@ export default function DashboardPage() {
             </div>
 
             {selectedBookings.length === 0 ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: '#9CA3AF', fontSize: '13px' }}>
+              <div style={{ padding: '24px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>
                 予約はありません
               </div>
             ) : (
               selectedBookings.map(b => (
                 <div key={b.id} style={{ padding: '14px 16px', borderBottom: '1px solid #F3F4F6' }}>
 
-                  {/* 予約情報 */}
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '10px' }}>
-                    {/* 昼/夜バッジ */}
                     <span style={{
-                      fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', flexShrink: 0,
+                      fontSize: '14px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', flexShrink: 0,
                       background: b.bin_type === 'day' ? '#E8F4FD' : '#EEF2FF',
                       color: b.bin_type === 'day' ? '#0A3D62' : '#4338CA',
                     }}>
@@ -475,17 +455,16 @@ export default function DashboardPage() {
                     </span>
 
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>{b.name}</div>
-                      <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '3px', lineHeight: 1.6 }}>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>{b.name}</div>
+                      <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '3px', lineHeight: 1.6 }}>
                         {b.count}名{b.fishing_style ? `　${b.fishing_style}` : ''}
                         {b.message ? `\n${b.message}` : ''}
                       </div>
                     </div>
 
-                    {/* ステータスバッジ（確定・お断りのみ） */}
                     {b.status !== 'pending' && (
                       <span style={{
-                        fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', flexShrink: 0,
+                        fontSize: '14px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', flexShrink: 0,
                         background: b.status === 'confirmed' ? '#D4EDDA' : '#F3F4F6',
                         color: b.status === 'confirmed' ? '#1B6B3A' : '#6B7280',
                       }}>
@@ -494,7 +473,6 @@ export default function DashboardPage() {
                     )}
                   </div>
 
-                  {/* アクションボタン */}
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {b.status === 'pending' && (
                       <>
@@ -502,7 +480,7 @@ export default function DashboardPage() {
                           onClick={() => updateStatus(b.id, 'confirmed')}
                           disabled={actionLoading === b.id}
                           style={{
-                            flex: 1, padding: '10px', fontSize: '14px', fontWeight: 700,
+                            flex: 1, padding: '10px', fontSize: '16px', fontWeight: 700,
                             background: actionLoading === b.id ? '#E5E7EB' : '#D4EDDA',
                             color: actionLoading === b.id ? '#9CA3AF' : '#1B6B3A',
                             border: '1px solid #86EFAC', borderRadius: '8px',
@@ -513,7 +491,7 @@ export default function DashboardPage() {
                           onClick={() => updateStatus(b.id, 'rejected')}
                           disabled={actionLoading === b.id}
                           style={{
-                            flex: 1, padding: '10px', fontSize: '14px', fontWeight: 700,
+                            flex: 1, padding: '10px', fontSize: '16px', fontWeight: 700,
                             background: actionLoading === b.id ? '#E5E7EB' : '#FEE2E2',
                             color: actionLoading === b.id ? '#9CA3AF' : '#B91C1C',
                             border: '1px solid #FCA5A5', borderRadius: '8px',
@@ -526,7 +504,7 @@ export default function DashboardPage() {
                       <a
                         href={`tel:${b.tel}`}
                         style={{
-                          flex: 1, padding: '10px', fontSize: '14px', fontWeight: 700, textAlign: 'center',
+                          flex: 1, padding: '10px', fontSize: '16px', fontWeight: 700, textAlign: 'center',
                           background: '#E8F4FD', color: '#0A3D62', border: '1px solid #BFDBFE',
                           borderRadius: '8px', textDecoration: 'none', display: 'block',
                         }}
