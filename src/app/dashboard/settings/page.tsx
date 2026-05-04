@@ -115,7 +115,6 @@ export default function SettingsPage() {
   }
 
   const validate = (): string => {
-    if (!form.name.trim()) return '便の名称を入力してください'
     if (!form.days_of_week.length) return '出る曜日を1つ以上選んでください'
     if (!form.departure_time) return '出発時刻を入力してください'
     const cap = Number(form.max_capacity)
@@ -130,9 +129,10 @@ export default function SettingsPage() {
     setSaving(true)
     setError('')
     try {
+      const resolvedName = form.name.trim() || (form.bin_type === 'day' ? '昼便' : '夜便')
       const payload = {
         vessel_id: vesselId,
-        name: form.name,
+        name: resolvedName,
         bin_type: form.bin_type,
         start_month: form.start_month,
         end_month: form.end_month,
@@ -322,8 +322,11 @@ export default function SettingsPage() {
 
             {/* 便の名前 */}
             <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '10px' }}>
-                便の名前 <span style={{ background: '#B91C1C', color: '#fff', fontSize: '11px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151', marginBottom: '4px' }}>
+                便の名前 <span style={{ fontSize: '14px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
+              </div>
+              <div style={{ fontSize: '14px', color: '#9CA3AF', marginBottom: '8px' }}>
+                空欄の場合は「{form.bin_type === 'day' ? '昼便' : '夜便'}」として登録されます
               </div>
               <input
                 type="text"

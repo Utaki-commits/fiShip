@@ -23,18 +23,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '必須項目が不足しています' }, { status: 400 })
     }
 
-    // 同じ便名称の設定がすでに存在するか確認（名称が指定されている場合のみ）
-    if (name && name.trim()) {
+    // 同じ便名称の設定がすでに存在するか確認
+    const checkName = (name || '').trim()
+    if (checkName) {
       const { data: existing } = await supabase
         .from('bin_settings')
         .select('id')
         .eq('vessel_id', vessel_id)
-        .eq('name', name.trim())
+        .eq('name', checkName)
         .maybeSingle()
 
       if (existing) {
         return NextResponse.json(
-          { error: `「${name}」という名前の便はすでに設定されています` },
+          { error: `「${checkName}」という名前の便はすでに設定されています` },
           { status: 409 }
         )
       }
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
       .from('bin_settings')
       .insert([{
         vessel_id,
-        name: name || null,
+        name: checkName || null,
         bin_type,
         start_month: Number(start_month),
         end_month: Number(end_month),
@@ -81,10 +82,28 @@ export async function PATCH(req: NextRequest) {
 
     if (!id) return NextResponse.json({ error: 'idが必要です' }, { status: 400 })
 
+    // 同じ便名称が他の設定に存在しないか確認（自分自身は除く）
+    const patchName = (name || '').trim()
+    if (patchName) {
+      const { data: existing } = await supabase
+        .from('bin_settings')
+        .select('id, vessel_id')
+        .eq('name', patchName)
+        .neq('id', id)
+        .maybeSingle()
+
+      if (existing) {
+        return NextResponse.json(
+          { error: `「${patchName}」という名前の便はすでに設定されています` },
+          { status: 409 }
+        )
+      }
+    }
+
     const { data, error } = await supabase
       .from('bin_settings')
       .update({
-        name: name || null,
+        name: patchName || null,
         bin_type,
         start_month: Number(start_month),
         end_month: Number(end_month),
