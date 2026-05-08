@@ -130,6 +130,13 @@ export default function SettingsPage() {
     setError('')
     try {
       const resolvedName = form.name.trim() || (form.bin_type === 'day' ? '昼便' : '夜便')
+      const hasSameName = settings.some(s =>
+        (s.name || '').trim() === resolvedName && s.id !== editingId
+      )
+      if (hasSameName) {
+        setError(`「${resolvedName}」という名前の便はすでに設定されています`)
+        return
+      }
       const payload = {
         vessel_id: vesselId,
         name: resolvedName,

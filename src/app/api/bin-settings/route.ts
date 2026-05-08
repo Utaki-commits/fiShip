@@ -85,11 +85,17 @@ export async function PATCH(req: NextRequest) {
     // 同じ便名称が他の設定に存在しないか確認（自分自身は除く）
     const patchName = (name || '').trim()
     if (patchName) {
-      const { data: existing } = await supabase
+      let existingQuery = supabase
         .from('bin_settings')
         .select('id, vessel_id')
         .eq('name', patchName)
         .neq('id', id)
+
+      if (body.vessel_id) {
+        existingQuery = existingQuery.eq('vessel_id', body.vessel_id)
+      }
+
+      const { data: existing } = await existingQuery
         .maybeSingle()
 
       if (existing) {
