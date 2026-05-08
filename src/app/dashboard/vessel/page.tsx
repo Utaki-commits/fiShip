@@ -72,6 +72,8 @@ const availabilityLabel = (value: boolean) => value ? 'あり' : 'なし'
 
 const choiceLabel = (value: string, labels: Record<string, string>) => labels[value] ?? 'なし'
 
+const parkingLabel = (value: Facilities['parking']) => choiceLabel(value, { free: 'あり', paid: '有料', none: 'なし' })
+
 const facilityDisplayCategories: FacilityDisplayCategory[] = [
   {
     title: '釣り道具',
@@ -84,7 +86,6 @@ const facilityDisplayCategories: FacilityDisplayCategory[] = [
   {
     title: '船内設備',
     items: [
-      { label: '駐車場', value: facilities => choiceLabel(facilities.parking, { free: '無料', paid: '有料', none: 'なし' }) },
       { label: 'トイレ', value: facilities => availabilityLabel(facilities.toilet) },
       { label: 'クーラーボックス', value: facilities => availabilityLabel(facilities.cooler) },
       { label: '生け簀', value: facilities => availabilityLabel(facilities.live_well) },
@@ -380,6 +381,7 @@ export default function VesselPage() {
                   { label: '船長名', value: vessel.captain_name },
                   { label: '出船場所', value: `${vessel.prefecture}・${vessel.port_name}` },
                   { label: 'アクセス', value: vessel.access || '未設定' },
+                  { label: '駐車場', value: parkingLabel(facilities.parking) },
                   { label: '乗船料金', value: vessel.price || '未設定' },
                   { label: '定員', value: `${vessel.capacity}名` },
                   { label: '初心者歓迎', value: vessel.beginner_accepted ? 'はい' : 'いいえ' },
@@ -508,9 +510,35 @@ export default function VesselPage() {
               <input
                 value={form.access}
                 onChange={e => update('access', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '0', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
                 placeholder="例：筑前前原駅から車で15分"
               />
+
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>駐車場</div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[
+                  { value: 'free', label: 'あり' },
+                  { value: 'none', label: 'なし' },
+                  { value: 'paid', label: '有料' },
+                ].map(option => {
+                  const currentParking = (form.facilities || defaultFacilities()).parking
+                  return (
+                    <button
+                      key={option.value}
+                      onClick={() => updateFacility('parking', option.value)}
+                      style={{
+                        flex: 1, padding: '12px 4px', borderRadius: '8px', fontSize: '16px', fontWeight: 700,
+                        background: currentParking === option.value ? '#E8F4FD' : '#F8F9FA',
+                        color: currentParking === option.value ? '#0A3D62' : '#9CA3AF',
+                        border: currentParking === option.value ? '2px solid #2E86C1' : '2px solid transparent',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             {/* 乗船料金（釣り物別に設定可） */}
@@ -531,7 +559,7 @@ export default function VesselPage() {
             {/* 設備・サービス */}
             {(() => {
               const fac = form?.facilities || defaultFacilities()
-              const threeChoice = (key: 'tackle_rental' | 'ice' | 'parking' | 'cleaning', label: string, opts: readonly { v: string; l: string }[]) => {
+              const threeChoice = (key: 'tackle_rental' | 'ice' | 'cleaning', label: string, opts: readonly { v: string; l: string }[]) => {
                 const cur = (fac as Record<string, unknown>)[key] as string
                 return (
                   <div key={key} style={{ marginBottom: '10px' }}>
@@ -568,7 +596,6 @@ export default function VesselPage() {
                   {toggle('rod_holder', 'ロッドホルダー')}
 
                   {catHeader('船内設備')}
-                  {threeChoice('parking', '駐車場', [{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }])}
                   {toggle('toilet', 'トイレ')}
                   {toggle('cooler', 'クーラーボックス')}
                   {toggle('live_well', '生け簀')}
