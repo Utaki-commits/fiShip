@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -107,29 +107,29 @@ export default function LoginPage() {
 
   return (
     <main style={{
-      minHeight: '100vh', background: '#0A3D62',
+      minHeight: '100vh', background: 'var(--ocean)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
     }}>
       <div style={{
-        background: '#fff', borderRadius: '16px', padding: '32px 24px',
+        background: 'var(--surface)', borderRadius: '16px', padding: '32px 24px',
         width: '100%', maxWidth: '400px', fontFamily: 'sans-serif',
       }}>
         {/* アイコン・タイトル */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div style={{
-            width: '56px', height: '56px', background: '#D4AC0D', borderRadius: '14px',
+            width: '56px', height: '56px', background: 'var(--gold)', borderRadius: '14px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '28px', margin: '0 auto 12px',
           }}>⚓</div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#111827' }}>{title}</div>
-          <div style={{ fontSize: '13px', color: '#9CA3AF', marginTop: '4px' }}>{sub}</div>
+          <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)' }}>{title}</div>
+          <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '4px' }}>{sub}</div>
         </div>
 
         {/* エラー */}
         {error && (
           <div style={{
-            background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: '8px',
-            padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#B91C1C',
+            background: 'var(--status-full-bg)', border: '1px solid var(--status-full-bd)', borderRadius: '8px',
+            padding: '10px 14px', marginBottom: '16px', fontSize: '14px', color: 'var(--status-full-fg)',
           }}>
             {error}
           </div>
@@ -138,8 +138,8 @@ export default function LoginPage() {
         {/* 完了メッセージ */}
         {message && (
           <div style={{
-            background: '#D4EDDA', border: '1px solid #86EFAC', borderRadius: '8px',
-            padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: '#1B6B3A', lineHeight: 1.6,
+            background: 'var(--status-ok-bg)', border: '1px solid var(--status-ok-bd)', borderRadius: '8px',
+            padding: '12px 14px', marginBottom: '16px', fontSize: '14px', color: 'var(--status-ok-fg)', lineHeight: 1.6,
           }}>
             {message}
           </div>
@@ -150,7 +150,7 @@ export default function LoginPage() {
             {/* メールアドレス（新パスワード設定画面では非表示） */}
             {mode !== 'new-password' && (
               <div style={{ marginBottom: '14px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '6px' }}>
                   メールアドレス
                 </div>
                 <input
@@ -161,7 +161,7 @@ export default function LoginPage() {
                   placeholder="例：yamada@example.com"
                   style={{
                     width: '100%', padding: '14px', fontSize: '15px',
-                    border: '2px solid #E5E7EB', borderRadius: '10px',
+                    border: '2px solid var(--border)', borderRadius: '10px',
                     outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
                   }}
                 />
@@ -171,7 +171,7 @@ export default function LoginPage() {
             {/* パスワード（リセット以外で表示） */}
             {mode !== 'reset' && (
               <div style={{ marginBottom: (mode === 'signup' || mode === 'new-password') ? '14px' : '24px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '6px' }}>
                   {mode === 'new-password' ? '新しいパスワード（8文字以上）' : `パスワード${mode === 'signup' ? '（8文字以上）' : ''}`}
                 </div>
                 <input
@@ -182,7 +182,7 @@ export default function LoginPage() {
                   placeholder={mode === 'signup' || mode === 'new-password' ? '8文字以上で入力' : 'パスワードを入力'}
                   style={{
                     width: '100%', padding: '14px', fontSize: '15px',
-                    border: '2px solid #E5E7EB', borderRadius: '10px',
+                    border: '2px solid var(--border)', borderRadius: '10px',
                     outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
                   }}
                 />
@@ -192,7 +192,7 @@ export default function LoginPage() {
             {/* パスワード確認（新規登録・新パスワード設定で表示） */}
             {(mode === 'signup' || mode === 'new-password') && (
               <div style={{ marginBottom: '24px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '6px' }}>
                   パスワード（確認）
                 </div>
                 <input
@@ -203,7 +203,7 @@ export default function LoginPage() {
                   placeholder="もう一度入力"
                   style={{
                     width: '100%', padding: '14px', fontSize: '15px',
-                    border: '2px solid #E5E7EB', borderRadius: '10px',
+                    border: '2px solid var(--border)', borderRadius: '10px',
                     outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
                   }}
                 />
@@ -218,8 +218,8 @@ export default function LoginPage() {
               disabled={loading}
               style={{
                 width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700,
-                background: loading ? '#E5E7EB' : '#0A3D62',
-                color: loading ? '#9CA3AF' : '#fff',
+                background: loading ? 'var(--border)' : 'var(--ocean)',
+                color: loading ? 'var(--fg-3)' : 'var(--surface)',
                 border: 'none', borderRadius: '12px',
                 cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
               }}
@@ -235,13 +235,13 @@ export default function LoginPage() {
             <>
               <button
                 onClick={() => switchMode('reset')}
-                style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}
+                style={{ background: 'none', border: 'none', color: 'var(--fg-2)', fontSize: '14px', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}
               >
                 パスワードを忘れた方はこちら
               </button>
               <button
                 onClick={() => switchMode('signup')}
-                style={{ background: 'none', border: 'none', color: '#0A3D62', fontSize: '13px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}
+                style={{ background: 'none', border: 'none', color: 'var(--ocean)', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}
               >
                 新規登録はこちら →
               </button>
@@ -250,7 +250,7 @@ export default function LoginPage() {
           {(mode === 'signup' || mode === 'reset') && (
             <button
               onClick={() => switchMode('login')}
-              style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}
+              style={{ background: 'none', border: 'none', color: 'var(--fg-2)', fontSize: '14px', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}
             >
               ← ログインに戻る
             </button>
@@ -260,3 +260,6 @@ export default function LoginPage() {
     </main>
   )
 }
+
+
+

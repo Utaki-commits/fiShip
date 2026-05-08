@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -239,24 +239,24 @@ export default function ReservePage() {
 
     // 昼便バンドの色・ラベル
     const dayBg = dayBin
-      ? (dayBin.isFull ? '#FEE2E2' : '#E8F4FD')
+      ? (dayBin.isFull ? 'var(--status-full-bg)' : 'var(--status-day-bg)')
       : null
     const dayLabel = dayBin
       ? (dayBin.isFull ? '昼　満員' : `昼　残${dayBin.remaining}`)
       : null
     const dayTextColor = dayBin
-      ? (dayBin.isFull || dayBin.remaining <= 2 ? '#B91C1C' : '#0A3D62')
+      ? (dayBin.isFull || dayBin.remaining <= 2 ? 'var(--status-full-fg)' : 'var(--ocean)')
       : null
 
     // 夜便バンドの色・ラベル
     const nightBg = nightBin
-      ? (nightBin.isFull ? '#FEE2E2' : '#EEF2FF')
+      ? (nightBin.isFull ? 'var(--status-full-bg)' : 'var(--status-night-bg)')
       : null
     const nightLabel = nightBin
       ? (nightBin.isFull ? '夜　満員' : `夜　残${nightBin.remaining}`)
       : null
     const nightTextColor = nightBin
-      ? (nightBin.isFull || nightBin.remaining <= 2 ? '#B91C1C' : '#4338CA')
+      ? (nightBin.isFull || nightBin.remaining <= 2 ? 'var(--status-full-fg)' : 'var(--status-night-fg)')
       : null
 
     return (
@@ -268,22 +268,22 @@ export default function ReservePage() {
           minHeight: '72px', transition: 'border-color .15s',
           cursor: isPast || (!hasAvailable && bins.length > 0) ? 'default' : bins.length === 0 ? 'default' : 'pointer',
           opacity: isPast ? 0.4 : 1,
-          border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
+          border: isSelected ? '2px solid var(--ocean)' : isToday ? '2px solid var(--gold)' : '2px solid transparent',
         }}
       >
         {/* 上段：日付 + 祝日名 */}
         <div style={{
           display: 'flex', alignItems: 'flex-start', padding: '2px 3px', flexShrink: 0,
-          background: bins.length === 0 ? (isPast ? '#F8F9FA' : '#F3F4F6') : '#fff',
+          background: bins.length === 0 ? (isPast ? 'var(--bg)' : 'var(--status-closed-bg)') : 'var(--surface)',
           borderBottom: bins.length > 0 ? '1px solid rgba(0,0,0,0.05)' : 'none',
         }}>
           <div>
             <span style={{
-              fontSize: '11px', fontWeight: 700,
-              color: (holiday || dow === 0) ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
+              fontSize: '14px', fontWeight: 700,
+              color: (holiday || dow === 0) ? 'var(--status-full-fg)' : dow === 6 ? 'var(--ocean-light)' : 'var(--fg-1)',
             }}>{day}</span>
             {holiday && (
-              <div style={{ fontSize: '7px', color: '#B91C1C', fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '30px' }}>
+              <div style={{ fontSize: '14px', color: 'var(--status-full-fg)', fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '30px' }}>
                 {holiday.name}
               </div>
             )}
@@ -292,17 +292,17 @@ export default function ReservePage() {
 
         {/* 中・下段：便バンドを均等分割して中央寄せ */}
         {bins.length === 0 ? (
-          <div style={{ flex: 1, background: isPast ? '#F8F9FA' : '#F3F4F6' }} />
+          <div style={{ flex: 1, background: isPast ? 'var(--bg)' : 'var(--status-closed-bg)' }} />
         ) : (
           <>
             {dayBin && (
               <div style={{ flex: 1, background: dayBg!, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: nightBin ? '1px solid rgba(0,0,0,0.05)' : undefined }}>
-                <span style={{ fontSize: '10px', fontWeight: 700, color: dayTextColor!, whiteSpace: 'nowrap' }}>{dayLabel}</span>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: dayTextColor!, whiteSpace: 'nowrap' }}>{dayLabel}</span>
               </div>
             )}
             {nightBin && (
               <div style={{ flex: 1, background: nightBg!, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '10px', fontWeight: 700, color: nightTextColor!, whiteSpace: 'nowrap' }}>{nightLabel}</span>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: nightTextColor!, whiteSpace: 'nowrap' }}>{nightLabel}</span>
               </div>
             )}
           </>
@@ -330,19 +330,19 @@ export default function ReservePage() {
   const maxCount = activeBinInfo?.remaining ?? 1
 
   if (loading) return (
-    <main style={{ minHeight: '100vh', background: '#0A3D62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#fff', fontSize: '16px' }}>読み込み中...</div>
+    <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: 'var(--surface)', fontSize: '16px' }}>読み込み中...</div>
     </main>
   )
 
   if (!vessel) return (
-    <main style={{ minHeight: '100vh', background: '#F8F9FA', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
+    <main style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚓</div>
-        <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>
+        <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>
           {fetchError || '船の情報が見つかりません'}
         </div>
-        <div style={{ fontSize: '13px', color: '#6B7280' }}>
+        <div style={{ fontSize: '14px', color: 'var(--fg-2)' }}>
           {fetchError ? 'QRコードや案内リンクからアクセスしてください' : 'URLが正しいか確認してください'}
         </div>
       </div>
@@ -350,30 +350,30 @@ export default function ReservePage() {
   )
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F8F9FA', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'sans-serif' }}>
 
       {/* ヘッダー */}
-      <div style={{ background: '#0A3D62', padding: '20px 16px 34px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', bottom: '-16px', left: 0, right: 0, height: '32px', background: '#F8F9FA', borderRadius: '50% 50% 0 0 / 100% 100% 0 0' }} />
+      <div style={{ background: 'var(--ocean)', padding: '20px 16px 34px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', bottom: '-16px', left: 0, right: 0, height: '32px', background: 'var(--bg)', borderRadius: '50% 50% 0 0 / 100% 100% 0 0' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-          <div style={{ width: '48px', height: '48px', background: '#D4AC0D', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>⚓</div>
+          <div style={{ width: '48px', height: '48px', background: 'var(--gold)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>⚓</div>
           <div>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>{vessel.name}</div>
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)', marginTop: '2px' }}>{vessel.captain_name} 船長</div>
+            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>{vessel.name}</div>
+            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)', marginTop: '2px' }}>{vessel.captain_name} 船長</div>
           </div>
         </div>
-        <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>
+        <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>
           📍 {vessel.prefecture}・{vessel.port_name}
         </div>
         {vessel.price && (
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#D4AC0D', marginBottom: '6px' }}>{formatPrice(vessel.price)}</div>
+          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--gold)', marginBottom: '6px' }}>{formatPrice(vessel.price)}</div>
         )}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {vessel.beginner_accepted && (
-            <span style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: '11px', padding: '3px 10px', borderRadius: '99px' }}>初心者歓迎</span>
+            <span style={{ background: 'rgba(255,255,255,0.15)', color: 'var(--surface)', fontSize: '14px', padding: '3px 10px', borderRadius: '99px' }}>初心者歓迎</span>
           )}
           {vessel.charter_accepted && (
-            <span style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: '11px', padding: '3px 10px', borderRadius: '99px' }}>貸切OK</span>
+            <span style={{ background: 'rgba(255,255,255,0.15)', color: 'var(--surface)', fontSize: '14px', padding: '3px 10px', borderRadius: '99px' }}>貸切OK</span>
           )}
         </div>
       </div>
@@ -381,25 +381,25 @@ export default function ReservePage() {
       <div style={{ padding: '12px' }}>
 
         {/* カレンダー */}
-        <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827', marginBottom: '4px', textAlign: 'center' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px', textAlign: 'center' }}>
             ご希望の日を選んでください
           </div>
-          <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '12px', textAlign: 'center' }}>
+          <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginBottom: '12px', textAlign: 'center' }}>
             色のついた日をタップすると予約フォームが開きます
           </div>
 
           {/* 凡例 */}
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
             {[
-              { bg: '#E8F4FD', color: '#0A3D62', label: '昼便' },
-              { bg: '#EEF2FF', color: '#4338CA', label: '夜便' },
-              { bg: '#FEE2E2', color: '#B91C1C', label: '満員' },
-              { bg: '#F3F4F6', color: '#9CA3AF', label: '休船日' },
+              { bg: 'var(--status-day-bg)', color: 'var(--ocean)', label: '昼便' },
+              { bg: 'var(--status-night-bg)', color: 'var(--status-night-fg)', label: '夜便' },
+              { bg: 'var(--status-full-bg)', color: 'var(--status-full-fg)', label: '満員' },
+              { bg: 'var(--status-closed-bg)', color: 'var(--fg-3)', label: '休船日' },
             ].map(({ bg, color, label }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <div style={{ width: '12px', height: '12px', borderRadius: '2px', background: bg }} />
-                <span style={{ fontSize: '10px', color, fontWeight: 700 }}>{label}</span>
+                <span style={{ fontSize: '14px', color, fontWeight: 700 }}>{label}</span>
               </div>
             ))}
           </div>
@@ -408,19 +408,19 @@ export default function ReservePage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <button
               onClick={() => { if (calM === 0) { setCalM(11); setCalYear(y => y - 1) } else setCalM(m => m - 1) }}
-              style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#F8F9FA', border: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px' }}
+              style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}
             >◀</button>
-            <span style={{ fontSize: '17px', fontWeight: 700, color: '#111827' }}>{calYear}年{MONTH_NAMES[calM]}</span>
+            <span style={{ fontSize: '17px', fontWeight: 700, color: 'var(--fg-1)' }}>{calYear}年{MONTH_NAMES[calM]}</span>
             <button
               onClick={() => { if (calM === 11) { setCalM(0); setCalYear(y => y + 1) } else setCalM(m => m + 1) }}
-              style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#F8F9FA', border: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px' }}
+              style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}
             >▶</button>
           </div>
 
           {/* 曜日ヘッダー */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '2px', marginBottom: '4px' }}>
             {DAY_NAMES.map((d, i) => (
-              <div key={d} style={{ fontSize: '11px', fontWeight: 700, textAlign: 'center', color: i === 0 ? '#B91C1C' : i === 6 ? '#2E86C1' : '#9CA3AF' }}>{d}</div>
+              <div key={d} style={{ fontSize: '14px', fontWeight: 700, textAlign: 'center', color: i === 0 ? 'var(--status-full-fg)' : i === 6 ? 'var(--ocean-light)' : 'var(--fg-3)' }}>{d}</div>
             ))}
           </div>
 
@@ -432,29 +432,29 @@ export default function ReservePage() {
 
         {/* 予約フォーム */}
         {selectedDate && !completed && (
-          <div id="reserve-form" style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
+          <div id="reserve-form" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
 
             {/* フォームヘッダー */}
-            <div style={{ background: '#0A3D62', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ background: 'var(--ocean)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--surface)' }}>
                   {(() => { const d = new Date(selectedDate + 'T00:00:00'); return `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）の予約` })()}
                 </div>
                 {activeBinInfo && (
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
+                  <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
                     残り {activeBinInfo.remaining}名
                   </div>
                 )}
               </div>
               <button
                 onClick={() => { setSelectedDate(null); setCompleted(null) }}
-                style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', color: '#fff', fontSize: '16px', cursor: 'pointer' }}
+                style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', color: 'var(--surface)', fontSize: '16px', cursor: 'pointer' }}
               >✕</button>
             </div>
 
             <div style={{ padding: '16px' }}>
               {formError && (
-                <p style={{ fontSize: '13px', fontWeight: 700, color: '#B91C1C', margin: '0 0 12px', padding: 0, lineHeight: 1.5 }}>
+                <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--status-full-fg)', margin: '0 0 12px', padding: 0, lineHeight: 1.5 }}>
                   ⚠ {formError}
                 </p>
               )}
@@ -462,7 +462,7 @@ export default function ReservePage() {
               {/* 便の種類（複数便がある日のみ表示） */}
               {selectedBins.length > 1 && (
                 <>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', marginBottom: '8px' }}>便の種類</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '8px' }}>便の種類</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                     {selectedBins.map(b => {
                       const isDay = b.setting.bin_type === 'day'
@@ -475,20 +475,20 @@ export default function ReservePage() {
                           style={{
                             padding: '14px 8px', textAlign: 'center', borderRadius: '10px',
                             cursor: b.isFull ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                            background: b.isFull ? '#F8F9FA' : isActive ? (isDay ? '#E8F4FD' : '#EEF2FF') : '#fff',
+                            background: b.isFull ? 'var(--bg)' : isActive ? (isDay ? 'var(--status-day-bg)' : 'var(--status-night-bg)') : 'var(--surface)',
                             border: isActive
-                              ? `2px solid ${isDay ? '#2E86C1' : '#4338CA'}`
-                              : '2px solid #E5E7EB',
+                              ? `2px solid ${isDay ? 'var(--ocean-light)' : 'var(--status-night-fg)'}`
+                              : '2px solid var(--border)',
                             opacity: b.isFull ? 0.5 : 1,
                           }}
                         >
-                          <div style={{ fontSize: '15px', fontWeight: 700, color: b.isFull ? '#9CA3AF' : isActive ? (isDay ? '#0A3D62' : '#4338CA') : '#6B7280' }}>
+                          <div style={{ fontSize: '15px', fontWeight: 700, color: b.isFull ? 'var(--fg-3)' : isActive ? (isDay ? 'var(--ocean)' : 'var(--status-night-fg)') : 'var(--fg-2)' }}>
                             {isDay ? '☀️ 昼便' : '🌙 夜便'}
                           </div>
-                          <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '4px' }}>
+                          <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '4px' }}>
                             {b.isFull ? '満員' : `残り${b.remaining}名`}
                           </div>
-                          <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
+                          <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '2px' }}>
                             {b.setting.departure_time} 出発
                           </div>
                         </button>
@@ -500,13 +500,13 @@ export default function ReservePage() {
 
               {/* 単便のとき出発時刻を表示 */}
               {selectedBins.length === 1 && activeBinInfo && (
-                <div style={{ background: activeBinInfo.setting.bin_type === 'day' ? '#E8F4FD' : '#EEF2FF', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ background: activeBinInfo.setting.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontSize: '18px' }}>{activeBinInfo.setting.bin_type === 'day' ? '☀️' : '🌙'}</span>
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: activeBinInfo.setting.bin_type === 'day' ? '#0A3D62' : '#4338CA' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: activeBinInfo.setting.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
                       {activeBinInfo.setting.bin_type === 'day' ? '昼便' : '夜便'}　{activeBinInfo.setting.departure_time} 出発
                     </div>
-                    <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>残り {activeBinInfo.remaining}名</div>
+                    <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>残り {activeBinInfo.remaining}名</div>
                   </div>
                 </div>
               )}
@@ -514,10 +514,10 @@ export default function ReservePage() {
               {/* 魚種表示（設定されていれば） */}
               {activeBinInfo && activeBinInfo.setting.fish_types.length > 0 && (
                 <div style={{ marginBottom: '16px' }}>
-                  <div style={{ fontSize: '12px', color: '#9CA3AF', fontWeight: 700, marginBottom: '6px' }}>この便で釣れる魚</div>
+                  <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700, marginBottom: '6px' }}>この便で釣れる魚</div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {activeBinInfo.setting.fish_types.map(f => (
-                      <span key={f} style={{ fontSize: '13px', background: '#F3F4F6', color: '#374151', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>
+                      <span key={f} style={{ fontSize: '14px', background: 'var(--status-closed-bg)', color: 'var(--fg-1)', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>
                         {f}
                       </span>
                     ))}
@@ -526,22 +526,22 @@ export default function ReservePage() {
               )}
 
               {/* お名前 */}
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
-                お名前 <span style={{ background: '#B91C1C', color: '#fff', fontSize: '9px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
+              <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
+                お名前 <span style={{ background: 'var(--status-full-fg)', color: 'var(--surface)', fontSize: '14px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
               </label>
               <input
-                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
                 placeholder="例：山田 太郎"
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               />
 
               {/* 電話番号 */}
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
-                電話番号 <span style={{ background: '#B91C1C', color: '#fff', fontSize: '9px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
+              <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
+                電話番号 <span style={{ background: 'var(--status-full-fg)', color: 'var(--surface)', fontSize: '14px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
               </label>
               <input
-                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
                 placeholder="例：090-1234-5678"
                 type="tel"
                 value={form.tel}
@@ -549,41 +549,41 @@ export default function ReservePage() {
               />
 
               {/* 人数 */}
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '10px' }}>
-                人数 <span style={{ background: '#B91C1C', color: '#fff', fontSize: '9px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
+              <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '10px' }}>
+                人数 <span style={{ background: 'var(--status-full-fg)', color: 'var(--surface)', fontSize: '14px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
               </label>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '16px', padding: '12px', background: '#F8F9FA', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '16px', padding: '12px', background: 'var(--bg)', borderRadius: '12px' }}>
                 <button
                   onClick={() => setForm(f => ({ ...f, count: Math.max(1, f.count - 1) }))}
-                  style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fff', border: '2px solid #E5E7EB', cursor: 'pointer', fontSize: '20px', fontWeight: 700 }}
+                  style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '20px', fontWeight: 700 }}
                 >－</button>
                 <div style={{ textAlign: 'center', minWidth: '60px' }}>
-                  <span style={{ fontSize: '28px', fontWeight: 700, color: '#0A3D62' }}>{form.count}</span>
-                  <span style={{ fontSize: '16px', fontWeight: 700, color: '#0A3D62' }}>名</span>
+                  <span style={{ fontSize: '28px', fontWeight: 700, color: 'var(--ocean)' }}>{form.count}</span>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)' }}>名</span>
                 </div>
                 <button
                   onClick={() => setForm(f => ({ ...f, count: Math.min(maxCount, f.count + 1) }))}
-                  style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fff', border: '2px solid #E5E7EB', cursor: 'pointer', fontSize: '20px', fontWeight: 700 }}
+                  style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '20px', fontWeight: 700 }}
                 >＋</button>
               </div>
 
               {/* 釣り方（任意） */}
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
-                釣り方 <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
+              <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
+                釣り方 <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（任意）</span>
               </label>
               <input
-                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
                 placeholder="例：泳がせ、一つテンヤ"
                 value={form.fishing_style}
                 onChange={e => setForm(f => ({ ...f, fishing_style: e.target.value }))}
               />
 
               {/* メッセージ（任意） */}
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
-                一言メッセージ <span style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 400 }}>（任意）</span>
+              <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
+                一言メッセージ <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（任意）</span>
               </label>
               <textarea
-                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid #E5E7EB', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '18px', boxSizing: 'border-box', resize: 'none', height: '80px' }}
+                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '18px', boxSizing: 'border-box', resize: 'none', height: '80px' }}
                 placeholder="質問・ご要望があればどうぞ"
                 value={form.message}
                 onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
@@ -595,8 +595,8 @@ export default function ReservePage() {
                 disabled={submitting}
                 style={{
                   width: '100%', padding: '17px', fontSize: '17px', fontWeight: 700,
-                  background: submitting ? '#E5E7EB' : '#0A3D62',
-                  color: submitting ? '#9CA3AF' : '#fff',
+                  background: submitting ? 'var(--border)' : 'var(--ocean)',
+                  color: submitting ? 'var(--fg-3)' : 'var(--surface)',
                   border: 'none', borderRadius: '12px',
                   cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                 }}
@@ -612,23 +612,23 @@ export default function ReservePage() {
           <div
             id="reserve-form"
             style={{
-              background: completed.isImmediate ? '#D4EDDA' : '#FEF3C7',
-              border: `1px solid ${completed.isImmediate ? '#86EFAC' : '#FCD34D'}`,
+              background: completed.isImmediate ? 'var(--status-ok-bg)' : 'var(--status-pending-bg)',
+              border: `1px solid ${completed.isImmediate ? 'var(--status-ok-bd)' : 'var(--status-pending-dot)'}`,
               borderRadius: '14px', padding: '24px 20px', marginBottom: '12px', textAlign: 'center',
             }}
           >
             <div style={{ fontSize: '40px', marginBottom: '10px' }}>{completed.isImmediate ? '✅' : '⏳'}</div>
-            <div style={{ fontSize: '17px', fontWeight: 700, color: completed.isImmediate ? '#1B6B3A' : '#92400E', marginBottom: '8px' }}>
+            <div style={{ fontSize: '17px', fontWeight: 700, color: completed.isImmediate ? 'var(--status-ok-fg)' : 'var(--status-pending-fg)', marginBottom: '8px' }}>
               {completed.isImmediate ? '予約が完了しました！' : '予約リクエストを受け付けました'}
             </div>
-            <div style={{ fontSize: '13px', color: completed.isImmediate ? '#1B6B3A' : '#92400E', marginBottom: '16px', lineHeight: 1.6 }}>
+            <div style={{ fontSize: '14px', color: completed.isImmediate ? 'var(--status-ok-fg)' : 'var(--status-pending-fg)', marginBottom: '16px', lineHeight: 1.6 }}>
               {completed.isImmediate
                 ? `${vessel.name}の予約が確定しました。\n当日はお気をつけてお越しください。`
                 : `船長が確認後、折り返しご連絡いたします。\nしばらくお待ちください。`}
             </div>
             <button
               onClick={() => { setSelectedDate(null); setCompleted(null) }}
-              style={{ padding: '12px 28px', fontSize: '14px', fontWeight: 700, background: '#0A3D62', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ padding: '12px 28px', fontSize: '14px', fontWeight: 700, background: 'var(--ocean)', color: 'var(--surface)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               別の日を予約する
             </button>
@@ -637,9 +637,9 @@ export default function ReservePage() {
 
         {/* アクセス情報 */}
         {vessel.access && (
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: '#6B7280', marginBottom: '8px' }}>アクセス</div>
-            <div style={{ fontSize: '14px', color: '#111827', lineHeight: 1.6 }}>{vessel.access}</div>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '8px' }}>アクセス</div>
+            <div style={{ fontSize: '14px', color: 'var(--fg-1)', lineHeight: 1.6 }}>{vessel.access}</div>
           </div>
         )}
 
@@ -647,3 +647,6 @@ export default function ReservePage() {
     </div>
   )
 }
+
+
+

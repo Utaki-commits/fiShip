@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -149,29 +149,29 @@ export default function DashboardPage() {
       const hasPending = bookings.some(b => b.date === dateStr && b.status === 'pending')
       const holiday = getHolidayInfo(new Date(year, month, day))
 
-      let dayBg = '#E8F4FD'
+      let dayBg = 'var(--status-day-bg)'
       let dayLabel: string | null = null
-      let dayTextColor = '#0A3D62'
+      let dayTextColor = 'var(--ocean)'
       if (dayBin) {
         const rem = getRemaining(dateStr, 'day', dayBin.max_capacity)
         if (rem <= 0) {
-          dayBg = '#FEE2E2'; dayLabel = '満員'; dayTextColor = '#B91C1C'
+          dayBg = 'var(--status-full-bg)'; dayLabel = '満員'; dayTextColor = 'var(--status-full-fg)'
         } else {
           dayLabel = `昼　残${rem}`
-          dayTextColor = rem <= 2 ? '#B91C1C' : '#0A3D62'
+          dayTextColor = rem <= 2 ? 'var(--status-full-fg)' : 'var(--ocean)'
         }
       }
 
-      let nightBg = '#EEF2FF'
+      let nightBg = 'var(--status-night-bg)'
       let nightLabel: string | null = null
-      let nightTextColor = '#4338CA'
+      let nightTextColor = 'var(--status-night-fg)'
       if (nightBin) {
         const rem = getRemaining(dateStr, 'night', nightBin.max_capacity)
         if (rem <= 0) {
-          nightBg = '#FEE2E2'; nightLabel = '満員'; nightTextColor = '#B91C1C'
+          nightBg = 'var(--status-full-bg)'; nightLabel = '満員'; nightTextColor = 'var(--status-full-fg)'
         } else {
           nightLabel = `夜　残${rem}`
-          nightTextColor = rem <= 2 ? '#B91C1C' : '#4338CA'
+          nightTextColor = rem <= 2 ? 'var(--status-full-fg)' : 'var(--status-night-fg)'
         }
       }
 
@@ -182,33 +182,33 @@ export default function DashboardPage() {
           style={{
             borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
             cursor: 'pointer', minHeight: '80px', transition: 'border-color .15s',
-            border: isSelected ? '2px solid #0A3D62' : isToday ? '2px solid #D4AC0D' : '2px solid transparent',
+            border: isSelected ? '2px solid var(--ocean)' : isToday ? '2px solid var(--gold)' : '2px solid transparent',
           }}
         >
           <div style={{
             display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
             padding: '3px 4px', flexShrink: 0,
-            background: !dayBin && !nightBin ? '#F8F9FA' : '#fff',
+            background: !dayBin && !nightBin ? 'var(--bg)' : 'var(--surface)',
             borderBottom: (dayBin || nightBin) ? '1px solid rgba(0,0,0,0.05)' : 'none',
           }}>
             <div>
               <span style={{
-                fontSize: '12px', fontWeight: 700,
-                color: (holiday || dow === 0) ? '#B91C1C' : dow === 6 ? '#2E86C1' : '#374151',
+                fontSize: '14px', fontWeight: 700,
+                color: (holiday || dow === 0) ? 'var(--status-full-fg)' : dow === 6 ? 'var(--ocean-light)' : 'var(--fg-1)',
               }}>{day}</span>
               {holiday && (
-                <div style={{ fontSize: '7px', color: '#B91C1C', fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '30px' }}>
+                <div style={{ fontSize: '14px', color: 'var(--status-full-fg)', fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '30px' }}>
                   {holiday.name}
                 </div>
               )}
             </div>
             {hasPending && (
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D97706', flexShrink: 0, marginTop: '2px' }} />
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--status-pending-dot)', flexShrink: 0, marginTop: '2px' }} />
             )}
           </div>
 
           {!dayBin && !nightBin ? (
-            <div style={{ flex: 1, background: '#F8F9FA' }} />
+            <div style={{ flex: 1, background: 'var(--bg)' }} />
           ) : (
             <>
               {dayBin && (
@@ -218,7 +218,7 @@ export default function DashboardPage() {
                   borderBottom: nightBin ? '1px solid rgba(0,0,0,0.06)' : undefined,
                 }}>
                   {dayLabel && (
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: dayTextColor, whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: dayTextColor, whiteSpace: 'nowrap' }}>
                       {dayLabel}
                     </span>
                   )}
@@ -230,7 +230,7 @@ export default function DashboardPage() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   {nightLabel && (
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: nightTextColor, whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: nightTextColor, whiteSpace: 'nowrap' }}>
                       {nightLabel}
                     </span>
                   )}
@@ -277,26 +277,26 @@ export default function DashboardPage() {
     : []
 
   if (loading) return (
-    <main style={{ minHeight: '100vh', background: '#0A3D62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#fff', fontSize: '16px' }}>読み込み中...</div>
+    <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: 'var(--surface)', fontSize: '16px' }}>読み込み中...</div>
     </main>
   )
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F8F9FA', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'sans-serif' }}>
 
       {/* トップバー */}
-      <div style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
-        <div style={{ width: '36px', height: '36px', background: '#D4AC0D', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>⚓</div>
+      <div style={{ background: 'var(--ocean)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
+        <div style={{ width: '36px', height: '36px', background: 'var(--gold)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>⚓</div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>{vessel?.name}</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--surface)' }}>{vessel?.name}</div>
         </div>
         {getPendingCount() > 0 && (
-          <div style={{ background: '#D97706', color: '#fff', fontSize: '14px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', whiteSpace: 'nowrap' }}>
+          <div style={{ background: 'var(--status-pending-dot)', color: 'var(--surface)', fontSize: '14px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', whiteSpace: 'nowrap' }}>
             承認待ち {getPendingCount()}件
           </div>
         )}
-        <button onClick={handleLogout} style={{ padding: '6px 12px', fontSize: '14px', fontWeight: 700, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+        <button onClick={handleLogout} style={{ padding: '6px 12px', fontSize: '14px', fontWeight: 700, background: 'rgba(255,255,255,0.15)', color: 'var(--surface)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
           ログアウト
         </button>
       </div>
@@ -308,15 +308,15 @@ export default function DashboardPage() {
           <div
             onClick={() => router.push('/dashboard/settings')}
             style={{
-              background: '#FFF3CD', border: '1px solid #FFC107', borderRadius: '12px',
+              background: 'var(--status-pending-bg)', border: '1px solid var(--status-pending-dot)', borderRadius: '12px',
               padding: '14px 16px', marginBottom: '12px', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: '12px',
             }}
           >
             <div style={{ fontSize: '24px', flexShrink: 0 }}>⚠️</div>
             <div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: '#856404' }}>出船スケジュールが未設定です</div>
-              <div style={{ fontSize: '14px', color: '#856404', marginTop: '2px' }}>タップして昼便・夜便のスケジュールを登録してください</div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--status-pending-fg)' }}>出船スケジュールが未設定です</div>
+              <div style={{ fontSize: '14px', color: 'var(--status-pending-fg)', marginTop: '2px' }}>タップして昼便・夜便のスケジュールを登録してください</div>
             </div>
           </div>
         )}
@@ -324,11 +324,11 @@ export default function DashboardPage() {
         {/* クイックアクションボタン */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
           {[
-            { icon: '💬', bg: '#E8F4FD', label: 'SNS・電話から\n取り込む', path: '/dashboard/extract' },
-            { icon: '👥', bg: '#F0FDF4', label: '顧客名簿\nを見る', path: '/dashboard/customers' },
-            { icon: '📋', bg: '#FFF7ED', label: '乗船名簿\nを記録する', path: '/dashboard/logs' },
-            { icon: '⚙️', bg: '#EEF2FF', label: '便の設定\nを変更する', path: '/dashboard/settings' },
-            { icon: '🔗', bg: '#FEF9C3', label: '予約URL\nを共有する', path: '/dashboard/vessel' },
+            { icon: '💬', bg: 'var(--status-day-bg)', label: 'SNS・電話から\n取り込む', path: '/dashboard/extract' },
+            { icon: '👥', bg: 'var(--status-ok-bg)', label: '顧客名簿\nを見る', path: '/dashboard/customers' },
+            { icon: '📋', bg: 'var(--status-pending-bg)', label: '乗船名簿\nを記録する', path: '/dashboard/logs' },
+            { icon: '⚙️', bg: 'var(--status-night-bg)', label: '便の設定\nを変更する', path: '/dashboard/settings' },
+            { icon: '🔗', bg: 'var(--status-pending-bg)', label: '予約リンク\nを共有する', path: '/dashboard/vessel' },
           ].map(({ icon, bg, label, path }) => (
             <button
               key={path}
@@ -336,18 +336,18 @@ export default function DashboardPage() {
               style={{
                 padding: '12px 8px',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
-                background: '#fff', border: '2px solid #E5E7EB', borderRadius: '12px',
+                background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: '12px',
                 cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center',
               }}
             >
               <div style={{ width: '36px', height: '36px', background: bg, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>{icon}</div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827', whiteSpace: 'pre-line', lineHeight: 1.4 }}>{label}</div>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-1)', whiteSpace: 'pre-line', lineHeight: 1.4 }}>{label}</div>
             </button>
           ))}
         </div>
 
         {/* カレンダー */}
-        <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '14px', marginBottom: '12px' }}>
 
           {/* ヘッダー：ナビ・タイトル・月/週トグル */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -356,23 +356,23 @@ export default function DashboardPage() {
                 ? () => { if (calM === 0) { setCalM(11); setCalYear(y => y - 1) } else setCalM(m => m - 1) }
                 : () => setWeekStart(d => { const p = new Date(d); p.setDate(d.getDate() - 7); return p })
               }
-              style={{ width: '44px', height: '44px', flexShrink: 0, borderRadius: '50%', background: '#F8F9FA', border: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px' }}
+              style={{ width: '44px', height: '44px', flexShrink: 0, borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}
             >◀</button>
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>
+              <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>
                 {view === 'month' ? `${calYear}年${MONTH_NAMES[calM]}` : weekLabel}
               </span>
               {/* 月 / 週 切り替えトグル */}
-              <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: '8px', padding: '2px', gap: '2px' }}>
+              <div style={{ display: 'flex', background: 'var(--status-closed-bg)', borderRadius: '8px', padding: '2px', gap: '2px' }}>
                 {(['month', 'week'] as const).map(v => (
                   <button
                     key={v}
                     onClick={() => switchView(v)}
                     style={{
                       padding: '4px 16px', fontSize: '14px', fontWeight: 700,
-                      background: view === v ? '#fff' : 'transparent',
-                      color: view === v ? '#0A3D62' : '#9CA3AF',
+                      background: view === v ? 'var(--surface)' : 'transparent',
+                      color: view === v ? 'var(--ocean)' : 'var(--fg-3)',
                       border: 'none', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit',
                       boxShadow: view === v ? '0 1px 2px rgba(0,0,0,.1)' : 'none',
                       transition: 'all .15s',
@@ -387,14 +387,14 @@ export default function DashboardPage() {
                 ? () => { if (calM === 11) { setCalM(0); setCalYear(y => y + 1) } else setCalM(m => m + 1) }
                 : () => setWeekStart(d => { const n = new Date(d); n.setDate(d.getDate() + 7); return n })
               }
-              style={{ width: '44px', height: '44px', flexShrink: 0, borderRadius: '50%', background: '#F8F9FA', border: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px' }}
+              style={{ width: '44px', height: '44px', flexShrink: 0, borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}
             >▶</button>
           </div>
 
           {/* 曜日ヘッダー */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '2px', marginBottom: '4px' }}>
             {DAY_NAMES.map((d, i) => (
-              <div key={d} style={{ fontSize: '12px', fontWeight: 700, textAlign: 'center', color: i === 0 ? '#B91C1C' : i === 6 ? '#2E86C1' : '#9CA3AF' }}>{d}</div>
+              <div key={d} style={{ fontSize: '14px', fontWeight: 700, textAlign: 'center', color: i === 0 ? 'var(--status-full-fg)' : i === 6 ? 'var(--ocean-light)' : 'var(--fg-3)' }}>{d}</div>
             ))}
           </div>
 
@@ -406,27 +406,27 @@ export default function DashboardPage() {
           {/* 凡例 */}
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
             {[
-              { bg: '#E8F4FD', color: '#0A3D62', label: '昼便' },
-              { bg: '#EEF2FF', color: '#4338CA', label: '夜便' },
-              { bg: '#FEE2E2', color: '#B91C1C', label: '満員・残2以下' },
+              { bg: 'var(--status-day-bg)', color: 'var(--ocean)', label: '昼便' },
+              { bg: 'var(--status-night-bg)', color: 'var(--status-night-fg)', label: '夜便' },
+              { bg: 'var(--status-full-bg)', color: 'var(--status-full-fg)', label: '満員・残2以下' },
             ].map(({ bg, color, label }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: bg, border: `1px solid ${color}22` }} />
-                <span style={{ fontSize: '12px', color: '#6B7280' }}>{label}</span>
+                <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: bg, border: '1px solid var(--border)' }} />
+                <span style={{ fontSize: '14px', color: 'var(--fg-2)' }}>{label}</span>
               </div>
             ))}
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#D97706' }} />
-              <span style={{ fontSize: '12px', color: '#6B7280' }}>承認待ち</span>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--status-pending-dot)' }} />
+              <span style={{ fontSize: '14px', color: 'var(--fg-2)' }}>承認待ち</span>
             </div>
           </div>
         </div>
 
         {/* 選択日の詳細パネル */}
         {selectedDate && (
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', marginBottom: '12px', overflow: 'hidden' }}>
-            <div style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', marginBottom: '12px', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--ocean)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--surface)' }}>
                 {(() => {
                   const d = new Date(selectedDate + 'T00:00:00')
                   return `${d.getMonth() + 1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）の予約`
@@ -439,25 +439,25 @@ export default function DashboardPage() {
             </div>
 
             {selectedBookings.length === 0 ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--fg-3)', fontSize: '14px' }}>
                 予約はありません
               </div>
             ) : (
               selectedBookings.map(b => (
-                <div key={b.id} style={{ padding: '14px 16px', borderBottom: '1px solid #F3F4F6' }}>
+                <div key={b.id} style={{ padding: '14px 16px', borderBottom: '1px solid var(--status-closed-bg)' }}>
 
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '10px' }}>
                     <span style={{
                       fontSize: '14px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', flexShrink: 0,
-                      background: b.bin_type === 'day' ? '#E8F4FD' : '#EEF2FF',
-                      color: b.bin_type === 'day' ? '#0A3D62' : '#4338CA',
+                      background: b.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)',
+                      color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)',
                     }}>
                       {b.bin_type === 'day' ? '昼便' : '夜便'}
                     </span>
 
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>{b.name}</div>
-                      <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '3px', lineHeight: 1.6 }}>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
+                      <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '3px', lineHeight: 1.6 }}>
                         {b.count}名{b.fishing_style ? `　${b.fishing_style}` : ''}
                         {b.message ? `\n${b.message}` : ''}
                       </div>
@@ -466,8 +466,8 @@ export default function DashboardPage() {
                     {b.status !== 'pending' && (
                       <span style={{
                         fontSize: '14px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', flexShrink: 0,
-                        background: b.status === 'confirmed' ? '#D4EDDA' : '#F3F4F6',
-                        color: b.status === 'confirmed' ? '#1B6B3A' : '#6B7280',
+                        background: b.status === 'confirmed' ? 'var(--status-ok-bg)' : 'var(--status-closed-bg)',
+                        color: b.status === 'confirmed' ? 'var(--status-ok-fg)' : 'var(--fg-2)',
                       }}>
                         {b.status === 'confirmed' ? '承認済み' : 'お断り'}
                       </span>
@@ -482,9 +482,9 @@ export default function DashboardPage() {
                           disabled={actionLoading === b.id}
                           style={{
                             flex: 1, padding: '10px', fontSize: '16px', fontWeight: 700,
-                            background: actionLoading === b.id ? '#E5E7EB' : '#D4EDDA',
-                            color: actionLoading === b.id ? '#9CA3AF' : '#1B6B3A',
-                            border: '1px solid #86EFAC', borderRadius: '8px',
+                            background: actionLoading === b.id ? 'var(--border)' : 'var(--status-ok-bg)',
+                            color: actionLoading === b.id ? 'var(--fg-3)' : 'var(--status-ok-fg)',
+                            border: '1px solid var(--status-ok-bd)', borderRadius: '8px',
                             cursor: actionLoading === b.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                           }}
                         >{actionLoading === b.id ? '処理中...' : '承認する'}</button>
@@ -493,9 +493,9 @@ export default function DashboardPage() {
                           disabled={actionLoading === b.id}
                           style={{
                             flex: 1, padding: '10px', fontSize: '16px', fontWeight: 700,
-                            background: actionLoading === b.id ? '#E5E7EB' : '#FEE2E2',
-                            color: actionLoading === b.id ? '#9CA3AF' : '#B91C1C',
-                            border: '1px solid #FCA5A5', borderRadius: '8px',
+                            background: actionLoading === b.id ? 'var(--border)' : 'var(--status-full-bg)',
+                            color: actionLoading === b.id ? 'var(--fg-3)' : 'var(--status-full-fg)',
+                            border: '1px solid var(--status-full-bd)', borderRadius: '8px',
                             cursor: actionLoading === b.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                           }}
                         >お断り</button>
@@ -506,7 +506,7 @@ export default function DashboardPage() {
                         href={`tel:${b.tel}`}
                         style={{
                           flex: 1, padding: '10px', fontSize: '16px', fontWeight: 700, textAlign: 'center',
-                          background: '#E8F4FD', color: '#0A3D62', border: '1px solid #BFDBFE',
+                          background: 'var(--status-day-bg)', color: 'var(--ocean)', border: '1px solid var(--ocean-light)',
                           borderRadius: '8px', textDecoration: 'none', display: 'block',
                         }}
                       >📞　電話する</a>
@@ -522,3 +522,6 @@ export default function DashboardPage() {
     </div>
   )
 }
+
+
+
