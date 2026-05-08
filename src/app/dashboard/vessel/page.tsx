@@ -328,35 +328,52 @@ export default function VesselPage() {
                 <div style={{ fontSize: '16px', fontWeight: 700, color: '#374151' }}>設備・サービス</div>
               </div>
               <div style={{ padding: '4px 0' }}>
-                {[
-                  { label: 'タックル貸出', value: facilities.tackle_rental === 'free' ? '無料' : facilities.tackle_rental === 'paid' ? '有料' : 'なし' },
-                  { label: '餌', value: facilities.bait ? 'あり' : 'なし' },
-                  { label: '氷', value: facilities.ice === 'sale' ? '販売' : facilities.ice === 'free' ? '無料' : 'なし' },
-                  { label: 'ライフジャケット', value: facilities.life_jacket ? 'あり' : 'なし' },
-                  { label: 'ロッドホルダー', value: facilities.rod_holder ? 'あり' : 'なし' },
-                  { label: '夜焚き用集魚灯', value: facilities.metal_light ? 'あり' : 'なし' },
-                  { label: 'トイレ', value: facilities.toilet ? 'あり' : 'なし' },
-                  { label: 'クーラーボックス', value: facilities.cooler ? 'あり' : 'なし' },
-                  { label: '生け簀', value: facilities.live_well ? 'あり' : 'なし' },
-                  { label: '海水循環装置', value: facilities.water_circulation ? 'あり' : 'なし' },
-                  { label: '電子レンジ', value: facilities.microwave ? 'あり' : 'なし' },
-                  { label: '湯沸かし器', value: facilities.kettle ? 'あり' : 'なし' },
-                  { label: '屋根日よけ', value: facilities.roof ? 'あり' : 'なし' },
-                  { label: 'キャスティングデッキ', value: facilities.casting_deck ? 'あり' : 'なし' },
-                  { label: 'アンチローリングジャイロ', value: facilities.gyro ? 'あり' : 'なし' },
-                  { label: 'ロッドキーパー', value: facilities.rod_keeper ? 'あり' : 'なし' },
-                  { label: '血抜き', value: facilities.bloodletting ? 'あり' : 'なし' },
-                  { label: '神経締め', value: facilities.ike_jime ? 'あり' : 'なし' },
-                  { label: '下処理', value: facilities.cleaning === 'free' ? '無料' : facilities.cleaning === 'paid' ? '有料' : 'なし' },
-                  { label: '駐車場', value: facilities.parking === 'free' ? '無料' : facilities.parking === 'paid' ? '有料' : 'なし' },
-                  { label: 'お支払い', value: [facilities.cash ? '現金' : '', facilities.credit ? 'クレジット' : '', facilities.paypay ? 'PayPay' : ''].filter(Boolean).join('・') || '未設定' },
-                  ...(facilities.payment ? [{ label: 'その他', value: facilities.payment }] : []),
-                ].map(({ label, value }) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #F3F4F6' }}>
-                    <span style={{ fontSize: '16px', color: '#6B7280', fontWeight: 700 }}>{label}</span>
-                    <span style={{ fontSize: '16px', color: '#111827', fontWeight: 600 }}>{value}</span>
-                  </div>
-                ))}
+                {(() => {
+                  const catHeader = (label: string) => (
+                    <div key={label} style={{ fontSize: '13px', fontWeight: 700, color: '#9CA3AF', padding: '10px 16px 4px', background: '#F8F9FA', borderBottom: '1px solid #F3F4F6' }}>{label}</div>
+                  )
+                  const row = (label: string, value: string) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #F3F4F6' }}>
+                      <span style={{ fontSize: '16px', color: '#6B7280', fontWeight: 700 }}>{label}</span>
+                      <span style={{ fontSize: '16px', color: '#111827', fontWeight: 600 }}>{value}</span>
+                    </div>
+                  )
+                  return [
+                    catHeader('釣り道具'),
+                    row('タックル貸出', facilities.tackle_rental === 'free' ? '無料' : facilities.tackle_rental === 'paid' ? '有料' : 'なし'),
+                    row('ライフジャケット', facilities.life_jacket ? 'あり' : 'なし'),
+                    row('ロッドホルダー', facilities.rod_holder ? 'あり' : 'なし'),
+
+                    catHeader('船内設備'),
+                    row('駐車場', facilities.parking === 'free' ? '無料' : facilities.parking === 'paid' ? '有料' : 'なし'),
+                    row('トイレ', facilities.toilet ? 'あり' : 'なし'),
+                    row('クーラーボックス', facilities.cooler ? 'あり' : 'なし'),
+                    row('生け簀', facilities.live_well ? 'あり' : 'なし'),
+                    row('海水循環装置', facilities.water_circulation ? 'あり' : 'なし'),
+                    row('電子レンジ', facilities.microwave ? 'あり' : 'なし'),
+                    row('湯沸かし器', facilities.kettle ? 'あり' : 'なし'),
+                    row('屋根日よけ', facilities.roof ? 'あり' : 'なし'),
+                    row('夜焚き用集魚灯', facilities.metal_light ? 'あり' : 'なし'),
+
+                    catHeader('魚の処理'),
+                    row('血抜き', facilities.bloodletting ? 'あり' : 'なし'),
+                    row('神経締め', facilities.ike_jime ? 'あり' : 'なし'),
+                    row('下処理', facilities.cleaning === 'free' ? '無料' : facilities.cleaning === 'paid' ? '有料' : 'なし'),
+
+                    catHeader('販売品'),
+                    row('氷', facilities.ice === 'sale' ? '販売' : facilities.ice === 'free' ? '無料' : 'なし'),
+                    row('餌', facilities.bait ? 'あり' : 'なし'),
+
+                    catHeader('支払方法'),
+                    row('現金・その他', [facilities.cash ? '現金' : '', facilities.credit ? 'クレジット' : '', facilities.paypay ? 'PayPay' : ''].filter(Boolean).join('・') || '未設定'),
+                    ...(facilities.payment ? [row('その他', facilities.payment)] : []),
+
+                    catHeader('こだわり設備'),
+                    row('キャスティングデッキ', facilities.casting_deck ? 'あり' : 'なし'),
+                    row('アンチローリングジャイロ', facilities.gyro ? 'あり' : 'なし'),
+                    row('ロッドキーパー', facilities.rod_keeper ? 'あり' : 'なし'),
+                  ]
+                })()}
               </div>
             </div>
 
