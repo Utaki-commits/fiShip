@@ -105,31 +105,83 @@ export default function LoginPage() {
 
   const { title, sub, btn } = titles[mode]
 
+  const oceanGradient =
+    'radial-gradient(120% 200% at 88% 110%, rgba(46,134,193,.45) 0%, transparent 55%),' +
+    'radial-gradient(80% 120% at 12% -20%, rgba(212,172,13,.18) 0%, transparent 60%),' +
+    'linear-gradient(180deg, var(--ocean) 0%, #0F4570 55%, #04192B 100%)'
+
+  const inputStyle = {
+    width: '100%',
+    padding: '18px 16px',
+    fontSize: '22px',
+    border: '2px solid var(--border)',
+    borderRadius: '12px',
+    outline: 'none',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box' as const,
+    minHeight: '64px',
+    color: 'var(--fg-1)',
+    background: 'var(--surface)',
+  }
+
+  const labelStyle = {
+    fontSize: '20px',
+    fontWeight: 600,
+    color: 'var(--fg-1)',
+    marginBottom: '10px',
+  }
+
+  const linkButtonStyle = {
+    background: 'none',
+    border: 'none',
+    minHeight: '56px',
+    padding: '10px 12px',
+    fontSize: '22px',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    textDecoration: 'underline',
+  }
+
   return (
     <main style={{
-      minHeight: '100vh', background: 'var(--ocean)',
+      minHeight: '100vh', background: oceanGradient,
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
+      position: 'relative', overflow: 'hidden', isolation: 'isolate',
     }}>
       <div style={{
-        background: 'var(--surface)', borderRadius: '16px', padding: '32px 24px',
-        width: '100%', maxWidth: '400px', fontFamily: 'sans-serif',
+        position: 'absolute', left: 0, right: 0, top: 0, height: '1px', zIndex: 2,
+        background: 'linear-gradient(90deg,transparent 0%,rgba(242,199,68,.55) 30%,rgba(242,199,68,.85) 50%,rgba(242,199,68,.55) 70%,transparent 100%)',
+      }} />
+      <svg viewBox="0 0 700 60" preserveAspectRatio="none"
+        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, width: '100%', height: '60px', opacity: 0.55, pointerEvents: 'none', zIndex: 1 }}>
+        <path d="M0 36 Q 90 24, 180 36 T 360 36 T 540 36 T 720 36 V60 H0 Z" fill="rgba(46,134,193,.30)" />
+        <path d="M0 46 Q 90 36, 180 46 T 360 46 T 540 46 T 720 46 V60 H0 Z" fill="rgba(46,134,193,.50)" />
+      </svg>
+      <div style={{
+        background: 'var(--surface)', borderRadius: '20px', padding: '40px 28px',
+        width: '100%', maxWidth: '440px', fontFamily: 'var(--font-sans)',
+        position: 'relative', zIndex: 3,
+        boxShadow: '0 20px 50px -20px rgba(4,25,43,.55)',
       }}>
         {/* アイコン・タイトル */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
-            width: '56px', height: '56px', background: 'var(--gold)', borderRadius: '14px',
+            width: '84px', height: '84px', background: 'var(--surface)', borderRadius: '18px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '28px', margin: '0 auto 12px',
-          }}>⚓</div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)' }}>{title}</div>
-          <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '4px' }}>{sub}</div>
+            margin: '0 auto 18px', border: '2px solid var(--border)', overflow: 'hidden',
+          }}>
+            <span style={{ fontSize: '40px', color: 'var(--ocean)', fontWeight: 700, lineHeight: 1 }}>fi</span>
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--fg-1)', lineHeight: 1.25 }}>{title}</div>
+          <div style={{ fontSize: '18px', color: 'var(--fg-2)', marginTop: '10px', fontWeight: 600, lineHeight: 1.6 }}>{sub}</div>
         </div>
 
         {/* エラー */}
         {error && (
           <div style={{
-            background: 'var(--status-full-bg)', border: '1px solid var(--status-full-bd)', borderRadius: '8px',
-            padding: '10px 14px', marginBottom: '16px', fontSize: '14px', color: 'var(--status-full-fg)',
+            background: 'var(--status-full-bg)', border: '2px solid var(--status-full-bd)', borderRadius: '12px',
+            padding: '16px 18px', marginBottom: '22px', fontSize: '18px', color: 'var(--status-full-fg)',
+            fontWeight: 700, lineHeight: 1.6,
           }}>
             {error}
           </div>
@@ -138,8 +190,9 @@ export default function LoginPage() {
         {/* 完了メッセージ */}
         {message && (
           <div style={{
-            background: 'var(--status-ok-bg)', border: '1px solid var(--status-ok-bd)', borderRadius: '8px',
-            padding: '12px 14px', marginBottom: '16px', fontSize: '14px', color: 'var(--status-ok-fg)', lineHeight: 1.6,
+            background: 'var(--status-ok-bg)', border: '2px solid var(--status-ok-bd)', borderRadius: '12px',
+            padding: '16px 18px', marginBottom: '22px', fontSize: '18px', color: 'var(--status-ok-fg)', lineHeight: 1.7,
+            fontWeight: 700,
           }}>
             {message}
           </div>
@@ -149,8 +202,8 @@ export default function LoginPage() {
           <>
             {/* メールアドレス（新パスワード設定画面では非表示） */}
             {mode !== 'new-password' && (
-              <div style={{ marginBottom: '14px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '6px' }}>
+              <div style={{ marginBottom: '22px' }}>
+                <div style={labelStyle}>
                   メールアドレス
                 </div>
                 <input
@@ -159,19 +212,15 @@ export default function LoginPage() {
                   onChange={e => setEmail(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                   placeholder="例：yamada@example.com"
-                  style={{
-                    width: '100%', padding: '14px', fontSize: '15px',
-                    border: '2px solid var(--border)', borderRadius: '10px',
-                    outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
-                  }}
+                  style={inputStyle}
                 />
               </div>
             )}
 
             {/* パスワード（リセット以外で表示） */}
             {mode !== 'reset' && (
-              <div style={{ marginBottom: (mode === 'signup' || mode === 'new-password') ? '14px' : '24px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '6px' }}>
+              <div style={{ marginBottom: (mode === 'signup' || mode === 'new-password') ? '22px' : '28px' }}>
+                <div style={labelStyle}>
                   {mode === 'new-password' ? '新しいパスワード（8文字以上）' : `パスワード${mode === 'signup' ? '（8文字以上）' : ''}`}
                 </div>
                 <input
@@ -180,19 +229,15 @@ export default function LoginPage() {
                   onChange={e => setPassword(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                   placeholder={mode === 'signup' || mode === 'new-password' ? '8文字以上で入力' : 'パスワードを入力'}
-                  style={{
-                    width: '100%', padding: '14px', fontSize: '15px',
-                    border: '2px solid var(--border)', borderRadius: '10px',
-                    outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
-                  }}
+                  style={inputStyle}
                 />
               </div>
             )}
 
             {/* パスワード確認（新規登録・新パスワード設定で表示） */}
             {(mode === 'signup' || mode === 'new-password') && (
-              <div style={{ marginBottom: '24px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '6px' }}>
+              <div style={{ marginBottom: '28px' }}>
+                <div style={labelStyle}>
                   パスワード（確認）
                 </div>
                 <input
@@ -201,27 +246,25 @@ export default function LoginPage() {
                   onChange={e => setPasswordConfirm(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                   placeholder="もう一度入力"
-                  style={{
-                    width: '100%', padding: '14px', fontSize: '15px',
-                    border: '2px solid var(--border)', borderRadius: '10px',
-                    outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
-                  }}
+                  style={inputStyle}
                 />
               </div>
             )}
 
-            {mode === 'reset' && <div style={{ marginBottom: '24px' }} />}
+            {mode === 'reset' && <div style={{ marginBottom: '28px' }} />}
 
             {/* メインボタン */}
             <button
               onClick={handleSubmit}
               disabled={loading}
               style={{
-                width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700,
-                background: loading ? 'var(--border)' : 'var(--ocean)',
+                width: '100%', padding: '20px 26px', fontSize: '24px', fontWeight: 600,
+                background: loading ? 'var(--border)' : 'linear-gradient(180deg,var(--ocean) 0%,#164B73 100%)',
                 color: loading ? 'var(--fg-3)' : 'var(--surface)',
                 border: 'none', borderRadius: '12px',
                 cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                minHeight: '64px',
+                boxShadow: loading ? 'none' : 'inset 0 1px 0 rgba(255,255,255,.18), 0 2px 0 rgba(0,0,0,.18), 0 4px 12px rgba(15,69,112,.30)',
               }}
             >
               {loading ? '処理中...' : btn}
@@ -230,18 +273,18 @@ export default function LoginPage() {
         )}
 
         {/* モード切り替えリンク */}
-        <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+        <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
           {mode === 'login' && (
             <>
               <button
                 onClick={() => switchMode('reset')}
-                style={{ background: 'none', border: 'none', color: 'var(--fg-2)', fontSize: '14px', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}
+                style={{ ...linkButtonStyle, color: 'var(--fg-2)' }}
               >
                 パスワードを忘れた方はこちら
               </button>
               <button
                 onClick={() => switchMode('signup')}
-                style={{ background: 'none', border: 'none', color: 'var(--ocean)', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}
+                style={{ ...linkButtonStyle, color: 'var(--ocean)', fontWeight: 700 }}
               >
                 新規登録はこちら →
               </button>
@@ -250,7 +293,7 @@ export default function LoginPage() {
           {(mode === 'signup' || mode === 'reset') && (
             <button
               onClick={() => switchMode('login')}
-              style={{ background: 'none', border: 'none', color: 'var(--fg-2)', fontSize: '14px', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}
+              style={{ ...linkButtonStyle, color: 'var(--fg-2)' }}
             >
               ← ログインに戻る
             </button>
