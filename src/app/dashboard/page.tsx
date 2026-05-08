@@ -278,7 +278,7 @@ export default function DashboardPage() {
 
   if (loading) return (
     <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'var(--surface)', fontSize: '16px' }}>読み込み中...</div>
+      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
     </main>
   )
 
@@ -289,14 +289,14 @@ export default function DashboardPage() {
       <div style={{ background: 'var(--ocean)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
         <div style={{ width: '36px', height: '36px', background: 'var(--gold)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>⚓</div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--surface)' }}>{vessel?.name}</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--surface)' }}>{vessel?.name}</div>
         </div>
         {getPendingCount() > 0 && (
           <div style={{ background: 'var(--status-pending-dot)', color: 'var(--surface)', fontSize: '14px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', whiteSpace: 'nowrap' }}>
             承認待ち {getPendingCount()}件
           </div>
         )}
-        <button onClick={handleLogout} style={{ padding: '6px 12px', fontSize: '14px', fontWeight: 700, background: 'rgba(255,255,255,0.15)', color: 'var(--surface)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+        <button onClick={handleLogout} style={{ padding: '10px 16px', fontSize: '22px', fontWeight: 700, background: 'rgba(255,255,255,0.15)', color: 'var(--surface)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
           ログアウト
         </button>
       </div>
@@ -315,8 +315,8 @@ export default function DashboardPage() {
           >
             <div style={{ fontSize: '24px', flexShrink: 0 }}>⚠️</div>
             <div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--status-pending-fg)' }}>出船スケジュールが未設定です</div>
-              <div style={{ fontSize: '14px', color: 'var(--status-pending-fg)', marginTop: '2px' }}>タップして昼便・夜便のスケジュールを登録してください</div>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--status-pending-fg)' }}>出船スケジュールが未設定です</div>
+              <div style={{ fontSize: '18px', color: 'var(--status-pending-fg)', marginTop: '2px' }}>タップして昼便・夜便のスケジュールを登録してください</div>
             </div>
           </div>
         )}
@@ -334,14 +334,14 @@ export default function DashboardPage() {
               key={path}
               onClick={() => router.push(path)}
               style={{
-                padding: '12px 8px',
+                padding: '16px 8px',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
                 background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: '12px',
                 cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center',
               }}
             >
               <div style={{ width: '36px', height: '36px', background: bg, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>{icon}</div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-1)', whiteSpace: 'pre-line', lineHeight: 1.4 }}>{label}</div>
+              <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)', whiteSpace: 'pre-line', lineHeight: 1.35 }}>{label}</div>
             </button>
           ))}
         </div>
@@ -356,11 +356,11 @@ export default function DashboardPage() {
                 ? () => { if (calM === 0) { setCalM(11); setCalYear(y => y - 1) } else setCalM(m => m - 1) }
                 : () => setWeekStart(d => { const p = new Date(d); p.setDate(d.getDate() - 7); return p })
               }
-              style={{ width: '44px', height: '44px', flexShrink: 0, borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}
+              style={{ width: '56px', height: '56px', flexShrink: 0, borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '22px' }}
             >◀</button>
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>
+              <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)' }}>
                 {view === 'month' ? `${calYear}年${MONTH_NAMES[calM]}` : weekLabel}
               </span>
               {/* 月 / 週 切り替えトグル */}
@@ -370,7 +370,7 @@ export default function DashboardPage() {
                     key={v}
                     onClick={() => switchView(v)}
                     style={{
-                      padding: '4px 16px', fontSize: '14px', fontWeight: 700,
+                      padding: '8px 18px', fontSize: '22px', fontWeight: 700,
                       background: view === v ? 'var(--surface)' : 'transparent',
                       color: view === v ? 'var(--ocean)' : 'var(--fg-3)',
                       border: 'none', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit',
@@ -387,7 +387,7 @@ export default function DashboardPage() {
                 ? () => { if (calM === 11) { setCalM(0); setCalYear(y => y + 1) } else setCalM(m => m + 1) }
                 : () => setWeekStart(d => { const n = new Date(d); n.setDate(d.getDate() + 7); return n })
               }
-              style={{ width: '44px', height: '44px', flexShrink: 0, borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}
+              style={{ width: '56px', height: '56px', flexShrink: 0, borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '22px' }}
             >▶</button>
           </div>
 
@@ -426,7 +426,7 @@ export default function DashboardPage() {
         {selectedDate && (
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', marginBottom: '12px', overflow: 'hidden' }}>
             <div style={{ background: 'var(--ocean)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--surface)' }}>
+              <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)' }}>
                 {(() => {
                   const d = new Date(selectedDate + 'T00:00:00')
                   return `${d.getMonth() + 1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）の予約`
@@ -434,12 +434,12 @@ export default function DashboardPage() {
               </span>
               <button
                 onClick={() => setSelectedDate(null)}
-                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: '18px', cursor: 'pointer', padding: '4px', lineHeight: 1 }}
+                style={{ minWidth: '56px', background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: '22px', cursor: 'pointer', padding: '4px', lineHeight: 1 }}
               >✕</button>
             </div>
 
             {selectedBookings.length === 0 ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--fg-3)', fontSize: '14px' }}>
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--fg-3)', fontSize: '18px' }}>
                 予約はありません
               </div>
             ) : (
@@ -456,8 +456,8 @@ export default function DashboardPage() {
                     </span>
 
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
-                      <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '3px', lineHeight: 1.6 }}>
+                      <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
+                      <div style={{ fontSize: '18px', color: 'var(--fg-2)', marginTop: '3px', lineHeight: 1.6 }}>
                         {b.count}名{b.fishing_style ? `　${b.fishing_style}` : ''}
                         {b.message ? `\n${b.message}` : ''}
                       </div>
@@ -481,7 +481,7 @@ export default function DashboardPage() {
                           onClick={() => updateStatus(b.id, 'confirmed')}
                           disabled={actionLoading === b.id}
                           style={{
-                            flex: 1, padding: '10px', fontSize: '16px', fontWeight: 700,
+                            flex: 1, padding: '14px', fontSize: '22px', fontWeight: 700,
                             background: actionLoading === b.id ? 'var(--border)' : 'var(--status-ok-bg)',
                             color: actionLoading === b.id ? 'var(--fg-3)' : 'var(--status-ok-fg)',
                             border: '1px solid var(--status-ok-bd)', borderRadius: '8px',
@@ -492,7 +492,7 @@ export default function DashboardPage() {
                           onClick={() => updateStatus(b.id, 'rejected')}
                           disabled={actionLoading === b.id}
                           style={{
-                            flex: 1, padding: '10px', fontSize: '16px', fontWeight: 700,
+                            flex: 1, padding: '14px', fontSize: '22px', fontWeight: 700,
                             background: actionLoading === b.id ? 'var(--border)' : 'var(--status-full-bg)',
                             color: actionLoading === b.id ? 'var(--fg-3)' : 'var(--status-full-fg)',
                             border: '1px solid var(--status-full-bd)', borderRadius: '8px',
@@ -505,7 +505,7 @@ export default function DashboardPage() {
                       <a
                         href={`tel:${b.tel}`}
                         style={{
-                          flex: 1, padding: '10px', fontSize: '16px', fontWeight: 700, textAlign: 'center',
+                          flex: 1, padding: '14px', fontSize: '22px', fontWeight: 700, textAlign: 'center', minHeight: '56px',
                           background: 'var(--status-day-bg)', color: 'var(--ocean)', border: '1px solid var(--ocean-light)',
                           borderRadius: '8px', textDecoration: 'none', display: 'block',
                         }}
