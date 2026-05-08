@@ -1,0 +1,37 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=720">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:32px;background:#F8F9FA;font-family:'Noto Sans JP',sans-serif}
+.lbl{font-size:14px;font-weight:700;color:#9CA3AF;letter-spacing:.06em;margin:0 0 12px;text-transform:uppercase}
+.row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:24px}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:16px;font-weight:700;padding:8px 16px;border-radius:99px;line-height:1.2}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+.alert{display:flex;align-items:center;gap:10px;background:#FEE2E2;border:2px solid #FCA5A5;border-radius:12px;padding:16px 18px;font-size:18px;font-weight:700;color:#B91C1C}
+.alert::before{content:"⚠";font-size:24px}
+</style></head><body>
+
+<div class="lbl">PENDING COUNT · TOP BAR</div>
+<div class="row">
+  <span class="pill" style="background:#D97706;color:#fff"><span class="dot" style="background:#FFE082"></span>承認待ち 3件</span>
+</div>
+
+<div class="lbl">BOOKING ROW STATE</div>
+<div class="row">
+  <span class="pill" style="background:#D4EDDA;color:#1B6B3A">承認済み</span>
+  <span class="pill" style="background:#F1F5F9;color:#6B7280">お断り</span>
+  <span class="pill" style="background:#DDD6FE;color:#4338CA">未対応</span>
+</div>
+
+<div class="lbl">AVAILABILITY</div>
+<div class="row">
+  <span class="pill" style="background:#FEE2E2;color:#B91C1C">満員</span>
+  <span class="pill" style="background:#FEF9C3;color:#854D0E">承認待ち</span>
+  <span class="pill" style="background:#E8F4FD;color:#0A3D62">空きあり</span>
+  <span class="pill" style="background:#F1F5F9;color:#6B7280">休船日</span>
+</div>
+
+<div class="lbl">ERROR ALERT</div>
+<div class="alert">メールアドレスまたはパスワードが正しくありません</div>
+
+</body></html>

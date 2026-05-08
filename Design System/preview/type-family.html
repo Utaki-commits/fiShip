@@ -1,0 +1,38 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=720">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:36px;background:#fff;font-family:'Noto Sans JP',sans-serif;color:#111827}
+h1{font-size:40px;margin:0 0 4px;font-weight:700;line-height:1.2}
+.sub{font-size:18px;color:#6B7280;margin-bottom:24px;line-height:1.6}
+.spec{display:grid;grid-template-columns:170px 1fr;gap:14px 28px;font-size:18px;margin-bottom:24px}
+.k{color:#9CA3AF;font-family:ui-monospace,Menlo,monospace;font-size:16px}
+.v{color:#111827}
+.v .src{font-size:14px;color:#6B7280;margin-left:8px}
+.v .self{color:#1B6B3A;font-weight:700}
+.weights{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.w{background:#F8F9FA;border-radius:12px;padding:18px;border:1px solid #E5E7EB}
+.w .lbl{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:#6B7280;margin-bottom:6px;font-weight:700}
+.w.semi{background:#FBF7E3;border-color:#E6D77A}
+.w.semi .lbl{color:#854D0E}
+.w .smp{font-size:28px;color:#111827;line-height:1.4}
+.sample{padding:22px;background:#F8F9FA;border-radius:12px;font-size:20px;line-height:1.8;color:#111827}
+</style></head><body>
+<h1>Noto Sans JP</h1>
+<div class="sub">唯一の書体。ITリテラシーが高くないユーザーでも読みやすい、日本語UIの標準フォント。</div>
+<div class="spec">
+  <span class="k">family</span><span class="v">Noto Sans JP</span>
+  <span class="k">fallback</span><span class="v">-apple-system, BlinkMacSystemFont, sans-serif</span>
+  <span class="k">weights</span><span class="v">400 / <b>600</b> / 700</span>
+  <span class="k">400 · 700</span><span class="v">Google Fonts <span class="src">runtime</span></span>
+  <span class="k">600 SemiBold</span><span class="v"><span class="self">self-hosted</span> <span class="src">fonts/NotoSansJP-SemiBold.ttf</span></span>
+</div>
+
+<div class="weights">
+  <div class="w"><div class="lbl">REGULAR · 400</div><div class="smp" style="font-weight:400">海皇丸 予約 Aa</div></div>
+  <div class="w semi"><div class="lbl">SEMIBOLD · 600 ★</div><div class="smp" style="font-weight:600">海皇丸 予約 Aa</div></div>
+  <div class="w"><div class="lbl">BOLD · 700</div><div class="smp" style="font-weight:700">海皇丸 予約 Aa</div></div>
+</div>
+
+<div class="sample">本日の予約は<b style="font-weight:600">3件</b>です。承認待ちが<b style="font-weight:700">1件</b>あります。<br>The quick brown fox jumps over the lazy dog. fiShip 0123456789</div>
+</body></html>

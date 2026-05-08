@@ -1,0 +1,61 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=720">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:36px;background:#fff;font-family:'Noto Sans JP',sans-serif;color:#111827}
+.lbl{font-size:14px;font-weight:700;color:#9CA3AF;letter-spacing:.06em;margin:0 0 14px;text-transform:uppercase}
+.field{margin-bottom:24px}
+.lab{font-size:20px;font-weight:600;color:#111827;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.req{background:#B91C1C;color:#fff;font-size:14px;font-weight:700;padding:3px 10px;border-radius:6px;letter-spacing:.04em}
+.help{font-size:16px;color:#6B7280;margin-top:8px;line-height:1.55}
+input,textarea{
+  font-family:inherit;font-size:22px;font-weight:400;
+  width:100%;padding:18px 18px;
+  border:2px solid #E5E7EB;border-radius:12px;
+  outline:none;background:#fff;color:#111827;
+  min-height:64px;box-sizing:border-box;
+  -webkit-appearance:none;appearance:none;
+}
+input::placeholder,textarea::placeholder{color:#9CA3AF}
+input:focus,textarea:focus{border:3px solid #1E5F8E;padding:17px 17px}
+input.error{border-color:#B91C1C;background:#FEF2F2}
+input.success{border-color:#1B6B3A}
+textarea{min-height:120px;resize:vertical}
+.errmsg{margin-top:8px;font-size:16px;font-weight:700;color:#B91C1C;display:flex;align-items:center;gap:6px}
+.errmsg::before{content:"⚠";font-size:20px}
+hr{border:0;border-top:1px solid #F1F5F9;margin:28px 0}
+</style></head><body>
+
+<div class="lbl">INPUTS · v2 LARGE-FIRST</div>
+
+<div class="field">
+  <div class="lab">船の名前 <span class="req">必須</span></div>
+  <input type="text" placeholder="例：海皇丸" value="海皇丸">
+</div>
+
+<div class="field">
+  <div class="lab">出航する漁港 <span class="req">必須</span></div>
+  <input type="text" placeholder="例：糸島市志摩野北漁港">
+  <div class="help">市町村名から入力してください。</div>
+</div>
+
+<div class="field">
+  <div class="lab">電話番号 <span class="req">必須</span></div>
+  <input type="tel" placeholder="例：090-1234-5678" class="error" value="090-1234">
+  <div class="errmsg">電話番号は11桁で入力してください</div>
+</div>
+
+<div class="field">
+  <div class="lab">メールアドレス</div>
+  <input type="email" placeholder="例：captain@example.com" class="success" value="captain@kaiou-maru.jp">
+</div>
+
+<hr>
+
+<div class="field">
+  <div class="lab">船長からのコメント</div>
+  <textarea placeholder="お客様にお伝えしたい注意事項などをご記入ください"></textarea>
+  <div class="help">200文字以内で入力してください。</div>
+</div>
+
+</body></html>

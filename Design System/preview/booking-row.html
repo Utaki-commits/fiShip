@@ -1,0 +1,38 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=720">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:32px;background:#F8F9FA;font-family:'Noto Sans JP',sans-serif}
+.card{background:#fff;border:1px solid #E5E7EB;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.h{background:linear-gradient(180deg,#1E5F8E 0%,#0F4570 100%);padding:18px 22px;display:flex;justify-content:space-between;align-items:center}
+.h-title{font-size:22px;font-weight:700;color:#fff}
+.h-x{width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,.12);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.row{display:flex;align-items:center;gap:14px;padding:20px 22px;border-bottom:1px solid #E5E7EB}
+.row:last-child{border-bottom:0}
+.who{flex:1;min-width:0}
+.n{font-size:22px;font-weight:700;color:#111827;line-height:1.2}
+.m{font-size:16px;color:#6B7280;margin-top:6px;line-height:1.5}
+.actions{display:flex;gap:8px;flex-shrink:0}
+.b{padding:14px 20px;font-size:18px;font-weight:700;border-radius:10px;font-family:inherit;cursor:pointer;min-height:56px;border:2px solid transparent}
+.ok{background:#D4EDDA;color:#1B6B3A;border-color:#86EFAC}
+.no{background:#fff;color:#B91C1C;border-color:#FCA5A5}
+.tag{font-size:16px;font-weight:700;padding:10px 18px;border-radius:99px;flex-shrink:0}
+.tag.ok{background:#D4EDDA;color:#1B6B3A}
+.tag.dec{background:#F1F5F9;color:#6B7280}
+</style></head><body>
+<div class="card">
+  <div class="h"><span class="h-title">4月7日（日）の予約</span><span class="h-x" aria-label="閉じる">✕</span></div>
+  <div class="row">
+    <div class="who"><div class="n">田中 健一 さま</div><div class="m">3名 / サビキ釣り<br>090-1234-5678</div></div>
+    <div class="actions"><span class="b ok">承認</span><span class="b no">お断り</span></div>
+  </div>
+  <div class="row">
+    <div class="who"><div class="n">佐藤 美咲 さま</div><div class="m">2名 / ジギング<br>080-2345-6789</div></div>
+    <span class="tag ok">承認済み</span>
+  </div>
+  <div class="row">
+    <div class="who"><div class="n">鈴木 大輔 さま</div><div class="m">4名 / 貸切<br>070-3456-7890</div></div>
+    <span class="tag dec">お断り</span>
+  </div>
+</div>
+</body></html>
