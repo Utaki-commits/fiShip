@@ -107,6 +107,16 @@ export default function DashboardPage() {
 
   const getPendingCount = () => bookings.filter(b => b.status === 'pending').length
 
+  const switchView = (nextView: 'month' | 'week') => {
+    if (nextView === 'week') {
+      const baseDate = selectedDate
+        ? new Date(selectedDate + 'T00:00:00')
+        : new Date(calYear, calM, 1)
+      setWeekStart(getWeekSunday(baseDate))
+    }
+    setView(nextView)
+  }
+
   const renderCalendar = () => {
     const getBinsForDate = (year: number, month: number, day: number) => {
       const dow = new Date(year, month, day).getDay()
@@ -358,16 +368,7 @@ export default function DashboardPage() {
                 {(['month', 'week'] as const).map(v => (
                   <button
                     key={v}
-                    onClick={() => {
-                      if (v === 'week') {
-                        if (selectedDate) {
-                          setWeekStart(getWeekSunday(new Date(selectedDate + 'T00:00:00')))
-                        } else {
-                          setWeekStart(getWeekSunday(new Date(calYear, calM, 1)))
-                        }
-                      }
-                      setView(v)
-                    }}
+                    onClick={() => switchView(v)}
                     style={{
                       padding: '4px 16px', fontSize: '14px', fontWeight: 700,
                       background: view === v ? '#fff' : 'transparent',
