@@ -1,308 +1,382 @@
-﻿'use client'
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+'use client'
 
-type Mode = 'login' | 'signup' | 'reset' | 'new-password'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import type { Provider } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+
+type Step = 'start' | 'phone' | 'code'
+
+const callbackUrl = 'https://fiship-project.vercel.app/auth/callback'
+const lineProvider = (process.env.NEXT_PUBLIC_SUPABASE_LINE_PROVIDER || 'line') as Provider
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<Mode>('login')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [passwordConfirm, setPasswordConfirm] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
   const router = useRouter()
+  const [step, setStep] = useState<Step>('start')
+  const [phoneDigits, setPhoneDigits] = useState('')
+  const [phoneForAuth, setPhoneForAuth] = useState('')
+  const [code, setCode] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
 
-  // パスワードリセットメールのリンクから戻ってきた場合を検出する
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setMode('new-password')
-        setError('')
-        setMessage('')
-      }
+  const routeByUser = async () => {
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      setError('確認できませんでした。もう一度お試しください。')
+      return
+    }
+
+    const { data, error: vesselError } = await supabase
+      .from('vessels')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (vesselError) {
+      setError('船の情報を確認できませんでした。もう一度お試しください。')
+      return
+    }
+
+    router.replace(data ? '/dashboard' : '/register')
+  }
+
+  const formatPhoneForAuth = (digits: string) => {
+    if (!/^0\d{9,10}$/.test(digits)) return ''
+    return `+81${digits.slice(1)}`
+  }
+
+  const startLine = async () => {
+    setBusy(true)
+    setError('')
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: lineProvider,
+      options: {
+        redirectTo: callbackUrl,
+      },
     })
-    return () => subscription.unsubscribe()
-  }, [])
 
-  const reset = () => { setError(''); setMessage('') }
-
-  const switchMode = (next: Mode) => { reset(); setMode(next) }
-
-  // ログイン
-  const handleLogin = async () => {
-    if (!email || !password) { setError('メールアドレスとパスワードを入力してください'); return }
-    setLoading(true); reset()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError('メールアドレスまたはパスワードが正しくありません')
-    } else {
-      router.push('/dashboard')
+    if (oauthError) {
+      setError('LINEを開けませんでした。時間をおいてもう一度お試しください。')
+      setBusy(false)
     }
-    setLoading(false)
   }
 
-  // 新規登録
-  const handleSignup = async () => {
-    if (!email || !password) { setError('メールアドレスとパスワードを入力してください'); return }
-    if (password.length < 8) { setError('パスワードは8文字以上で入力してください'); return }
-    if (password !== passwordConfirm) { setError('パスワードが一致しません'); return }
-    setLoading(true); reset()
-    const { error } = await supabase.auth.signUp({ email, password })
-    if (error) {
-      setError('登録に失敗しました。このメールアドレスはすでに使用されているかもしれません。')
-    } else {
-      setMessage('確認メールを送信しました。メールのリンクをクリックしてアカウントを有効化してください。')
+  const sendSms = async () => {
+    const phone = formatPhoneForAuth(phoneDigits)
+    if (!phone) {
+      setError('電話番号を数字だけで入力してください。')
+      return
     }
-    setLoading(false)
-  }
 
-  // パスワードリセットメール送信
-  const handleReset = async () => {
-    if (!email) { setError('メールアドレスを入力してください'); return }
-    setLoading(true); reset()
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login`,
+    setBusy(true)
+    setError('')
+
+    const { error: smsError } = await supabase.auth.signInWithOtp({
+      phone,
+      options: {
+        shouldCreateUser: true,
+      },
     })
-    if (error) {
-      setError('送信に失敗しました。メールアドレスを確認してください。')
+
+    if (smsError) {
+      setError('番号を送れませんでした。電話番号を確認してください。')
     } else {
-      setMessage('パスワード再設定のメールを送信しました。メールをご確認ください。')
+      setPhoneForAuth(phone)
+      setStep('code')
     }
-    setLoading(false)
+
+    setBusy(false)
   }
 
-  // 新パスワード設定（PASSWORD_RECOVERYセッション中に実行）
-  const handleNewPassword = async () => {
-    if (!password) { setError('新しいパスワードを入力してください'); return }
-    if (password.length < 8) { setError('パスワードは8文字以上で入力してください'); return }
-    if (password !== passwordConfirm) { setError('パスワードが一致しません'); return }
-    setLoading(true); reset()
-    const { error } = await supabase.auth.updateUser({ password })
-    if (error) {
-      setError('パスワードの更新に失敗しました。もう一度お試しください。')
-    } else {
-      router.push('/dashboard')
+  const confirmCode = async () => {
+    if (!/^\d{6}$/.test(code)) {
+      setError('6桁の番号を入力してください。')
+      return
     }
-    setLoading(false)
+
+    setBusy(true)
+    setError('')
+
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      phone: phoneForAuth,
+      token: code,
+      type: 'sms',
+    })
+
+    if (verifyError) {
+      setError('番号が合いません。もう一度確認してください。')
+      setBusy(false)
+      return
+    }
+
+    await routeByUser()
+    setBusy(false)
   }
 
-  const handleSubmit = () => {
-    if (mode === 'login') handleLogin()
-    else if (mode === 'signup') handleSignup()
-    else if (mode === 'new-password') handleNewPassword()
-    else handleReset()
+  const primaryButtonStyle = {
+    width: '100%',
+    minHeight: '64px',
+    borderRadius: '12px',
+    border: 'none',
+    fontSize: '22px',
+    fontWeight: 700,
+    fontFamily: 'inherit',
+    cursor: busy ? 'not-allowed' : 'pointer',
   }
 
-  const titles: Record<Mode, { title: string; sub: string; btn: string }> = {
-    login:        { title: '船長ログイン',        sub: 'メールアドレスとパスワードでログイン',    btn: 'ログインする' },
-    signup:       { title: '新規登録',            sub: '新しいアカウントを作成します',            btn: '登録する' },
-    reset:        { title: 'パスワードを忘れた',  sub: '登録済みのメールアドレスを入力してください', btn: '再設定メールを送る' },
-    'new-password': { title: '新しいパスワード設定', sub: '新しいパスワードを入力してください',   btn: 'パスワードを更新する' },
+  const outlineButtonStyle = {
+    ...primaryButtonStyle,
+    background: 'var(--surface)',
+    color: 'var(--ocean)',
+    border: '2px solid var(--border)',
   }
-
-  const { title, sub, btn } = titles[mode]
-
-  const oceanGradient =
-    'radial-gradient(120% 200% at 88% 110%, rgba(46,134,193,.45) 0%, transparent 55%),' +
-    'radial-gradient(80% 120% at 12% -20%, rgba(212,172,13,.18) 0%, transparent 60%),' +
-    'linear-gradient(180deg, var(--ocean) 0%, #0F4570 55%, #04192B 100%)'
 
   const inputStyle = {
     width: '100%',
-    padding: '18px 16px',
-    fontSize: '22px',
-    border: '2px solid var(--border)',
-    borderRadius: '12px',
-    outline: 'none',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box' as const,
     minHeight: '64px',
-    color: 'var(--fg-1)',
+    borderRadius: '10px',
+    border: '2px solid var(--border)',
     background: 'var(--surface)',
-  }
-
-  const labelStyle = {
-    fontSize: '20px',
-    fontWeight: 600,
     color: 'var(--fg-1)',
-    marginBottom: '10px',
-  }
-
-  const linkButtonStyle = {
-    background: 'none',
-    border: 'none',
-    minHeight: '56px',
-    padding: '10px 12px',
     fontSize: '22px',
-    cursor: 'pointer',
     fontFamily: 'inherit',
-    textDecoration: 'underline',
+    padding: '18px 16px',
+    outline: 'none',
   }
 
   return (
     <main style={{
-      minHeight: '100vh', background: oceanGradient,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
-      position: 'relative', overflow: 'hidden', isolation: 'isolate',
+      minHeight: '100vh',
+      background: 'var(--bg)',
+      display: 'flex',
+      justifyContent: 'center',
+      padding: '24px 16px',
+      fontFamily: 'var(--font-sans)',
     }}>
-      <div style={{
-        position: 'absolute', left: 0, right: 0, top: 0, height: '1px', zIndex: 2,
-        background: 'linear-gradient(90deg,transparent 0%,rgba(242,199,68,.55) 30%,rgba(242,199,68,.85) 50%,rgba(242,199,68,.55) 70%,transparent 100%)',
-      }} />
-      <svg viewBox="0 0 700 60" preserveAspectRatio="none"
-        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, width: '100%', height: '60px', opacity: 0.55, pointerEvents: 'none', zIndex: 1 }}>
-        <path d="M0 36 Q 90 24, 180 36 T 360 36 T 540 36 T 720 36 V60 H0 Z" fill="rgba(46,134,193,.30)" />
-        <path d="M0 46 Q 90 36, 180 46 T 360 46 T 540 46 T 720 46 V60 H0 Z" fill="rgba(46,134,193,.50)" />
-      </svg>
-      <div style={{
-        background: 'var(--surface)', borderRadius: '20px', padding: '40px 28px',
-        width: '100%', maxWidth: '440px', fontFamily: 'var(--font-sans)',
-        position: 'relative', zIndex: 3,
-        boxShadow: '0 20px 50px -20px rgba(4,25,43,.55)',
+      <section style={{
+        width: '100%',
+        maxWidth: '480px',
+        minHeight: 'calc(100vh - 48px)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
       }}>
-        {/* アイコン・タイトル */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            width: '84px', height: '84px', background: 'var(--surface)', borderRadius: '18px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 18px', border: '2px solid var(--border)', overflow: 'hidden',
-          }}>
-            <span style={{ fontSize: '40px', color: 'var(--ocean)', fontWeight: 700, lineHeight: 1 }}>fi</span>
+        <div style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: '16px',
+          padding: '32px 20px 28px',
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '16px',
+              background: 'var(--gold)',
+              color: 'var(--ocean-deep)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '32px',
+              margin: '0 auto 18px',
+              fontWeight: 700,
+            }}>
+              ⚓
+            </div>
+            <h1 style={{
+              margin: 0,
+              color: 'var(--fg-1)',
+              fontSize: '32px',
+              fontWeight: 700,
+              lineHeight: 1.3,
+            }}>
+              遊漁船予約システム
+            </h1>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--fg-1)', lineHeight: 1.25 }}>{title}</div>
-          <div style={{ fontSize: '18px', color: 'var(--fg-2)', marginTop: '10px', fontWeight: 600, lineHeight: 1.6 }}>{sub}</div>
-        </div>
 
-        {/* エラー */}
-        {error && (
-          <div style={{
-            background: 'var(--status-full-bg)', border: '2px solid var(--status-full-bd)', borderRadius: '12px',
-            padding: '16px 18px', marginBottom: '22px', fontSize: '18px', color: 'var(--status-full-fg)',
-            fontWeight: 700, lineHeight: 1.6,
-          }}>
-            {error}
-          </div>
-        )}
+          {error && (
+            <div style={{
+              background: 'var(--status-full-bg)',
+              border: '2px solid var(--status-full-bd)',
+              borderRadius: '12px',
+              color: 'var(--status-full-fg)',
+              fontSize: '18px',
+              fontWeight: 700,
+              lineHeight: 1.6,
+              padding: '14px 16px',
+              marginBottom: '20px',
+            }}>
+              {error}
+            </div>
+          )}
 
-        {/* 完了メッセージ */}
-        {message && (
-          <div style={{
-            background: 'var(--status-ok-bg)', border: '2px solid var(--status-ok-bd)', borderRadius: '12px',
-            padding: '16px 18px', marginBottom: '22px', fontSize: '18px', color: 'var(--status-ok-fg)', lineHeight: 1.7,
-            fontWeight: 700,
-          }}>
-            {message}
-          </div>
-        )}
-
-        {!message && (
-          <>
-            {/* メールアドレス（新パスワード設定画面では非表示） */}
-            {mode !== 'new-password' && (
-              <div style={{ marginBottom: '22px' }}>
-                <div style={labelStyle}>
-                  メールアドレス
-                </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  placeholder="例：yamada@example.com"
-                  style={inputStyle}
-                />
-              </div>
-            )}
-
-            {/* パスワード（リセット以外で表示） */}
-            {mode !== 'reset' && (
-              <div style={{ marginBottom: (mode === 'signup' || mode === 'new-password') ? '22px' : '28px' }}>
-                <div style={labelStyle}>
-                  {mode === 'new-password' ? '新しいパスワード（8文字以上）' : `パスワード${mode === 'signup' ? '（8文字以上）' : ''}`}
-                </div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  placeholder={mode === 'signup' || mode === 'new-password' ? '8文字以上で入力' : 'パスワードを入力'}
-                  style={inputStyle}
-                />
-              </div>
-            )}
-
-            {/* パスワード確認（新規登録・新パスワード設定で表示） */}
-            {(mode === 'signup' || mode === 'new-password') && (
-              <div style={{ marginBottom: '28px' }}>
-                <div style={labelStyle}>
-                  パスワード（確認）
-                </div>
-                <input
-                  type="password"
-                  value={passwordConfirm}
-                  onChange={e => setPasswordConfirm(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  placeholder="もう一度入力"
-                  style={inputStyle}
-                />
-              </div>
-            )}
-
-            {mode === 'reset' && <div style={{ marginBottom: '28px' }} />}
-
-            {/* メインボタン */}
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              style={{
-                width: '100%', padding: '20px 26px', fontSize: '24px', fontWeight: 600,
-                background: loading ? 'var(--border)' : 'linear-gradient(180deg,var(--ocean) 0%,#164B73 100%)',
-                color: loading ? 'var(--fg-3)' : 'var(--surface)',
-                border: 'none', borderRadius: '12px',
-                cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                minHeight: '64px',
-                boxShadow: loading ? 'none' : 'inset 0 1px 0 rgba(255,255,255,.18), 0 2px 0 rgba(0,0,0,.18), 0 4px 12px rgba(15,69,112,.30)',
-              }}
-            >
-              {loading ? '処理中...' : btn}
-            </button>
-          </>
-        )}
-
-        {/* モード切り替えリンク */}
-        <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
-          {mode === 'login' && (
-            <>
+          {step === 'start' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <button
-                onClick={() => switchMode('reset')}
-                style={{ ...linkButtonStyle, color: 'var(--fg-2)' }}
+                type="button"
+                onClick={startLine}
+                disabled={busy}
+                style={{
+                  ...primaryButtonStyle,
+                  background: busy ? 'var(--border)' : '#06C755',
+                  color: busy ? 'var(--fg-3)' : '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '12px',
+                }}
               >
-                パスワードを忘れた方はこちら
+                <span style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: '#fff',
+                  color: '#06C755',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  lineHeight: 1,
+                }}>
+                  LINE
+                </span>
+                {busy ? '開いています...' : 'LINEではじめる'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setError('')
+                  setStep('phone')
+                }}
+                disabled={busy}
+                style={outlineButtonStyle}
+              >
+                電話番号ではじめる
+              </button>
+            </div>
+          )}
+
+          {step === 'phone' && (
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--fg-1)',
+                marginBottom: '10px',
+              }}>
+                電話番号
+              </label>
+              <input
+                value={phoneDigits}
+                onChange={(event) => setPhoneDigits(event.target.value.replace(/\D/g, '').slice(0, 11))}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="tel-national"
+                placeholder="09012345678"
+                style={inputStyle}
+              />
+              <button
+                type="button"
+                onClick={sendSms}
+                disabled={busy}
+                style={{
+                  ...primaryButtonStyle,
+                  background: busy ? 'var(--border)' : 'var(--ocean)',
+                  color: busy ? 'var(--fg-3)' : '#fff',
+                  marginTop: '18px',
+                }}
+              >
+                {busy ? '送っています...' : 'SMSに番号を送る'}
               </button>
               <button
-                onClick={() => switchMode('signup')}
-                style={{ ...linkButtonStyle, color: 'var(--ocean)', fontWeight: 700 }}
+                type="button"
+                onClick={() => {
+                  setError('')
+                  setStep('start')
+                }}
+                disabled={busy}
+                style={{
+                  ...outlineButtonStyle,
+                  color: 'var(--fg-2)',
+                  marginTop: '12px',
+                }}
               >
-                新規登録はこちら →
+                戻る
               </button>
-            </>
+            </div>
           )}
-          {(mode === 'signup' || mode === 'reset') && (
-            <button
-              onClick={() => switchMode('login')}
-              style={{ ...linkButtonStyle, color: 'var(--fg-2)' }}
-            >
-              ← ログインに戻る
-            </button>
+
+          {step === 'code' && (
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'var(--fg-1)',
+                marginBottom: '10px',
+              }}>
+                6桁の番号
+              </label>
+              <input
+                value={code}
+                onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="one-time-code"
+                placeholder="123456"
+                style={{
+                  ...inputStyle,
+                  letterSpacing: '0.18em',
+                  textAlign: 'center',
+                }}
+              />
+              <button
+                type="button"
+                onClick={confirmCode}
+                disabled={busy}
+                style={{
+                  ...primaryButtonStyle,
+                  background: busy ? 'var(--border)' : 'var(--ocean)',
+                  color: busy ? 'var(--fg-3)' : '#fff',
+                  marginTop: '18px',
+                }}
+              >
+                {busy ? '確認しています...' : '確認する'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setError('')
+                  setCode('')
+                  setStep('phone')
+                }}
+                disabled={busy}
+                style={{
+                  ...outlineButtonStyle,
+                  color: 'var(--fg-2)',
+                  marginTop: '12px',
+                }}
+              >
+                電話番号を直す
+              </button>
+            </div>
           )}
+
+          <p style={{
+            color: 'var(--fg-2)',
+            fontSize: '16px',
+            lineHeight: 1.6,
+            textAlign: 'center',
+            margin: '24px 0 0',
+          }}>
+            2回目以降は自動で開きます
+          </p>
         </div>
-      </div>
+      </section>
     </main>
   )
 }
-
-
-
