@@ -111,24 +111,24 @@ export default function CustomersPage() {
 
   if (loading) return (
     <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'var(--surface)', fontSize: '16px' }}>読み込み中...</div>
+      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
     </main>
   )
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
 
       {/* ヘッダー */}
-      <div style={{ background: 'var(--ocean)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
+      <div style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, zIndex: 20, minHeight: '80px', overflow: 'hidden' }}>
         <button
           onClick={() => selectedCustomer ? setSelectedCustomer(null) : router.push('/dashboard')}
-          style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: 'var(--surface)', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.3)', color: 'var(--surface)', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--surface)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>
             {selectedCustomer ? selectedCustomer.name : '顧客名簿'}
           </div>
-          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
+          <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5 }}>
             {selectedCustomer
               ? `来船 ${selectedCustomer.totalVisits}回 / 合計 ${selectedCustomer.totalPeople}名`
               : `承認済み ${customers.length}名のお客さん`}
@@ -138,7 +138,7 @@ export default function CustomersPage() {
 
       {/* ===== 顧客詳細ビュー ===== */}
       {selectedCustomer && (
-        <div style={{ padding: '12px' }}>
+        <div style={{ padding: '16px' }}>
 
           {/* プロフィールカード */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
@@ -159,7 +159,7 @@ export default function CustomersPage() {
                 { label: '合計人数', value: `${selectedCustomer.totalPeople}名` },
                 { label: '最終来船', value: formatDateShort(selectedCustomer.lastDate) },
               ].map(({ label, value }) => (
-                <div key={label} style={{ background: 'var(--bg)', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
+                <div key={label} style={{ background: 'var(--bg)', borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
                   <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700, marginBottom: '4px' }}>{label}</div>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-1)' }}>{value}</div>
                 </div>
@@ -184,7 +184,7 @@ export default function CustomersPage() {
                 href={`tel:${selectedCustomer.tel}`}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  width: '100%', padding: '14px', fontSize: '15px', fontWeight: 700,
+                  width: '100%', padding: '14px', fontSize: '18px', fontWeight: 700,
                   background: 'var(--status-day-bg)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)',
                   borderRadius: '10px', textDecoration: 'none', boxSizing: 'border-box',
                 }}
@@ -196,7 +196,7 @@ export default function CustomersPage() {
 
           {/* 予約履歴 */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
-            <div style={{ background: 'var(--bg)', padding: '10px 16px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ background: 'var(--bg)', padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
               <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-1)' }}>来船履歴</div>
             </div>
             {selectedCustomer.bookings
@@ -225,11 +225,11 @@ export default function CustomersPage() {
 
       {/* ===== 顧客一覧ビュー ===== */}
       {!selectedCustomer && (
-        <div style={{ padding: '12px' }}>
+        <div style={{ padding: '16px' }}>
 
           {/* 検索バー */}
           <div style={{ position: 'relative', marginBottom: '12px' }}>
-            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', color: 'var(--fg-3)' }}>🔍</span>
+            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', color: 'var(--fg-3)' }}>🔍</span>
             <input
               type="search"
               value={search}
@@ -237,7 +237,7 @@ export default function CustomersPage() {
               placeholder="名前・電話番号で検索"
               style={{
                 width: '100%', padding: '12px 12px 12px 38px',
-                fontSize: '15px', border: '2px solid var(--border)', borderRadius: '10px',
+                fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px',
                 outline: 'none', fontFamily: 'inherit', background: 'var(--surface)', boxSizing: 'border-box',
               }}
             />
@@ -247,7 +247,7 @@ export default function CustomersPage() {
           {customers.length === 0 ? (
             <div style={{ background: 'var(--surface)', border: '2px dashed var(--border)', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
               <div style={{ fontSize: '36px', marginBottom: '12px' }}>👥</div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>まだ顧客データがありません</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>まだ顧客データがありません</div>
               <div style={{ fontSize: '14px', color: 'var(--fg-3)', lineHeight: 1.6 }}>
                 予約が承認されると<br />ここに顧客情報が表示されます
               </div>
@@ -269,13 +269,13 @@ export default function CustomersPage() {
                   }}
                 >
                   {/* アバター */}
-                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--status-day-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--status-day-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
                     👤
                   </div>
 
                   {/* 情報 */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '3px' }}>{c.name}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '3px' }}>{c.name}</div>
                     <div style={{ fontSize: '14px', color: 'var(--fg-2)' }}>{c.tel}</div>
                     {c.fishingStyles.length > 0 && (
                       <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -286,7 +286,7 @@ export default function CustomersPage() {
 
                   {/* 来船回数バッジ */}
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)' }}>{c.totalVisits}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ocean)' }}>{c.totalVisits}</div>
                     <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700 }}>回</div>
                     <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '2px' }}>{formatDateShort(c.lastDate)}</div>
                   </div>
@@ -302,7 +302,7 @@ export default function CustomersPage() {
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
                 style={{
-                  padding: '10px 20px', fontSize: '14px', fontWeight: 700,
+                  padding: '14px 20px', fontSize: '14px', fontWeight: 700,
                   background: page === 0 ? 'var(--status-closed-bg)' : 'var(--surface)',
                   color: page === 0 ? 'var(--fg-3)' : 'var(--ocean)',
                   border: '2px solid var(--border)', borderRadius: '8px',
@@ -316,7 +316,7 @@ export default function CustomersPage() {
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
                 style={{
-                  padding: '10px 20px', fontSize: '14px', fontWeight: 700,
+                  padding: '14px 20px', fontSize: '14px', fontWeight: 700,
                   background: page >= totalPages - 1 ? 'var(--status-closed-bg)' : 'var(--surface)',
                   color: page >= totalPages - 1 ? 'var(--fg-3)' : 'var(--ocean)',
                   border: '2px solid var(--border)', borderRadius: '8px',

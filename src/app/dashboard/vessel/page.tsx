@@ -276,7 +276,7 @@ export default function VesselPage() {
 
   if (loading) return (
     <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'var(--surface)', fontSize: '16px' }}>読み込み中...</div>
+      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
     </main>
   )
 
@@ -291,45 +291,45 @@ export default function VesselPage() {
   }
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
 
       {/* ヘッダー */}
-      <div style={{ background: 'var(--ocean)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
+      <div style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, zIndex: 20, minHeight: '80px', overflow: 'hidden' }}>
         <button
           onClick={() => view === 'edit' ? setView('top') : router.push('/dashboard')}
-          style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: 'var(--surface)', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.3)', color: 'var(--surface)', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--surface)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>
             {view === 'top' ? '船の情報・予約リンク' : '船の情報を変更する'}
           </div>
-          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
+          <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5 }}>
             {view === 'top' ? vessel.name : '変更内容を入力して保存してください'}
           </div>
         </div>
       </div>
 
-      <div style={{ padding: '12px' }}>
+      <div style={{ padding: '16px' }}>
 
         {/* ===== 確認ビュー ===== */}
         {view === 'top' && (
           <>
             {/* 保存完了バナー */}
             {saved && (
-              <div style={{ background: 'var(--status-ok-bg)', border: '1px solid var(--status-ok-bd)', borderRadius: '10px', padding: '12px 16px', marginBottom: '12px', fontSize: '16px', fontWeight: 700, color: 'var(--status-ok-fg)', textAlign: 'center' }}>
+              <div style={{ background: 'var(--status-ok-bg)', border: '1px solid var(--status-ok-bd)', borderRadius: '10px', padding: '12px 16px', marginBottom: '12px', fontSize: '18px', fontWeight: 700, color: 'var(--status-ok-fg)', textAlign: 'center' }}>
                 変更を保存しました ✓
               </div>
             )}
 
             {/* 予約リンク カード */}
             <div style={{ background: 'var(--surface)', border: '2px solid var(--ocean-light)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '16px' }}>🔗</span> お客さんへの予約リンク
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '18px' }}>🔗</span> お客さんへの予約リンク
               </div>
 
               {/* QRコード */}
               <div ref={qrRef} style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
-                <div style={{ background: 'var(--surface)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', display: 'inline-block' }}>
+                <div style={{ background: 'var(--surface)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)', display: 'inline-block' }}>
                   <QRCodeSVG value={reserveUrl} size={160} />
                 </div>
               </div>
@@ -342,7 +342,7 @@ export default function VesselPage() {
               <button
                 onClick={handleDownloadQR}
                 style={{
-                  width: '100%', padding: '12px', marginBottom: '12px', fontSize: '16px', fontWeight: 700,
+                  width: '100%', padding: '16px', marginBottom: '12px', fontSize: '18px', fontWeight: 700,
                   background: 'var(--bg)', color: 'var(--fg-1)',
                   border: '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit',
                 }}
@@ -359,7 +359,7 @@ export default function VesselPage() {
               <button
                 onClick={() => handleCopy(reserveUrl)}
                 style={{
-                  width: '100%', padding: '14px', fontSize: '16px', fontWeight: 700,
+                  width: '100%', padding: '14px', fontSize: '18px', fontWeight: 700,
                   background: copied ? 'var(--status-ok-bg)' : 'var(--ocean)',
                   color: copied ? 'var(--status-ok-fg)' : 'var(--surface)',
                   border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit',
@@ -372,8 +372,8 @@ export default function VesselPage() {
 
             {/* 船の情報カード */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
-              <div style={{ background: 'var(--bg)', padding: '10px 16px', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>現在の船の情報</div>
+              <div style={{ background: 'var(--bg)', padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>現在の船の情報</div>
               </div>
               <div style={{ padding: '4px 0' }}>
                 {[
@@ -388,8 +388,8 @@ export default function VesselPage() {
                   { label: '貸切OK', value: vessel.charter_accepted ? 'はい' : 'いいえ' },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 16px', borderBottom: '1px solid var(--status-closed-bg)' }}>
-                    <span style={{ fontSize: '16px', color: 'var(--fg-2)', fontWeight: 700, flexShrink: 0, marginRight: '12px' }}>{label}</span>
-                    <span style={{ fontSize: '16px', color: 'var(--fg-1)', fontWeight: 600, textAlign: 'right' }}>{value}</span>
+                    <span style={{ fontSize: '18px', color: 'var(--fg-2)', fontWeight: 700, flexShrink: 0, marginRight: '12px' }}>{label}</span>
+                    <span style={{ fontSize: '18px', color: 'var(--fg-1)', fontWeight: 600, textAlign: 'right' }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -397,8 +397,8 @@ export default function VesselPage() {
 
             {/* 設備・サービスカード */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
-              <div style={{ background: 'var(--bg)', padding: '10px 16px', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>設備・サービス</div>
+              <div style={{ background: 'var(--bg)', padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>設備・サービス</div>
               </div>
               <div style={{ padding: '4px 0' }}>
                 {facilityDisplayCategories.flatMap(category => [
@@ -406,9 +406,9 @@ export default function VesselPage() {
                     {category.title}
                   </div>,
                   ...category.items.map(item => (
-                    <div key={`${category.title}-${item.label}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', padding: '10px 16px', borderBottom: '1px solid var(--status-closed-bg)' }}>
-                      <span style={{ fontSize: '16px', color: 'var(--fg-2)', fontWeight: 700 }}>{item.label}</span>
-                      <span style={{ fontSize: '16px', color: 'var(--fg-1)', fontWeight: 600, textAlign: 'right' }}>{item.value(facilities)}</span>
+                    <div key={`${category.title}-${item.label}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', padding: '14px 16px', borderBottom: '1px solid var(--status-closed-bg)' }}>
+                      <span style={{ fontSize: '18px', color: 'var(--fg-2)', fontWeight: 700 }}>{item.label}</span>
+                      <span style={{ fontSize: '18px', color: 'var(--fg-1)', fontWeight: 600, textAlign: 'right' }}>{item.value(facilities)}</span>
                     </div>
                   )),
                 ])}
@@ -419,7 +419,7 @@ export default function VesselPage() {
             <button
               onClick={startEdit}
               style={{
-                width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700,
+                width: '100%', padding: '16px', fontSize: '18px', fontWeight: 700,
                 background: 'var(--surface)', color: 'var(--ocean)', border: '2px solid var(--ocean)',
                 borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit',
               }}
@@ -434,39 +434,39 @@ export default function VesselPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
             {error && (
-              <div style={{ background: 'var(--status-full-bg)', border: '1px solid var(--status-full-bd)', borderRadius: '8px', padding: '12px', fontSize: '14px', color: 'var(--status-full-fg)' }}>
+              <div style={{ background: 'var(--status-full-bg)', border: '1px solid var(--status-full-bd)', borderRadius: '8px', padding: '16px', fontSize: '14px', color: 'var(--status-full-fg)' }}>
                 {error}
               </div>
             )}
 
             {/* 基本情報 */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>基本情報</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>基本情報</div>
 
-              <label style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
                 船の名前 <span style={{ background: 'var(--status-full-fg)', color: 'var(--surface)', fontSize: '14px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
               </label>
               <input
                 value={form.name}
                 onChange={e => update('name', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '16px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
                 placeholder="例：海皇丸"
               />
 
-              <label style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
                 船長名 <span style={{ background: 'var(--status-full-fg)', color: 'var(--surface)', fontSize: '14px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
               </label>
               <input
                 value={form.captain_name}
                 onChange={e => update('captain_name', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '0', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '16px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '0', boxSizing: 'border-box' }}
                 placeholder="例：山田 太郎"
               />
             </div>
 
             {/* 定員 */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>最大乗船人数</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>最大乗船人数</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px' }}>
                 {[4, 6, 8, 10].map(n => (
                   <button
@@ -474,7 +474,7 @@ export default function VesselPage() {
                     onClick={() => update('capacity', n)}
                     style={{
                       padding: '14px 8px', textAlign: 'center', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
-                      fontSize: '16px', fontWeight: 700,
+                      fontSize: '18px', fontWeight: 700,
                       background: form.capacity === n ? 'var(--status-day-bg)' : 'var(--bg)',
                       color: form.capacity === n ? 'var(--ocean)' : 'var(--fg-3)',
                       border: form.capacity === n ? '2px solid var(--ocean-light)' : '2px solid transparent',
@@ -486,35 +486,35 @@ export default function VesselPage() {
 
             {/* 出船場所 */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>出船場所</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>出船場所</div>
 
-              <label style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>都道府県</label>
+              <label style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>都道府県</label>
               <input
                 value={form.prefecture}
                 onChange={e => update('prefecture', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '16px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
                 placeholder="例：福岡県"
               />
 
-              <label style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>漁港・出船場所</label>
+              <label style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>漁港・出船場所</label>
               <input
                 value={form.port_name}
                 onChange={e => update('port_name', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '16px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
                 placeholder="例：糸島市志摩野北漁港"
               />
 
-              <label style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
                 アクセスのメモ <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（任意）</span>
               </label>
               <input
                 value={form.access}
                 onChange={e => update('access', e.target.value)}
-                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '16px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' }}
                 placeholder="例：筑前前原駅から車で15分"
               />
 
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '6px' }}>駐車場</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '6px' }}>駐車場</div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 {[
                   { value: 'free', label: 'あり' },
@@ -527,7 +527,7 @@ export default function VesselPage() {
                       key={option.value}
                       onClick={() => updateFacility('parking', option.value)}
                       style={{
-                        flex: 1, padding: '12px 4px', borderRadius: '8px', fontSize: '16px', fontWeight: 700,
+                        flex: 1, padding: '12px 4px', borderRadius: '8px', fontSize: '18px', fontWeight: 700,
                         background: currentParking === option.value ? 'var(--status-day-bg)' : 'var(--bg)',
                         color: currentParking === option.value ? 'var(--ocean)' : 'var(--fg-3)',
                         border: currentParking === option.value ? '2px solid var(--ocean-light)' : '2px solid transparent',
@@ -543,7 +543,7 @@ export default function VesselPage() {
 
             {/* 乗船料金（釣り物別に設定可） */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <label style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', display: 'block', marginBottom: '4px' }}>
                 乗船料金 <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（任意・釣り物別に改行で入力可）</span>
               </label>
               <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginBottom: '8px' }}>例：タイラバ 15,000円　イカメタル 12,000円</div>
@@ -551,7 +551,7 @@ export default function VesselPage() {
                 value={form.price}
                 onChange={e => update('price', e.target.value)}
                 rows={3}
-                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'none', lineHeight: 1.6 }}
+                style={{ width: '100%', padding: '16px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'none', lineHeight: 1.6 }}
                 placeholder={'例：\nタイラバ　15,000円\nイカメタル　12,000円\n（エサ・氷代込み）'}
               />
             </div>
@@ -563,10 +563,10 @@ export default function VesselPage() {
                 const cur = (fac as Record<string, unknown>)[key] as string
                 return (
                   <div key={key} style={{ marginBottom: '10px' }}>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '6px' }}>{label}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '6px' }}>{label}</div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       {opts.map(o => (
-                        <button key={o.v} onClick={() => updateFacility(key, o.v)} style={{ flex: 1, padding: '10px 4px', borderRadius: '8px', fontSize: '16px', fontWeight: 700, background: cur === o.v ? 'var(--status-day-bg)' : 'var(--bg)', color: cur === o.v ? 'var(--ocean)' : 'var(--fg-3)', border: cur === o.v ? '2px solid var(--ocean-light)' : '2px solid transparent', cursor: 'pointer', fontFamily: 'inherit' }}>{o.l}</button>
+                        <button key={o.v} onClick={() => updateFacility(key, o.v)} style={{ flex: 1, padding: '14px 8px', borderRadius: '8px', fontSize: '18px', fontWeight: 700, background: cur === o.v ? 'var(--status-day-bg)' : 'var(--bg)', color: cur === o.v ? 'var(--ocean)' : 'var(--fg-3)', border: cur === o.v ? '2px solid var(--ocean-light)' : '2px solid transparent', cursor: 'pointer', fontFamily: 'inherit' }}>{o.l}</button>
                       ))}
                     </div>
                   </div>
@@ -575,12 +575,12 @@ export default function VesselPage() {
               const toggle = (key: keyof Facilities, label: string) => {
                 const val = (fac as Record<string, unknown>)[key] as boolean
                 return (
-                  <div key={key} onClick={() => updateFacility(key, !val)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px', background: val ? 'var(--status-day-bg)' : 'var(--bg)', border: val ? '2px solid var(--ocean-light)' : '2px solid transparent' }}>
-                    <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>{label}</span>
-                    <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: val ? 'var(--ocean-light)' : 'var(--border)', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
-                      <div style={{ position: 'absolute', top: '3px', left: val ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--surface)', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
+                  <button key={key} type="button" onClick={() => updateFacility(key, !val)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '6px', background: val ? 'var(--status-day-bg)' : 'var(--bg)', border: val ? '2px solid var(--ocean-light)' : '2px solid transparent', width: '100%', fontFamily: 'inherit', textAlign: 'left' }}>
+                    <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{label}</span>
+                    <div style={{ width: '72px', height: '40px', borderRadius: '20px', background: val ? 'var(--ocean-light)' : 'var(--border)', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
+                      <div style={{ position: 'absolute', top: '4px', left: val ? '36px' : '4px', width: '32px', height: '32px', borderRadius: '50%', background: 'var(--surface)', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
                     </div>
-                  </div>
+                  </button>
                 )
               }
               const catHeader = (label: string) => (
@@ -588,7 +588,7 @@ export default function VesselPage() {
               )
               return (
                 <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>設備・サービス</div>
+                  <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>設備・サービス</div>
 
                   {catHeader('釣り道具')}
                   {threeChoice('tackle_rental', 'タックル貸出', [{ v: 'free', l: '無料' }, { v: 'paid', l: '有料' }, { v: 'none', l: 'なし' }])}
@@ -617,19 +617,19 @@ export default function VesselPage() {
                   {catHeader('支払方法')}
                   <div style={{ marginBottom: '10px' }}>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <button disabled style={{ padding: '10px 16px', borderRadius: '8px', fontSize: '16px', fontWeight: 700, background: 'var(--status-day-bg)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', cursor: 'not-allowed', fontFamily: 'inherit' }}>現金</button>
+                      <button disabled style={{ padding: '14px 16px', borderRadius: '8px', fontSize: '18px', fontWeight: 700, background: 'var(--status-day-bg)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', cursor: 'not-allowed', fontFamily: 'inherit' }}>現金</button>
                       {([{ key: 'credit' as const, label: 'クレジット' }, { key: 'paypay' as const, label: 'PayPay' }]).map(({ key, label }) => {
                         const val = (fac as Record<string, unknown>)[key] as boolean
                         return (
-                          <button key={key} onClick={() => updateFacility(key, !val)} style={{ padding: '10px 16px', borderRadius: '8px', fontSize: '16px', fontWeight: 700, background: val ? 'var(--status-day-bg)' : 'var(--bg)', color: val ? 'var(--ocean)' : 'var(--fg-3)', border: val ? '2px solid var(--ocean-light)' : '2px solid transparent', cursor: 'pointer', fontFamily: 'inherit' }}>{label}</button>
+                          <button key={key} onClick={() => updateFacility(key, !val)} style={{ padding: '14px 16px', borderRadius: '8px', fontSize: '18px', fontWeight: 700, background: val ? 'var(--status-day-bg)' : 'var(--bg)', color: val ? 'var(--ocean)' : 'var(--fg-3)', border: val ? '2px solid var(--ocean-light)' : '2px solid transparent', cursor: 'pointer', fontFamily: 'inherit' }}>{label}</button>
                         )
                       })}
                     </div>
                   </div>
-                  <label style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
                     その他・備考 <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（任意）</span>
                   </label>
-                  <input value={fac.payment} onChange={e => updateFacility('payment', e.target.value)} style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }} placeholder="例：ポイント支払い可" />
+                  <input value={fac.payment} onChange={e => updateFacility('payment', e.target.value)} style={{ width: '100%', padding: '16px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }} placeholder="例：ポイント支払い可" />
 
                   {catHeader('こだわり設備')}
                   {toggle('casting_deck', 'キャスティングデッキ')}
@@ -641,7 +641,7 @@ export default function VesselPage() {
 
             {/* お客さん一人あたりの最大予約件数 */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>お客さん一人あたりの最大予約件数</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>お客さん一人あたりの最大予約件数</div>
               <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginBottom: '10px' }}>同じ電話番号で受け付ける予約の上限です</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input
@@ -650,15 +650,15 @@ export default function VesselPage() {
                   onChange={e => update('max_bookings_per_customer', Math.max(1, Math.min(99, Number(e.target.value) || 1)))}
                   min={1}
                   max={99}
-                  style={{ flex: 1, padding: '12px', fontSize: '24px', fontWeight: 700, border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)', textAlign: 'center' }}
+                  style={{ flex: 1, padding: '16px', fontSize: '24px', fontWeight: 700, border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)', textAlign: 'center' }}
                 />
-                <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>件まで</span>
+                <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>件まで</span>
               </div>
             </div>
 
             {/* オプション */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>予約ページの表示設定</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>予約ページの表示設定</div>
 
               {([
                 { key: 'beginner_accepted' as const, label: '初心者歓迎', sub: '予約ページに「初心者歓迎」と表示されます' },
@@ -675,11 +675,11 @@ export default function VesselPage() {
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>{label}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{label}</div>
                     <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>{sub}</div>
                   </div>
-                  <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: form[key] ? 'var(--ocean-light)' : 'var(--border)', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
-                    <div style={{ position: 'absolute', top: '3px', left: form[key] ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--surface)', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
+                  <div style={{ width: '72px', height: '40px', borderRadius: '20px', background: form[key] ? 'var(--ocean-light)' : 'var(--border)', position: 'relative', flexShrink: 0, transition: 'background .2s' }}>
+                    <div style={{ position: 'absolute', top: '4px', left: form[key] ? '36px' : '4px', width: '32px', height: '32px', borderRadius: '50%', background: 'var(--surface)', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .2s' }} />
                   </div>
                 </div>
               ))}
@@ -690,7 +690,7 @@ export default function VesselPage() {
               onClick={handleSave}
               disabled={saving}
               style={{
-                width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700,
+                width: '100%', padding: '16px', fontSize: '18px', fontWeight: 700,
                 background: saving ? 'var(--border)' : 'var(--ocean)',
                 color: saving ? 'var(--fg-3)' : 'var(--surface)',
                 border: 'none', borderRadius: '12px', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
@@ -701,7 +701,7 @@ export default function VesselPage() {
 
             <button
               onClick={() => setView('top')}
-              style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: 700, background: 'transparent', color: 'var(--fg-2)', border: '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ width: '100%', padding: '14px', fontSize: '18px', fontWeight: 700, background: 'transparent', color: 'var(--fg-2)', border: '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               キャンセル
             </button>

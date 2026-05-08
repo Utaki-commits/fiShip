@@ -188,30 +188,30 @@ export default function SettingsPage() {
 
   if (loading) return (
     <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'var(--surface)', fontSize: '16px' }}>読み込み中...</div>
+      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
     </main>
   )
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
 
       {/* ヘッダー */}
-      <div style={{ background: 'var(--ocean)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
+      <div style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, zIndex: 20, minHeight: '80px', overflow: 'hidden' }}>
         <button
           onClick={() => view === 'form' ? setView('list') : router.push('/dashboard')}
-          style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: 'var(--surface)', fontSize: '18px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.3)', color: 'var(--surface)', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--surface)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>
             {view === 'list' ? '便の設定' : editingId ? '便を編集する' : '便を追加する'}
           </div>
-          <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
+          <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5 }}>
             {view === 'list' ? '昼便・夜便の運航スケジュールを管理' : '営業する便の情報を入力してください'}
           </div>
         </div>
       </div>
 
-      <div style={{ padding: '12px' }}>
+      <div style={{ padding: '16px' }}>
 
         {/* ===== 一覧ビュー ===== */}
         {view === 'list' && (
@@ -219,7 +219,7 @@ export default function SettingsPage() {
             {settings.length === 0 ? (
               <div style={{ background: 'var(--surface)', border: '2px dashed var(--border)', borderRadius: '14px', padding: '40px 20px', textAlign: 'center', marginBottom: '12px' }}>
                 <div style={{ fontSize: '36px', marginBottom: '12px' }}>⛵</div>
-                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>まだ便が設定されていません</div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>まだ便が設定されていません</div>
                 <div style={{ fontSize: '14px', color: 'var(--fg-3)', lineHeight: 1.6 }}>
                   「便を追加する」から<br />昼便・夜便を登録してください
                 </div>
@@ -238,7 +238,7 @@ export default function SettingsPage() {
                       }}>
                         <span style={{ fontSize: '18px' }}>{s.bin_type === 'day' ? '☀️' : '🌙'}</span>
                         <div style={{ flex: 1 }}>
-                          <span style={{ fontSize: '16px', fontWeight: 700, color: s.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
+                          <span style={{ fontSize: '18px', fontWeight: 700, color: s.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
                             {s.bin_type === 'day' ? '昼便' : '夜便'}
                             {s.name ? `　${s.name}` : ''}
                           </span>
@@ -252,11 +252,11 @@ export default function SettingsPage() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
                           <div>
                             <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700, marginBottom: '2px' }}>シーズン</div>
-                            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>{seasonLabel(s)}</div>
+                            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{seasonLabel(s)}</div>
                           </div>
                           <div>
                             <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700, marginBottom: '2px' }}>定員</div>
-                            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>{s.max_capacity}名</div>
+                            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{s.max_capacity}名</div>
                           </div>
                         </div>
                         {/* 曜日バッジ */}
@@ -288,7 +288,7 @@ export default function SettingsPage() {
                         <button
                           onClick={() => handleEditClick(s)}
                           style={{
-                            flex: 1, padding: '15px', fontSize: '16px', fontWeight: 700,
+                            flex: 1, padding: '15px', fontSize: '18px', fontWeight: 700,
                             background: 'var(--surface)', color: 'var(--ocean-light)', border: 'none',
                             borderRight: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit',
                           }}
@@ -297,7 +297,7 @@ export default function SettingsPage() {
                           onClick={() => handleDelete(s.id)}
                           disabled={deleting === s.id}
                           style={{
-                            flex: 1, padding: '15px', fontSize: '16px', fontWeight: 700,
+                            flex: 1, padding: '15px', fontSize: '18px', fontWeight: 700,
                             background: deleting === s.id ? 'var(--border)' : 'var(--surface)',
                             color: deleting === s.id ? 'var(--fg-3)' : 'var(--status-full-fg)',
                             border: 'none', cursor: deleting === s.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
@@ -313,7 +313,7 @@ export default function SettingsPage() {
             <button
               onClick={handleAddClick}
               style={{
-                width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700,
+                width: '100%', padding: '16px', fontSize: '18px', fontWeight: 700,
                 background: 'var(--ocean)', color: 'var(--surface)', border: 'none', borderRadius: '12px',
                 cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               }}
@@ -329,7 +329,7 @@ export default function SettingsPage() {
 
             {/* 便の名前 */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>
                 便の名前 <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（任意）</span>
               </div>
               <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginBottom: '8px' }}>
@@ -340,13 +340,13 @@ export default function SettingsPage() {
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="例：タイラバ便、イカメタル便"
-                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '16px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
             </div>
 
             {/* 便の種類 */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>便の種類</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>便の種類</div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {([{ key: 'day', label: '☀️ 昼便', desc: '朝〜夕方' }, { key: 'night', label: '🌙 夜便', desc: '夕方〜深夜' }] as const).map(opt => (
                   <button
@@ -362,7 +362,7 @@ export default function SettingsPage() {
                         : '2px solid transparent',
                     }}
                   >
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: form.bin_type === opt.key ? (opt.key === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)') : 'var(--fg-3)' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: form.bin_type === opt.key ? (opt.key === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)') : 'var(--fg-3)' }}>
                       {opt.label}
                     </div>
                     <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '4px' }}>{opt.desc}</div>
@@ -373,22 +373,22 @@ export default function SettingsPage() {
 
             {/* 営業シーズン */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>営業シーズン</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>営業シーズン</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <select
                   value={form.start_month}
                   onChange={e => setForm(f => ({ ...f, start_month: Number(e.target.value) }))}
-                  style={{ flex: 1, padding: '12px 8px', fontSize: '16px', fontWeight: 700, border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)' }}
+                  style={{ flex: 1, padding: '12px 8px', fontSize: '18px', fontWeight: 700, border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)' }}
                 >
                   {MONTH_NAMES.map((name, i) => (
                     <option key={i} value={i}>{name}</option>
                   ))}
                 </select>
-                <span style={{ fontSize: '16px', color: 'var(--fg-2)', fontWeight: 700 }}>〜</span>
+                <span style={{ fontSize: '18px', color: 'var(--fg-2)', fontWeight: 700 }}>〜</span>
                 <select
                   value={form.end_month}
                   onChange={e => setForm(f => ({ ...f, end_month: Number(e.target.value) }))}
-                  style={{ flex: 1, padding: '12px 8px', fontSize: '16px', fontWeight: 700, border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)' }}
+                  style={{ flex: 1, padding: '12px 8px', fontSize: '18px', fontWeight: 700, border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)' }}
                 >
                   {MONTH_NAMES.map((name, i) => (
                     <option key={i} value={i}>{name}</option>
@@ -404,14 +404,14 @@ export default function SettingsPage() {
 
             {/* 出る曜日 */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>出る曜日</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>出る曜日</div>
               <div style={{ display: 'flex', gap: '6px' }}>
                 {DAY_NAMES.map((name, i) => (
                   <button
                     key={i}
                     onClick={() => toggleDay(i)}
                     style={{
-                      flex: 1, height: '64px', minWidth: '40px', borderRadius: '10px', fontSize: '16px', fontWeight: 700,
+                      flex: 1, height: '64px', minWidth: '40px', borderRadius: '10px', fontSize: '18px', fontWeight: 700,
                       cursor: 'pointer', fontFamily: 'inherit', border: 'none',
                       background: form.days_of_week.includes(i)
                         ? (form.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)')
@@ -425,18 +425,18 @@ export default function SettingsPage() {
 
             {/* 出発時刻 */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>出発時刻</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>出発時刻</div>
               <input
                 type="time"
                 value={form.departure_time}
                 onChange={e => setForm(f => ({ ...f, departure_time: e.target.value }))}
-                style={{ width: '100%', padding: '12px', fontSize: '18px', fontWeight: 700, border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)' }}
+                style={{ width: '100%', padding: '16px', fontSize: '18px', fontWeight: 700, border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)' }}
               />
             </div>
 
             {/* 定員 */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>定員（最大人数）</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>定員（最大人数）</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input
                   type="number"
@@ -445,24 +445,24 @@ export default function SettingsPage() {
                   min={1}
                   max={30}
                   placeholder="例：8"
-                  style={{ flex: 1, padding: '12px', fontSize: '24px', fontWeight: 700, border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)', textAlign: 'center' }}
+                  style={{ flex: 1, padding: '16px', fontSize: '24px', fontWeight: 700, border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)', textAlign: 'center' }}
                 />
-                <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>名</span>
+                <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>名</span>
               </div>
             </div>
 
             {/* 魚種（任意） */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>釣れる魚種（任意）</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>釣れる魚種（任意）</div>
               <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginBottom: '10px' }}>予約フォームに表示されます</div>
               {form.fish_types.length > 0 && (
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
                   {form.fish_types.map(f => (
-                    <span key={f} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '16px', background: 'var(--status-day-bg)', color: 'var(--ocean)', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>
+                    <span key={f} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '18px', background: 'var(--status-day-bg)', color: 'var(--ocean)', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>
                       {f}
                       <button
                         onClick={() => removeFish(f)}
-                        style={{ background: 'none', border: 'none', color: 'var(--ocean-light)', cursor: 'pointer', padding: '0', fontSize: '16px', lineHeight: 1 }}
+                        style={{ background: 'none', border: 'none', color: 'var(--ocean-light)', cursor: 'pointer', padding: '0', fontSize: '18px', lineHeight: 1 }}
                       >×</button>
                     </span>
                   ))}
@@ -475,13 +475,13 @@ export default function SettingsPage() {
                   onChange={e => setForm(f => ({ ...f, fish_input: e.target.value }))}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addFish() } }}
                   placeholder="例：マダイ"
-                  style={{ flex: 1, padding: '10px 12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)' }}
+                  style={{ flex: 1, padding: '10px 12px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', color: 'var(--fg-1)' }}
                 />
                 <button
                   onClick={addFish}
                   disabled={!form.fish_input.trim()}
                   style={{
-                    padding: '10px 16px', fontSize: '16px', fontWeight: 700,
+                    padding: '14px 16px', fontSize: '18px', fontWeight: 700,
                     background: form.fish_input.trim() ? 'var(--ocean)' : 'var(--border)',
                     color: form.fish_input.trim() ? 'var(--surface)' : 'var(--fg-3)',
                     border: 'none', borderRadius: '8px', cursor: form.fish_input.trim() ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
@@ -492,7 +492,7 @@ export default function SettingsPage() {
 
             {/* エラー */}
             {error && (
-              <div style={{ background: 'var(--status-full-bg)', border: '1px solid var(--status-full-bd)', borderRadius: '8px', padding: '12px', fontSize: '16px', color: 'var(--status-full-fg)' }}>
+              <div style={{ background: 'var(--status-full-bg)', border: '1px solid var(--status-full-bd)', borderRadius: '8px', padding: '16px', fontSize: '18px', color: 'var(--status-full-fg)' }}>
                 {error}
               </div>
             )}
@@ -502,7 +502,7 @@ export default function SettingsPage() {
               onClick={handleSave}
               disabled={saving}
               style={{
-                width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700,
+                width: '100%', padding: '16px', fontSize: '18px', fontWeight: 700,
                 background: saving ? 'var(--border)' : 'var(--ocean)',
                 color: saving ? 'var(--fg-3)' : 'var(--surface)',
                 border: 'none', borderRadius: '12px',
@@ -516,7 +516,7 @@ export default function SettingsPage() {
             <button
               onClick={() => setView('list')}
               style={{
-                width: '100%', padding: '14px', fontSize: '16px', fontWeight: 700,
+                width: '100%', padding: '14px', fontSize: '18px', fontWeight: 700,
                 background: 'transparent', color: 'var(--fg-2)',
                 border: '2px solid var(--border)', borderRadius: '12px',
                 cursor: 'pointer', fontFamily: 'inherit',

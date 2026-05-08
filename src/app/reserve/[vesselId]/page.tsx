@@ -331,12 +331,12 @@ export default function ReservePage() {
 
   if (loading) return (
     <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'var(--surface)', fontSize: '16px' }}>読み込み中...</div>
+      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
     </main>
   )
 
   if (!vessel) return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'sans-serif' }}>
+    <main style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'var(--font-sans)' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚓</div>
         <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>
@@ -350,23 +350,23 @@ export default function ReservePage() {
   )
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
 
       {/* ヘッダー */}
-      <div style={{ background: 'var(--ocean)', padding: '20px 16px 34px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '32px 22px 48px', position: 'relative', overflow: 'hidden', isolation: 'isolate' }}>
         <div style={{ position: 'absolute', bottom: '-16px', left: 0, right: 0, height: '32px', background: 'var(--bg)', borderRadius: '50% 50% 0 0 / 100% 100% 0 0' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-          <div style={{ width: '48px', height: '48px', background: 'var(--gold)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>⚓</div>
+          <div style={{ width: '56px', height: '56px', background: 'var(--gold)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>⚓</div>
           <div>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>{vessel.name}</div>
-            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)', marginTop: '2px' }}>{vessel.captain_name} 船長</div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>{vessel.name}</div>
+            <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.82)', marginTop: '2px' }}>{vessel.captain_name} 船長</div>
           </div>
         </div>
-        <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>
+        <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.82)', marginBottom: '4px' }}>
           📍 {vessel.prefecture}・{vessel.port_name}
         </div>
         {vessel.price && (
-          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--gold)', marginBottom: '6px' }}>{formatPrice(vessel.price)}</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gold)', marginBottom: '6px' }}>{formatPrice(vessel.price)}</div>
         )}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {vessel.beginner_accepted && (
@@ -408,12 +408,12 @@ export default function ReservePage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <button
               onClick={() => { if (calM === 0) { setCalM(11); setCalYear(y => y - 1) } else setCalM(m => m - 1) }}
-              style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}
+              style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}
             >◀</button>
-            <span style={{ fontSize: '17px', fontWeight: 700, color: 'var(--fg-1)' }}>{calYear}年{MONTH_NAMES[calM]}</span>
+            <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)' }}>{calYear}年{MONTH_NAMES[calM]}</span>
             <button
               onClick={() => { if (calM === 11) { setCalM(0); setCalYear(y => y + 1) } else setCalM(m => m + 1) }}
-              style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}
+              style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}
             >▶</button>
           </div>
 
@@ -437,7 +437,7 @@ export default function ReservePage() {
             {/* フォームヘッダー */}
             <div style={{ background: 'var(--ocean)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--surface)' }}>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--surface)' }}>
                   {(() => { const d = new Date(selectedDate + 'T00:00:00'); return `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）の予約` })()}
                 </div>
                 {activeBinInfo && (
@@ -448,7 +448,7 @@ export default function ReservePage() {
               </div>
               <button
                 onClick={() => { setSelectedDate(null); setCompleted(null) }}
-                style={{ width: '36px', height: '36px', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', color: 'var(--surface)', fontSize: '16px', cursor: 'pointer' }}
+                style={{ width: '56px', height: '56px', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', color: 'var(--surface)', fontSize: '18px', cursor: 'pointer' }}
               >✕</button>
             </div>
 
@@ -482,7 +482,7 @@ export default function ReservePage() {
                             opacity: b.isFull ? 0.5 : 1,
                           }}
                         >
-                          <div style={{ fontSize: '15px', fontWeight: 700, color: b.isFull ? 'var(--fg-3)' : isActive ? (isDay ? 'var(--ocean)' : 'var(--status-night-fg)') : 'var(--fg-2)' }}>
+                          <div style={{ fontSize: '18px', fontWeight: 700, color: b.isFull ? 'var(--fg-3)' : isActive ? (isDay ? 'var(--ocean)' : 'var(--status-night-fg)') : 'var(--fg-2)' }}>
                             {isDay ? '☀️ 昼便' : '🌙 夜便'}
                           </div>
                           <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '4px' }}>
@@ -530,7 +530,7 @@ export default function ReservePage() {
                 お名前 <span style={{ background: 'var(--status-full-fg)', color: 'var(--surface)', fontSize: '14px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
               </label>
               <input
-                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '14px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
                 placeholder="例：山田 太郎"
                 value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -541,7 +541,7 @@ export default function ReservePage() {
                 電話番号 <span style={{ background: 'var(--status-full-fg)', color: 'var(--surface)', fontSize: '14px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
               </label>
               <input
-                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '14px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
                 placeholder="例：090-1234-5678"
                 type="tel"
                 value={form.tel}
@@ -555,15 +555,15 @@ export default function ReservePage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '16px', padding: '12px', background: 'var(--bg)', borderRadius: '12px' }}>
                 <button
                   onClick={() => setForm(f => ({ ...f, count: Math.max(1, f.count - 1) }))}
-                  style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '20px', fontWeight: 700 }}
+                  style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '20px', fontWeight: 700 }}
                 >－</button>
                 <div style={{ textAlign: 'center', minWidth: '60px' }}>
                   <span style={{ fontSize: '28px', fontWeight: 700, color: 'var(--ocean)' }}>{form.count}</span>
-                  <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)' }}>名</span>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ocean)' }}>名</span>
                 </div>
                 <button
                   onClick={() => setForm(f => ({ ...f, count: Math.min(maxCount, f.count + 1) }))}
-                  style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '20px', fontWeight: 700 }}
+                  style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '20px', fontWeight: 700 }}
                 >＋</button>
               </div>
 
@@ -572,7 +572,7 @@ export default function ReservePage() {
                 釣り方 <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（任意）</span>
               </label>
               <input
-                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '14px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
                 placeholder="例：泳がせ、一つテンヤ"
                 value={form.fishing_style}
                 onChange={e => setForm(f => ({ ...f, fishing_style: e.target.value }))}
@@ -583,7 +583,7 @@ export default function ReservePage() {
                 一言メッセージ <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（任意）</span>
               </label>
               <textarea
-                style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '18px', boxSizing: 'border-box', resize: 'none', height: '80px' }}
+                style={{ width: '100%', padding: '14px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '18px', boxSizing: 'border-box', resize: 'none', height: '80px' }}
                 placeholder="質問・ご要望があればどうぞ"
                 value={form.message}
                 onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
@@ -594,7 +594,7 @@ export default function ReservePage() {
                 onClick={handleSubmit}
                 disabled={submitting}
                 style={{
-                  width: '100%', padding: '17px', fontSize: '17px', fontWeight: 700,
+                  width: '100%', padding: '17px', fontSize: '22px', fontWeight: 700,
                   background: submitting ? 'var(--border)' : 'var(--ocean)',
                   color: submitting ? 'var(--fg-3)' : 'var(--surface)',
                   border: 'none', borderRadius: '12px',
@@ -618,7 +618,7 @@ export default function ReservePage() {
             }}
           >
             <div style={{ fontSize: '40px', marginBottom: '10px' }}>{completed.isImmediate ? '✅' : '⏳'}</div>
-            <div style={{ fontSize: '17px', fontWeight: 700, color: completed.isImmediate ? 'var(--status-ok-fg)' : 'var(--status-pending-fg)', marginBottom: '8px' }}>
+            <div style={{ fontSize: '22px', fontWeight: 700, color: completed.isImmediate ? 'var(--status-ok-fg)' : 'var(--status-pending-fg)', marginBottom: '8px' }}>
               {completed.isImmediate ? '予約が完了しました！' : '予約リクエストを受け付けました'}
             </div>
             <div style={{ fontSize: '14px', color: completed.isImmediate ? 'var(--status-ok-fg)' : 'var(--status-pending-fg)', marginBottom: '16px', lineHeight: 1.6 }}>
