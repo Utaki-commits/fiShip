@@ -1,37 +1,36 @@
-﻿'use client'
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
+import { getSession as getAuth0Session } from '@auth0/nextjs-auth0'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
-export default function RootPage() {
-  const router = useRouter()
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-  useEffect(() => {
-    const redirect = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        router.replace('/dashboard')
-      } else {
-        router.replace('/login')
-      }
-    }
-    redirect()
-  }, [router])
+const getSupabaseSession = async () => {
+  const cookieStore = cookies()
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value
+      },
+      set(_name: string, _value: string, _options: CookieOptions) {},
+      remove(_name: string, _options: CookieOptions) {},
+    },
+  })
 
-  // リダイレクト中のスプラッシュ画面
-  return (
-    <main style={{
-      minHeight: '100vh', background: 'var(--ocean)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexDirection: 'column', gap: '16px',
-    }}>
-      <div style={{
-        width: '64px', height: '64px', background: 'var(--gold)', borderRadius: '16px',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px',
-      }}>⚓</div>
-      <div style={{ color: 'var(--surface)', fontSize: '28px', fontWeight: 700 }}>遊漁船予約システム</div>
-      <div style={{ color: 'rgba(255,255,255,0.72)', fontSize: '16px' }}>読み込み中...</div>
-    </main>
-  )
+  const { data: { session } } = await supabase.auth.getSession()
+  return session
 }
 
+export default async function RootPage() {
+  const [auth0Session, supabaseSession] = await Promise.all([
+    getAuth0Session(),
+    getSupabaseSession(),
+  ])
+
+  if (auth0Session || supabaseSession) {
+    redirect('/dashboard')
+  }
+
+  redirect('/login')
+}

@@ -2,13 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Provider } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 
 type Step = 'start' | 'phone' | 'code'
-
-const callbackUrl = 'https://fiship-project.vercel.app/auth/callback'
-const lineProvider = (process.env.NEXT_PUBLIC_SUPABASE_LINE_PROVIDER || 'line') as Provider
 
 export default function LoginPage() {
   const router = useRouter()
@@ -19,25 +15,8 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  const routeByUser = async () => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) {
-      setError('確認できませんでした。もう一度お試しください。')
-      return
-    }
-
-    const { data, error: vesselError } = await supabase
-      .from('vessels')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    if (vesselError) {
-      setError('船の情報を確認できませんでした。もう一度お試しください。')
-      return
-    }
-
-    router.replace(data ? '/dashboard' : '/register')
+  const lineStart = () => {
+    window.location.href = '/api/auth/login'
   }
 
   const formatPhoneForAuth = (digits: string) => {
@@ -45,24 +24,7 @@ export default function LoginPage() {
     return `+81${digits.slice(1)}`
   }
 
-  const startLine = async () => {
-    setBusy(true)
-    setError('')
-
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: lineProvider,
-      options: {
-        redirectTo: callbackUrl,
-      },
-    })
-
-    if (oauthError) {
-      setError('LINEを開けませんでした。時間をおいてもう一度お試しください。')
-      setBusy(false)
-    }
-  }
-
-  const sendSms = async () => {
+  const sendCode = async () => {
     const phone = formatPhoneForAuth(phoneDigits)
     if (!phone) {
       setError('電話番号を数字だけで入力してください。')
@@ -72,14 +34,14 @@ export default function LoginPage() {
     setBusy(true)
     setError('')
 
-    const { error: smsError } = await supabase.auth.signInWithOtp({
+    const { error: sendError } = await supabase.auth.signInWithOtp({
       phone,
       options: {
         shouldCreateUser: true,
       },
     })
 
-    if (smsError) {
+    if (sendError) {
       setError('番号を送れませんでした。電話番号を確認してください。')
     } else {
       setPhoneForAuth(phone)
@@ -89,7 +51,7 @@ export default function LoginPage() {
     setBusy(false)
   }
 
-  const confirmCode = async () => {
+  const verifyCode = async () => {
     if (!/^\d{6}$/.test(code)) {
       setError('6桁の番号を入力してください。')
       return
@@ -110,26 +72,17 @@ export default function LoginPage() {
       return
     }
 
-    await routeByUser()
-    setBusy(false)
+    router.replace('/auth/callback')
   }
 
-  const primaryButtonStyle = {
+  const buttonBase = {
     width: '100%',
     minHeight: '64px',
     borderRadius: '12px',
-    border: 'none',
+    fontFamily: 'inherit',
     fontSize: '22px',
     fontWeight: 700,
-    fontFamily: 'inherit',
     cursor: busy ? 'not-allowed' : 'pointer',
-  }
-
-  const outlineButtonStyle = {
-    ...primaryButtonStyle,
-    background: 'var(--surface)',
-    color: 'var(--ocean)',
-    border: '2px solid var(--border)',
   }
 
   const inputStyle = {
@@ -215,12 +168,13 @@ export default function LoginPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <button
                 type="button"
-                onClick={startLine}
+                onClick={lineStart}
                 disabled={busy}
                 style={{
-                  ...primaryButtonStyle,
-                  background: busy ? 'var(--border)' : '#06C755',
-                  color: busy ? 'var(--fg-3)' : '#fff',
+                  ...buttonBase,
+                  background: '#06C755',
+                  color: '#fff',
+                  border: 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -230,19 +184,25 @@ export default function LoginPage() {
                 <span style={{
                   width: '36px',
                   height: '36px',
-                  borderRadius: '10px',
-                  background: '#fff',
-                  color: '#06C755',
+                  borderRadius: '8px',
+                  background: '#06C755',
+                  border: '2px solid rgba(255,255,255,.85)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  lineHeight: 1,
                 }}>
-                  LINE
+                  <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+                    <path
+                      d="M6 4v14h10"
+                      fill="none"
+                      stroke="#fff"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </span>
-                {busy ? '開いています...' : 'LINEではじめる'}
+                LINEではじめる
               </button>
 
               <button
@@ -252,7 +212,12 @@ export default function LoginPage() {
                   setStep('phone')
                 }}
                 disabled={busy}
-                style={outlineButtonStyle}
+                style={{
+                  ...buttonBase,
+                  background: 'var(--surface)',
+                  color: 'var(--ocean)',
+                  border: '2px solid var(--border)',
+                }}
               >
                 電話番号ではじめる
               </button>
@@ -281,16 +246,17 @@ export default function LoginPage() {
               />
               <button
                 type="button"
-                onClick={sendSms}
+                onClick={sendCode}
                 disabled={busy}
                 style={{
-                  ...primaryButtonStyle,
+                  ...buttonBase,
                   background: busy ? 'var(--border)' : 'var(--ocean)',
                   color: busy ? 'var(--fg-3)' : '#fff',
+                  border: 'none',
                   marginTop: '18px',
                 }}
               >
-                {busy ? '送っています...' : 'SMSに番号を送る'}
+                {busy ? '送っています...' : '番号を送る'}
               </button>
               <button
                 type="button"
@@ -300,8 +266,10 @@ export default function LoginPage() {
                 }}
                 disabled={busy}
                 style={{
-                  ...outlineButtonStyle,
+                  ...buttonBase,
+                  background: 'var(--surface)',
                   color: 'var(--fg-2)',
+                  border: '2px solid var(--border)',
                   marginTop: '12px',
                 }}
               >
@@ -336,12 +304,13 @@ export default function LoginPage() {
               />
               <button
                 type="button"
-                onClick={confirmCode}
+                onClick={verifyCode}
                 disabled={busy}
                 style={{
-                  ...primaryButtonStyle,
+                  ...buttonBase,
                   background: busy ? 'var(--border)' : 'var(--ocean)',
                   color: busy ? 'var(--fg-3)' : '#fff',
+                  border: 'none',
                   marginTop: '18px',
                 }}
               >
@@ -356,8 +325,10 @@ export default function LoginPage() {
                 }}
                 disabled={busy}
                 style={{
-                  ...outlineButtonStyle,
+                  ...buttonBase,
+                  background: 'var(--surface)',
                   color: 'var(--fg-2)',
+                  border: '2px solid var(--border)',
                   marginTop: '12px',
                 }}
               >
