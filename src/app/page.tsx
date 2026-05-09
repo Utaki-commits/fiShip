@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { getSession as getAuth0Session } from '@auth0/nextjs-auth0'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { auth0 } from '@/lib/auth0'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -24,7 +24,7 @@ const getSupabaseSession = async () => {
 
 export default async function RootPage() {
   const [auth0Session, supabaseSession] = await Promise.all([
-    getAuth0Session(),
+    auth0.getSession(),
     getSupabaseSession(),
   ])
 

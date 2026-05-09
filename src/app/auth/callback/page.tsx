@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
-import { getSession as getAuth0Session } from '@auth0/nextjs-auth0'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { auth0 } from '@/lib/auth0'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -48,7 +48,7 @@ const hasVessel = async (userId: string) => {
 }
 
 export default async function AuthCallbackPage() {
-  const auth0Session = await getAuth0Session()
+  const auth0Session = await auth0.getSession()
   const supabase = createCookieClient()
   const { data: { user: supabaseUser } } = await supabase.auth.getUser()
 
