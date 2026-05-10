@@ -234,80 +234,46 @@ export default function ReservePage() {
     const bins = isPast ? [] : getBinsForDate(year, month, day)
     const dayBin = bins.find(b => b.setting.bin_type === 'day') ?? null
     const nightBin = bins.find(b => b.setting.bin_type === 'night') ?? null
-    const allFull = bins.length > 0 && bins.every(b => b.isFull)
     const hasAvailable = bins.some(b => !b.isFull)
+    const hasPending = bookings.some(b => b.date === dateStr && b.status === 'pending')
+    const hasDay = bookings.some(b => b.date === dateStr && b.bin_type === 'day' && b.status !== 'rejected') || Boolean(dayBin)
+    const hasNight = bookings.some(b => b.date === dateStr && b.bin_type === 'night' && b.status !== 'rejected') || Boolean(nightBin)
     // 祝日判定
     const holiday = getHolidayInfo(new Date(year, month, day))
-
-    // 昼便バンドの色・ラベル
-    const dayBg = dayBin
-      ? (dayBin.isFull ? 'var(--status-full-bg)' : 'var(--status-day-bg)')
-      : null
-    const dayLabel = dayBin
-      ? (dayBin.isFull ? '昼　満員' : `昼　残${dayBin.remaining}`)
-      : null
-    const dayTextColor = dayBin
-      ? (dayBin.isFull || dayBin.remaining <= 2 ? 'var(--status-full-fg)' : 'var(--ocean)')
-      : null
-
-    // 夜便バンドの色・ラベル
-    const nightBg = nightBin
-      ? (nightBin.isFull ? 'var(--status-full-bg)' : 'var(--status-night-bg)')
-      : null
-    const nightLabel = nightBin
-      ? (nightBin.isFull ? '夜　満員' : `夜　残${nightBin.remaining}`)
-      : null
-    const nightTextColor = nightBin
-      ? (nightBin.isFull || nightBin.remaining <= 2 ? 'var(--status-full-fg)' : 'var(--status-night-fg)')
-      : null
 
     return (
       <div
         key={dateStr}
         onClick={() => !isPast && hasAvailable && handleDateSelect(year, month, day)}
         style={{
-          borderRadius: '8px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          minHeight: '72px', transition: 'border-color .15s',
+          borderRadius: '10px',
+          minHeight: '56px', transition: 'border-color .15s',
           cursor: isPast || (!hasAvailable && bins.length > 0) ? 'default' : bins.length === 0 ? 'default' : 'pointer',
           opacity: isPast ? 0.4 : 1,
-          border: isSelected ? '2px solid var(--ocean)' : isToday ? '2px solid var(--gold)' : '2px solid transparent',
+          border: isSelected ? '3px solid var(--ocean)' : isToday ? '3px solid var(--gold)' : '3px solid transparent',
+          padding: '6px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+          background: bins.length === 0 ? (isPast ? 'var(--bg)' : 'var(--status-closed-bg)') : 'var(--surface)',
         }}
       >
-        {/* 上段：日付 + 祝日名 */}
-        <div style={{
-          display: 'flex', alignItems: 'flex-start', padding: '2px 3px', flexShrink: 0,
-          background: bins.length === 0 ? (isPast ? 'var(--bg)' : 'var(--status-closed-bg)') : 'var(--surface)',
-          borderBottom: bins.length > 0 ? '1px solid rgba(0,0,0,0.05)' : 'none',
-        }}>
-          <div>
-            <span style={{
-              fontSize: '14px', fontWeight: 700,
-              color: (holiday || dow === 0) ? 'var(--status-full-fg)' : dow === 6 ? 'var(--ocean-light)' : 'var(--fg-1)',
-            }}>{day}</span>
-            {holiday && (
-              <div style={{ fontSize: '14px', color: 'var(--status-full-fg)', fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '30px' }}>
-                {holiday.name}
-              </div>
-            )}
-          </div>
-        </div>
+        <span style={{ fontSize: '18px', fontWeight: 700,
+          color: (holiday || dow === 0) ? 'var(--status-full-fg)' : dow === 6 ? 'var(--ocean-light)' : 'var(--fg-1)' }}>
+          {day}
+        </span>
 
-        {/* 中・下段：便バンドを均等分割して中央寄せ */}
-        {bins.length === 0 ? (
-          <div style={{ flex: 1, background: isPast ? 'var(--bg)' : 'var(--status-closed-bg)' }} />
-        ) : (
-          <>
-            {dayBin && (
-              <div style={{ flex: 1, background: dayBg!, display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: nightBin ? '1px solid rgba(0,0,0,0.05)' : undefined }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: dayTextColor!, whiteSpace: 'nowrap' }}>{dayLabel}</span>
-              </div>
-            )}
-            {nightBin && (
-              <div style={{ flex: 1, background: nightBg!, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: nightTextColor!, whiteSpace: 'nowrap' }}>{nightLabel}</span>
-              </div>
-            )}
-          </>
+        {holiday && (
+          <div style={{ fontSize: '10px', color: 'var(--status-full-fg)', fontWeight: 700,
+            width: '100%', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {holiday.name}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
+          {hasPending && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--status-pending-dot)' }} />}
+          {hasDay && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--ocean)' }} />}
+          {hasNight && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--status-night-fg)' }} />}
+        </div>
+        {bins.length > 0 && !hasAvailable && (
+          <div style={{ fontSize: '10px', color: 'var(--status-full-fg)', fontWeight: 700 }}>満員</div>
         )}
       </div>
     )
