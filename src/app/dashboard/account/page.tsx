@@ -1,5 +1,5 @@
 ﻿'use client'
-import { useEffect, useRef, useState } from 'react'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -39,6 +39,8 @@ export default function AccountPage() {
   const [colorMode, setColorMode] = useState<'light'|'dark'>('light')
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+  const [cropImage, setCropImage] = useState<{ src: string, type: 'logo' | 'banner' } | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const bannerInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -63,16 +65,64 @@ export default function AccountPage() {
 
   const update = (key: keyof Vessel, value: string) => setVessel(v => v ? { ...v, [key]: value } : v)
 
-  const uploadImage = async (file: File, type: 'logo' | 'banner') => {
-    if (!vessel) return
+  const handleImageSelect = (e: ChangeEvent<HTMLInputElement>, type: 'logo' | 'banner') => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setCropImage({ src: reader.result as string, type })
+    reader.readAsDataURL(file)
+  }
+
+  const uploadCroppedImage = async () => {
+    if (!vessel || !cropImage) return
+    setUploadingImage(true)
     setError('')
-    const ext = file.name.split('.').pop() || 'jpg'
-    const path = `${vessel.id}/${type}.${ext}`
-    const { error: uploadError } = await supabase.storage.from('vessel-images').upload(path, file, { upsert: true })
-    if (uploadError) { setError('画像のアップロードに失敗しました'); return }
-    const { data: { publicUrl } } = supabase.storage.from('vessel-images').getPublicUrl(path)
-    await supabase.from('vessels').update(type === 'logo' ? { logo_url: publicUrl } : { banner_url: publicUrl }).eq('id', vessel.id)
-    setVessel(v => v ? { ...v, [type === 'logo' ? 'logo_url' : 'banner_url']: publicUrl } : v)
+    try {
+      const img = new Image()
+      img.src = cropImage.src
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error('image load failed'))
+      })
+
+      const isBanner = cropImage.type === 'banner'
+      const ratio = isBanner ? 16 / 9 : 1
+      const maxWidth = isBanner ? 1200 : 400
+      const maxHeight = isBanner ? 675 : 400
+      let sourceWidth = img.naturalWidth
+      let sourceHeight = sourceWidth / ratio
+      if (sourceHeight > img.naturalHeight) {
+        sourceHeight = img.naturalHeight
+        sourceWidth = sourceHeight * ratio
+      }
+      const sourceX = (img.naturalWidth - sourceWidth) / 2
+      const sourceY = (img.naturalHeight - sourceHeight) / 2
+      const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1)
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(sourceWidth * scale)
+      canvas.height = Math.round(sourceHeight * scale)
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('canvas context failed')
+      ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height)
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(result => result ? resolve(result) : reject(new Error('blob failed')), 'image/jpeg', 0.88)
+      })
+      const path = `${vessel.id}/${cropImage.type}.jpg`
+      const { error: uploadError } = await supabase.storage.from('vessel-images').upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('vessel-images').getPublicUrl(path)
+      const cacheBustedUrl = `${publicUrl}?v=${Date.now()}`
+      await supabase.from('vessels').update(
+        cropImage.type === 'logo' ? { logo_url: cacheBustedUrl } : { banner_url: cacheBustedUrl }
+      ).eq('id', vessel.id)
+      setVessel(v => v ? { ...v, [cropImage.type === 'logo' ? 'logo_url' : 'banner_url']: cacheBustedUrl } : v)
+      setCropImage(null)
+    } catch {
+      setError('画像のアップロードに失敗しました')
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   const handleSave = async () => {
@@ -108,12 +158,12 @@ export default function AccountPage() {
             {vessel.banner_url && <img src={vessel.banner_url} alt='バナー画像' style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
             {!vessel.banner_url && <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>バナー画像未設定</div>}
             <button onClick={() => bannerInputRef.current?.click()} style={{ position: 'absolute', right: '8px', bottom: '8px', padding: '8px 14px', borderRadius: '8px', border: 'none', background: 'rgba(0,0,0,.6)', color: '#fff', fontSize: '16px', fontWeight: 700 }}>変更</button>
-            <input ref={bannerInputRef} type='file' accept='image/*' style={{ display: 'none' }} onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'banner')} />
+            <input ref={bannerInputRef} type='file' accept='image/*' style={{ display: 'none' }} onChange={e => handleImageSelect(e, 'banner')} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '72px', height: '72px', borderRadius: '16px', overflow: 'hidden', background: vessel.logo_url ? 'transparent' : 'var(--ocean-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>{vessel.logo_url ? <img src={vessel.logo_url} alt='ロゴ画像' style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '⚓'}</div>
             <button onClick={() => logoInputRef.current?.click()} style={{ minHeight: '56px', padding: '0 20px', border: '2px solid var(--border)', borderRadius: '10px', background: 'var(--surface)', fontSize: '16px', fontWeight: 700 }}>ロゴを変更する</button>
-            <input ref={logoInputRef} type='file' accept='image/*' style={{ display: 'none' }} onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'logo')} />
+            <input ref={logoInputRef} type='file' accept='image/*' style={{ display: 'none' }} onChange={e => handleImageSelect(e, 'logo')} />
           </div>
         </section>
         <section style={sectionStyle}>
@@ -143,6 +193,29 @@ export default function AccountPage() {
           <button onClick={() => { window.location.href = '/api/auth/logout' }} style={{ width: '100%', minHeight: '64px', border: 'none', borderRadius: '12px', background: 'var(--ocean)', color: '#fff', fontSize: '18px', fontWeight: 700 }}>ログアウト</button>
         </section>
       </main>
+      {cropImage && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.72)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ width: '100%', maxWidth: '420px', background: 'var(--surface)', borderRadius: '16px', padding: '18px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>
+              {cropImage.type === 'banner' ? 'バナー画像を確認' : 'ロゴ画像を確認'}
+            </div>
+            <div style={{ width: '100%', aspectRatio: cropImage.type === 'banner' ? '16 / 9' : '1 / 1', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg)', marginBottom: '14px' }}>
+              <img src={cropImage.src} alt="トリミングプレビュー" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            </div>
+            <div style={{ fontSize: '14px', color: 'var(--fg-2)', lineHeight: 1.6, marginBottom: '16px' }}>
+              {cropImage.type === 'banner' ? '16:9の横長に中央トリミングして保存します。' : '1:1の正方形に中央トリミングして保存します。'}
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setCropImage(null)} disabled={uploadingImage} style={{ flex: 1, minHeight: '56px', border: '2px solid var(--border)', borderRadius: '12px', background: 'var(--surface)', color: 'var(--fg-1)', fontSize: '18px', fontWeight: 700 }}>
+                キャンセル
+              </button>
+              <button onClick={uploadCroppedImage} disabled={uploadingImage} style={{ flex: 1, minHeight: '56px', border: 'none', borderRadius: '12px', background: uploadingImage ? 'var(--border)' : 'var(--ocean)', color: uploadingImage ? 'var(--fg-3)' : '#fff', fontSize: '18px', fontWeight: 700 }}>
+                {uploadingImage ? '保存中...' : '保存する'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
