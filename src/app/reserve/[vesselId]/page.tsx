@@ -338,7 +338,13 @@ export default function ReservePage() {
       <div style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '32px 22px 48px', position: 'relative', overflow: 'hidden', isolation: 'isolate' }}>
         <div style={{ position: 'absolute', bottom: '-16px', left: 0, right: 0, height: '32px', background: 'var(--bg)', borderRadius: '50% 50% 0 0 / 100% 100% 0 0' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-          <div style={{ width: '56px', height: '56px', background: 'var(--gold)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>⚓</div>
+          <div style={{ width: '56px', height: '56px', background: vessel.logo_url ? 'transparent' : 'var(--gold)', borderRadius: '12px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>
+            {vessel.logo_url ? (
+              <img src={vessel.logo_url} alt={`${vessel.name} ロゴ`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <span style={{ fontSize: '20px' }}>⚓</span>
+            )}
+          </div>
           <div>
             <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>{vessel.name}</div>
             <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.82)', marginTop: '2px' }}>{vessel.captain_name} 船長</div>
@@ -371,21 +377,6 @@ export default function ReservePage() {
             色のついた日をタップすると予約フォームが開きます
           </div>
 
-          {/* 凡例 */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
-            {[
-              { bg: 'var(--status-day-bg)', color: 'var(--ocean)', label: '昼便' },
-              { bg: 'var(--status-night-bg)', color: 'var(--status-night-fg)', label: '夜便' },
-              { bg: 'var(--status-full-bg)', color: 'var(--status-full-fg)', label: '満員' },
-              { bg: 'var(--status-closed-bg)', color: 'var(--fg-3)', label: '休船日' },
-            ].map(({ bg, color, label }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '12px', height: '12px', borderRadius: '2px', background: bg }} />
-                <span style={{ fontSize: '14px', color, fontWeight: 700 }}>{label}</span>
-              </div>
-            ))}
-          </div>
-
           {/* 月ナビ */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <button
@@ -409,6 +400,21 @@ export default function ReservePage() {
           {/* カレンダーグリッド */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '3px' }}>
             {renderCalendar()}
+          </div>
+
+          {/* 凡例 */}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
+            {[
+              { bg: 'var(--status-day-bg)', color: 'var(--ocean)', label: '昼便' },
+              { bg: 'var(--status-night-bg)', color: 'var(--status-night-fg)', label: '夜便' },
+              { bg: 'var(--status-full-bg)', color: 'var(--status-full-fg)', label: '満員' },
+              { bg: 'var(--status-closed-bg)', color: 'var(--fg-3)', label: '休船日' },
+            ].map(({ bg, color, label }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '2px', background: bg }} />
+                <span style={{ fontSize: '14px', color, fontWeight: 700 }}>{label}</span>
+              </div>
+            ))}
           </div>
         </div>
 
