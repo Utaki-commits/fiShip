@@ -16,6 +16,7 @@ type Vessel = {
   color_mode?: string
   logo_url: string
   banner_url: string
+  map_embed_url: string
 }
 
 const areas: Record<string, string[]> = {}
@@ -133,6 +134,7 @@ export default function AccountPage() {
       name: vessel.name, captain_name: vessel.captain_name, prefecture: vessel.prefecture,
       port_name: vessel.port_name, access: vessel.access, notify_enabled: notifyEnabled,
       notify_hours: `${notifyStart}:00〜${notifyEnd}:00`, font_size: fontSize, color_mode: colorMode,
+      map_embed_url: vessel.map_embed_url,
     }).eq('id', vessel.id)
     if (saveError) { setError('保存に失敗しました'); setSaving(false); return }
     document.body.dataset.fontsize = fontSize
@@ -180,7 +182,29 @@ export default function AccountPage() {
           <label style={labelStyle}>船長名</label><input style={{ ...inputStyle, marginBottom: '14px' }} value={vessel.captain_name} onChange={e => update('captain_name', e.target.value)} />
           <label style={labelStyle}>都道府県</label><input style={{ ...inputStyle, marginBottom: '14px' }} value={vessel.prefecture} onChange={e => update('prefecture', e.target.value)} />
           <label style={labelStyle}>港名・出船場所</label><input style={{ ...inputStyle, marginBottom: '14px' }} value={vessel.port_name} onChange={e => update('port_name', e.target.value)} />
-          <label style={labelStyle}>アクセス情報</label><input style={inputStyle} value={vessel.access} onChange={e => update('access', e.target.value)} />
+          <label style={labelStyle}>アクセス情報</label><input style={{ ...inputStyle, marginBottom: '14px' }} value={vessel.access} onChange={e => update('access', e.target.value)} />
+          <label style={labelStyle}>Googleマップ埋め込みURL（任意）</label>
+          <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginBottom: '8px', lineHeight: 1.6 }}>
+            Googleマップで出港場所を検索 → 「共有」→「地図を埋め込む」→「HTMLをコピー」のsrc属性のURLを貼り付けてください
+          </div>
+          <input
+            style={{ ...inputStyle, marginBottom: '14px' }}
+            placeholder="https://www.google.com/maps/embed?pb=..."
+            value={vessel.map_embed_url || ''}
+            onChange={e => setVessel(v => v ? { ...v, map_embed_url: e.target.value } : v)}
+          />
+          {vessel.map_embed_url && (
+            <div style={{ borderRadius: '10px', overflow: 'hidden', marginBottom: '14px' }}>
+              <iframe
+                src={vessel.map_embed_url}
+                width="100%"
+                height="200"
+                style={{ border: 'none', display: 'block' }}
+                allowFullScreen
+                loading="lazy"
+              />
+            </div>
+          )}
         </section>
         <section style={sectionStyle}>
           <div style={titleStyle}>文字サイズ</div>
@@ -211,7 +235,14 @@ export default function AccountPage() {
           <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '28px 22px', width: '100%', maxWidth: '400px' }}>
             <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>本当に解約しますか？</div>
             <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginBottom: '24px', lineHeight: 1.7 }}>
-              解約すると船の情報が削除されます。この操作は取り消せません。
+              解約すると船の情報・予約データが削除されます。顧客データは運営側で保持されます。
+              <br /><br />
+              <span style={{ display: 'block', background: 'var(--status-full-bg)', border: '2px solid var(--status-full-bd)', borderRadius: '10px', padding: '12px 14px', color: 'var(--status-full-fg)', fontWeight: 700, fontSize: '15px', lineHeight: 1.7 }}>
+                ⚠️ 当月の月額料金は返金されません。<br />
+                残り期間があっても日割り返金は行っておりません。
+              </span>
+              <br />
+              この操作は取り消せません。
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: '14px', fontSize: '18px', fontWeight: 700, background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--fg-1)' }}>

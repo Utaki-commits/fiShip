@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-export default function PreferencesInitializer() {
+export function ThemeInitializer() {
   useEffect(() => {
     const fontsize = localStorage.getItem('fontsize') || 'medium'
     const colormode = localStorage.getItem('colormode') || 'light'

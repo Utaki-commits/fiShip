@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
-import PreferencesInitializer from './preferences-initializer'
+import { ThemeInitializer } from './preferences-initializer'
 
 export const metadata: Metadata = {
   title: '遊漁船予約システム',
@@ -26,7 +26,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
       <body>
-        <PreferencesInitializer />
+        <ThemeInitializer />
         {children}
       </body>
     </html>

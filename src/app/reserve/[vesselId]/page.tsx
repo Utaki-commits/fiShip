@@ -18,6 +18,7 @@ type Vessel = {
   price: string
   logo_url: string
   banner_url: string
+  map_embed_url: string
 }
 
 type Booking = {
@@ -672,6 +673,23 @@ export default function ReservePage() {
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
             <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '8px' }}>アクセス</div>
             <div style={{ fontSize: '14px', color: 'var(--fg-1)', lineHeight: 1.6 }}>{vessel.access}</div>
+          </div>
+        )}
+
+        {/* Googleマップ */}
+        {vessel.map_embed_url && (
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>📍 出港場所</div>
+            </div>
+            <iframe
+              src={vessel.map_embed_url}
+              width="100%"
+              height="240"
+              style={{ border: 'none', display: 'block' }}
+              allowFullScreen
+              loading="lazy"
+            />
           </div>
         )}
 
