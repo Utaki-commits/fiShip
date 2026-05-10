@@ -277,7 +277,7 @@ export default function DashboardPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px', marginBottom: '16px' }}>
           {[
-            { icon: '📅', label: '予約一覧', path: '/dashboard' },
+            { icon: '📅', label: '予約一覧', path: '/dashboard/bookings' },
             { icon: '👥', label: '顧客名簿', path: '/dashboard/customers' },
             { icon: '📋', label: '乗船名簿', path: '/dashboard/logs' },
             { icon: '⚙️', label: '便の設定', path: '/dashboard/settings' },

@@ -1,0 +1,417 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import { getHolidayInfo } from '@/lib/holidays'
+
+type Vessel = {
+  id: string
+  name: string
+  captain_name: string
+}
+
+type Booking = {
+  id: string
+  date: string
+  bin_type: 'day' | 'night'
+  name: string
+  tel: string
+  count: number
+  fishing_style: string | null
+  message: string | null
+  status: 'pending' | 'confirmed' | 'rejected'
+  channel: string
+  contacted: boolean
+}
+
+type BinSetting = {
+  id: string
+  vessel_id: string
+  bin_type: 'day' | 'night'
+  start_month: number
+  end_month: number
+  days_of_week: number[]
+  departure_time: string
+  fish_types: string[]
+  max_capacity: number
+}
+
+const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
+const DAY_NAMES = ['日','月','火','水','木','金','土']
+
+const toDateStr = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+
+const getWeekSunday = (d: Date) => {
+  const sun = new Date(d)
+  sun.setDate(d.getDate() - d.getDay())
+  sun.setHours(0, 0, 0, 0)
+  return sun
+}
+
+export default function DashboardBookingsPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [vessel, setVessel] = useState<Vessel | null>(null)
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [binSettings, setBinSettings] = useState<BinSetting[]>([])
+  const [calYear, setCalYear] = useState(new Date().getFullYear())
+  const [calM, setCalM] = useState(new Date().getMonth())
+  const [view, setView] = useState<'month' | 'week'>('month')
+  const [weekStart, setWeekStart] = useState<Date>(() => getWeekSunday(new Date()))
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  useEffect(() => {
+    const init = async () => {
+      const res = await fetch('/api/auth/profile')
+      if (!res.ok) { router.push('/login'); return }
+
+      const user = await res.json()
+      if (!user?.sub) { router.push('/login'); return }
+
+      const { data: v } = await supabase
+        .from('vessels')
+        .select('id, name, captain_name')
+        .eq('user_id', user.sub)
+        .single()
+      if (!v) { router.push('/register'); return }
+      setVessel(v)
+
+      const [{ data: bk }, { data: bs }] = await Promise.all([
+        supabase.from('bookings').select('*').eq('vessel_id', v.id).order('date', { ascending: true }),
+        supabase.from('bin_settings').select('*').eq('vessel_id', v.id),
+      ])
+      setBookings(bk || [])
+      setBinSettings(bs || [])
+      setLoading(false)
+    }
+    init()
+  }, [router])
+
+  const updateBooking = async (id: string, patch: { status?: 'confirmed' | 'rejected'; contacted?: boolean }) => {
+    setActionLoading(id)
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...patch }),
+      })
+      if (res.ok) {
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, ...patch } : b))
+      }
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleCall = async (booking: Booking) => {
+    window.location.href = `tel:${booking.tel}`
+    await updateBooking(booking.id, { contacted: true })
+  }
+
+  const switchView = (nextView: 'month' | 'week') => {
+    if (nextView === 'week') {
+      const baseDate = selectedDate
+        ? new Date(selectedDate + 'T00:00:00')
+        : new Date()
+      setWeekStart(getWeekSunday(baseDate))
+    }
+    setView(nextView)
+  }
+
+  const getBinsForDate = (year: number, month: number, day: number) => {
+    const dow = new Date(year, month, day).getDay()
+    return binSettings.filter(bin => {
+      const isInPeriod = bin.start_month <= bin.end_month
+        ? bin.start_month <= month && month <= bin.end_month
+        : month >= bin.start_month || month <= bin.end_month
+      return isInPeriod && bin.days_of_week.map(Number).includes(dow)
+    })
+  }
+
+  const renderCell = (year: number, month: number, day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    const isToday = dateStr === toDateStr(new Date())
+    const isSelected = selectedDate === dateStr
+    const dow = new Date(year, month, day).getDay()
+    const holiday = getHolidayInfo(new Date(year, month, day))
+    const dateBookings = bookings.filter(b => b.date === dateStr && b.status !== 'rejected')
+    const hasPending = dateBookings.some(b => b.status === 'pending')
+    const hasDay = dateBookings.some(b => b.bin_type === 'day')
+    const hasNight = dateBookings.some(b => b.bin_type === 'night')
+    const hasSchedule = getBinsForDate(year, month, day).length > 0
+
+    return (
+      <div
+        key={dateStr}
+        role="button"
+        tabIndex={0}
+        onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setSelectedDate(isSelected ? null : dateStr)
+          }
+        }}
+        style={{
+          borderRadius: '10px',
+          cursor: 'pointer',
+          minHeight: '56px',
+          border: isSelected ? '3px solid var(--ocean)' : isToday ? '3px solid var(--gold)' : '3px solid transparent',
+          padding: '6px 4px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '4px',
+          background: hasSchedule ? 'var(--surface)' : 'var(--bg)',
+        }}
+      >
+        <span style={{ fontSize: '18px', fontWeight: 700,
+          color: (holiday || dow === 0) ? 'var(--status-full-fg)' : dow === 6 ? 'var(--ocean-light)' : 'var(--fg-1)' }}>
+          {day}
+        </span>
+
+        {holiday && (
+          <div style={{ fontSize: '10px', color: 'var(--status-full-fg)', fontWeight: 700,
+            width: '100%', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {holiday.name}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '2px', justifyContent: 'center', minHeight: '7px' }}>
+          {hasPending && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--status-pending-dot)' }} />}
+          {hasDay && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--ocean)' }} />}
+          {hasNight && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--status-night-fg)' }} />}
+        </div>
+      </div>
+    )
+  }
+
+  const renderCalendar = () => {
+    if (view === 'month') {
+      const firstDow = new Date(calYear, calM, 1).getDay()
+      const totalDays = new Date(calYear, calM + 1, 0).getDate()
+      const cells = []
+      for (let i = 0; i < firstDow; i++) {
+        cells.push(<div key={`e${i}`} style={{ minHeight: '56px' }} />)
+      }
+      for (let d = 1; d <= totalDays; d++) {
+        cells.push(renderCell(calYear, calM, d))
+      }
+      return cells
+    }
+
+    const cells = []
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart)
+      d.setDate(weekStart.getDate() + i)
+      cells.push(renderCell(d.getFullYear(), d.getMonth(), d.getDate()))
+    }
+    return cells
+  }
+
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 6)
+  const weekLabel = weekStart.getMonth() === weekEnd.getMonth()
+    ? `${weekStart.getFullYear()}年${MONTH_NAMES[weekStart.getMonth()]} ${weekStart.getDate()}〜${weekEnd.getDate()}日`
+    : `${MONTH_NAMES[weekStart.getMonth()]}${weekStart.getDate()}日〜${MONTH_NAMES[weekEnd.getMonth()]}${weekEnd.getDate()}日`
+
+  const selectedBookings = selectedDate
+    ? bookings
+        .filter(b => b.date === selectedDate && b.status !== 'rejected')
+        .sort((a, b) => (a.bin_type === b.bin_type ? 0 : a.bin_type === 'day' ? -1 : 1))
+    : []
+
+  if (loading) return (
+    <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
+    </main>
+  )
+
+  return (
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          onClick={() => router.push('/dashboard')}
+          style={{ minHeight: '56px', padding: '0 14px', border: '2px solid var(--border)', borderRadius: '10px', background: 'var(--surface)', color: 'var(--fg-1)', fontSize: '18px', fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}
+        >
+          ← 戻る
+        </button>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: 'var(--fg-1)' }}>予約一覧</h1>
+          <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{vessel?.name}</div>
+        </div>
+      </div>
+
+      <main style={{ padding: '16px' }}>
+        <section style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <button
+              onClick={view === 'month'
+                ? () => { if (calM === 0) { setCalM(11); setCalYear(y => y - 1) } else setCalM(m => m - 1) }
+                : () => setWeekStart(d => { const p = new Date(d); p.setDate(d.getDate() - 7); return p })
+              }
+              style={{ width: '56px', height: '56px', flexShrink: 0, borderRadius: '14px', background: 'var(--bg)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '22px', fontWeight: 700, color: 'var(--ocean)' }}
+            >◀</button>
+
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--fg-1)', lineHeight: 1.2, textAlign: 'center' }}>
+                {view === 'month' ? `${calYear}年${MONTH_NAMES[calM]}` : weekLabel}
+              </span>
+              <div style={{ display: 'flex', background: 'var(--status-closed-bg)', borderRadius: '8px', padding: '2px', gap: '2px' }}>
+                {(['month', 'week'] as const).map(v => (
+                  <button
+                    key={v}
+                    onClick={() => switchView(v)}
+                    style={{
+                      padding: '8px 18px', fontSize: '22px', fontWeight: 700, minHeight: '56px',
+                      background: view === v ? 'var(--surface)' : 'transparent',
+                      color: view === v ? 'var(--ocean)' : 'var(--fg-3)',
+                      border: 'none', borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit',
+                      boxShadow: view === v ? '0 1px 2px rgba(0,0,0,.1)' : 'none',
+                    }}
+                  >{v === 'month' ? '月' : '週'}</button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={view === 'month'
+                ? () => { if (calM === 11) { setCalM(0); setCalYear(y => y + 1) } else setCalM(m => m + 1) }
+                : () => setWeekStart(d => { const n = new Date(d); n.setDate(d.getDate() + 7); return n })
+              }
+              style={{ width: '56px', height: '56px', flexShrink: 0, borderRadius: '14px', background: 'var(--bg)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '22px', fontWeight: 700, color: 'var(--ocean)' }}
+            >▶</button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '2px', marginBottom: '4px' }}>
+            {DAY_NAMES.map((d, i) => (
+              <div key={d} style={{ fontSize: '16px', fontWeight: 700, textAlign: 'center', padding: '8px 0', color: i === 0 ? 'var(--status-full-fg)' : i === 6 ? 'var(--ocean-light)' : 'var(--fg-2)' }}>{d}</div>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: '3px' }}>
+            {renderCalendar()}
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
+            {[
+              { color: 'var(--status-pending-dot)', label: '承認待ち' },
+              { color: 'var(--ocean)', label: '昼便' },
+              { color: 'var(--status-night-fg)', label: '夜便' },
+            ].map(({ color, label }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color }} />
+                <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 600 }}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {selectedDate && (
+          <section style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', marginBottom: '16px', overflow: 'hidden' }}>
+            <div style={{ background: 'linear-gradient(180deg,var(--ocean) 0%,#0F4570 100%)', padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+              <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--surface)' }}>
+                {(() => {
+                  const d = new Date(selectedDate + 'T00:00:00')
+                  return `${d.getMonth() + 1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）`
+                })()}
+              </span>
+              <button
+                onClick={() => setSelectedDate(null)}
+                aria-label="閉じる"
+                style={{ width: '56px', height: '56px', background: 'rgba(255,255,255,.12)', border: 'none', borderRadius: '12px', color: 'var(--surface)', fontSize: '22px', cursor: 'pointer', padding: '4px', lineHeight: 1, flexShrink: 0 }}
+              >×</button>
+            </div>
+
+            {selectedBookings.length === 0 ? (
+              <div style={{ padding: '28px', textAlign: 'center', color: 'var(--fg-2)', fontSize: '18px', fontWeight: 600 }}>
+                予約はありません
+              </div>
+            ) : (
+              selectedBookings.map(b => (
+                <div key={b.id} style={{ padding: '18px', borderBottom: '1px solid var(--status-closed-bg)' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px' }}>
+                    <span style={{
+                      fontSize: '14px', fontWeight: 700, padding: '8px 12px', borderRadius: '99px', flexShrink: 0,
+                      background: b.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)',
+                      color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)',
+                    }}>
+                      {b.bin_type === 'day' ? '昼便' : '夜便'}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)', lineHeight: 1.25 }}>{b.name}</div>
+                      <div style={{ fontSize: '18px', color: 'var(--fg-2)', marginTop: '6px', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+                        {b.count}名{b.fishing_style ? `　${b.fishing_style}` : ''}
+                        {b.message ? `\n${b.message}` : ''}
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: '14px', fontWeight: 700, padding: '8px 12px', borderRadius: '99px', flexShrink: 0,
+                      background: b.status === 'confirmed' ? 'var(--status-ok-bg)' : 'var(--status-pending-bg)',
+                      color: b.status === 'confirmed' ? 'var(--status-ok-fg)' : 'var(--status-pending-fg)',
+                    }}>
+                      {b.status === 'confirmed' ? '承認済み' : '承認待ち'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {b.status === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => updateBooking(b.id, { status: 'confirmed' })}
+                          disabled={actionLoading === b.id}
+                          style={{
+                            flex: '1 1 120px', padding: '14px', fontSize: '20px', fontWeight: 700, minHeight: '56px',
+                            background: actionLoading === b.id ? 'var(--border)' : 'var(--status-ok-bg)',
+                            color: actionLoading === b.id ? 'var(--fg-3)' : 'var(--status-ok-fg)',
+                            border: '2px solid var(--status-ok-bd)', borderRadius: '10px',
+                            cursor: actionLoading === b.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                          }}
+                        >{actionLoading === b.id ? '処理中...' : '承認する'}</button>
+                        <button
+                          onClick={() => updateBooking(b.id, { status: 'rejected' })}
+                          disabled={actionLoading === b.id}
+                          style={{
+                            flex: '1 1 120px', padding: '14px', fontSize: '20px', fontWeight: 700, minHeight: '56px',
+                            background: actionLoading === b.id ? 'var(--border)' : 'var(--status-full-bg)',
+                            color: actionLoading === b.id ? 'var(--fg-3)' : 'var(--status-full-fg)',
+                            border: '2px solid var(--status-full-bd)', borderRadius: '10px',
+                            cursor: actionLoading === b.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                          }}
+                        >お断り</button>
+                      </>
+                    )}
+                    {b.tel && (
+                      <button
+                        onClick={() => handleCall(b)}
+                        disabled={actionLoading === b.id}
+                        style={{
+                          flex: '1 1 80px', padding: '14px', fontSize: '22px', fontWeight: 700, minHeight: '56px',
+                          background: 'var(--status-day-bg)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)',
+                          borderRadius: '10px', cursor: actionLoading === b.id ? 'wait' : 'pointer', fontFamily: 'inherit',
+                        }}
+                      >📞</button>
+                    )}
+                    <button
+                      onClick={() => updateBooking(b.id, { contacted: !b.contacted })}
+                      disabled={actionLoading === b.id}
+                      style={{
+                        flex: '1 1 120px', padding: '14px', fontSize: '18px', fontWeight: 700, minHeight: '56px',
+                        background: b.contacted ? 'var(--status-ok-bg)' : 'var(--surface)',
+                        color: b.contacted ? 'var(--status-ok-fg)' : 'var(--fg-2)',
+                        border: b.contacted ? '2px solid var(--status-ok-bd)' : '2px solid var(--border)',
+                        borderRadius: '10px', cursor: actionLoading === b.id ? 'wait' : 'pointer', fontFamily: 'inherit',
+                      }}
+                    >{b.contacted ? '連絡済み' : '未連絡'}</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </section>
+        )}
+      </main>
+    </div>
+  )
+}
