@@ -201,11 +201,11 @@ export default function DashboardPage() {
         >
           <div style={{
             display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-            padding: '6px 8px', flexShrink: 0, minHeight: '40px',
+            padding: '6px 8px', flexShrink: 0, height: '48px',
             background: !dayBin && !nightBin ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.85)',
             borderBottom: (dayBin || nightBin) ? '1px solid rgba(0,0,0,0.05)' : 'none',
           }}>
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
               <span style={{
                 fontSize: '18px', fontWeight: 700, lineHeight: 1,
                 color: (holiday || dow === 0) ? 'var(--status-full-fg)' : dow === 6 ? 'var(--ocean-light)' : 'var(--fg-1)',
@@ -219,7 +219,9 @@ export default function DashboardPage() {
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  maxWidth: '100%',
+                  maxWidth: '38px',
+                  marginTop: '2px',
+                  textAlign: 'left',
                 }}>
                   {holiday.name}
                 </div>
