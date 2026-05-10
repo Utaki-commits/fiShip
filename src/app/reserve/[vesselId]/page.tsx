@@ -30,6 +30,7 @@ type Booking = {
 
 type BinSetting = {
   id: string
+  name: string | null
   bin_type: 'day' | 'night'
   start_month: number
   end_month: number
@@ -454,7 +455,7 @@ export default function ReservePage() {
                           }}
                         >
                           <div style={{ fontSize: '18px', fontWeight: 700, color: b.isFull ? 'var(--fg-3)' : isActive ? (isDay ? 'var(--ocean)' : 'var(--status-night-fg)') : 'var(--fg-2)' }}>
-                            {isDay ? '☀️ 昼便' : '🌙 夜便'}
+                            {isDay ? '☀️' : '🌙'} {b.setting.name || (isDay ? '昼便' : '夜便')}
                           </div>
                           <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '4px' }}>
                             {b.isFull ? '満員' : `残り${b.remaining}名`}
