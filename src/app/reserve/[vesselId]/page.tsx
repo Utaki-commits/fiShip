@@ -98,6 +98,21 @@ export default function ReservePage() {
   const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
   useEffect(() => {
+    // 予約ページは端末のカラーモード設定に従う
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    document.body.dataset.colormode = prefersDark ? 'dark' : 'light'
+    document.body.dataset.fontsize = 'medium'
+
+    // 端末の設定が変わったらリアルタイムで反映
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = (e: MediaQueryListEvent) => {
+      document.body.dataset.colormode = e.matches ? 'dark' : 'light'
+    }
+    mediaQuery.addEventListener('change', handler)
+    return () => mediaQuery.removeEventListener('change', handler)
+  }, [])
+
+  useEffect(() => {
     const init = async () => {
       // UUID形式でない場合は早期リターン
       if (!UUID_REGEX.test(vesselId || '')) {
