@@ -1,64 +1,31 @@
 import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
-import { createClient } from '@supabase/supabase-js'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { auth0 } from '@/lib/auth0'
+import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-const isUuid = (value: string) =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
-
-const createCookieClient = () => {
-  const cookieStore = cookies()
-
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
-      },
-      set(_name: string, _value: string, _options: CookieOptions) {},
-      remove(_name: string, _options: CookieOptions) {},
-    },
-  })
-}
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 const hasVessel = async (userId: string) => {
-  if (!isUuid(userId)) return false
-
-  const client = supabaseServiceRoleKey
-    ? createClient(supabaseUrl, supabaseServiceRoleKey, {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-        },
-      })
-    : createCookieClient()
-
+  const client = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
   const { data, error } = await client
     .from('vessels')
     .select('id')
     .eq('user_id', userId)
     .maybeSingle()
-
   if (error) return false
   return Boolean(data)
 }
 
 export default async function AuthCallbackPage() {
   const session = await auth0.getSession()
-  const auth0UserId = session?.user?.sub
-  if (auth0UserId) {
-    redirect(await hasVessel(auth0UserId) ? '/dashboard' : '/register')
+
+  if (!session?.user?.sub) {
+    redirect('/login')
   }
 
-  const supabase = createCookieClient()
-  const { data: { user: supabaseUser } } = await supabase.auth.getUser()
-  if (supabaseUser) {
-    redirect(await hasVessel(supabaseUser.id) ? '/dashboard' : '/register')
-  }
-
-  redirect('/login')
+  const auth0UserId = session.user.sub
+  const registered = await hasVessel(auth0UserId)
+  redirect(registered ? '/dashboard' : '/register')
 }
