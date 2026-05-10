@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
       departure_time,
       fish_types,
       max_capacity,
+      price,
     } = body
 
     // 必須項目のバリデーション
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
         departure_time,
         fish_types: fish_types || [],
         max_capacity: Number(max_capacity),
+        price: price || '',
       }])
       .select()
       .single()
@@ -78,6 +80,7 @@ export async function PATCH(req: NextRequest) {
       departure_time,
       fish_types,
       max_capacity,
+      price,
     } = body
 
     if (!id) return NextResponse.json({ error: 'idが必要です' }, { status: 400 })
@@ -117,6 +120,7 @@ export async function PATCH(req: NextRequest) {
         departure_time,
         fish_types: fish_types || [],
         max_capacity: Number(max_capacity),
+        price: price || '',
       })
       .eq('id', id)
       .select()

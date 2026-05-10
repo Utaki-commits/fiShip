@@ -142,6 +142,8 @@ type Vessel = {
   charter_accepted: boolean
   beginner_accepted: boolean
   price: string
+  logo_url: string
+  banner_url: string
   facilities?: Facilities | null
   max_bookings_per_customer: number
 }
@@ -218,6 +220,8 @@ export default function VesselPage() {
           charter_accepted: form.charter_accepted,
           beginner_accepted: form.beginner_accepted,
           price: form.price,
+          logo_url: form.logo_url,
+          banner_url: form.banner_url,
           facilities: form.facilities || defaultFacilities(),
           max_bookings_per_customer: form.max_bookings_per_customer ?? 5,
         })

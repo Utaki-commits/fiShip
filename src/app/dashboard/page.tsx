@@ -89,10 +89,6 @@ export default function DashboardPage() {
     init()
   }, [router])
 
-  const handleLogout = () => {
-    window.location.href = '/api/auth/logout'
-  }
-
   const updateStatus = async (id: string, status: 'confirmed' | 'rejected') => {
     setActionLoading(id)
     try {
@@ -119,7 +115,7 @@ export default function DashboardPage() {
     if (nextView === 'week') {
       const baseDate = selectedDate
         ? new Date(selectedDate + 'T00:00:00')
-        : new Date(calYear, calM, 1)
+        : new Date()
       setWeekStart(getWeekSunday(baseDate))
     }
     setView(nextView)
@@ -205,7 +201,7 @@ export default function DashboardPage() {
         >
           <div style={{
             display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-            padding: '6px 8px', flexShrink: 0,
+            padding: '6px 8px', flexShrink: 0, minHeight: '40px',
             background: !dayBin && !nightBin ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.85)',
             borderBottom: (dayBin || nightBin) ? '1px solid rgba(0,0,0,0.05)' : 'none',
           }}>
@@ -215,7 +211,16 @@ export default function DashboardPage() {
                 color: (holiday || dow === 0) ? 'var(--status-full-fg)' : dow === 6 ? 'var(--ocean-light)' : 'var(--fg-1)',
               }}>{day}</span>
               {holiday && (
-                <div style={{ fontSize: '14px', color: 'var(--status-full-fg)', fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '30px' }}>
+                <div style={{
+                  fontSize: '11px',
+                  color: 'var(--status-full-fg)',
+                  fontWeight: 700,
+                  lineHeight: 1.1,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '100%',
+                }}>
                   {holiday.name}
                 </div>
               )}
@@ -328,8 +333,8 @@ export default function DashboardPage() {
             承認待ち {getPendingCount()}件
           </div>
         )}
-        <button onClick={handleLogout} aria-label="ログアウト" style={{ width: '56px', height: '56px', padding: 0, fontSize: '22px', fontWeight: 700, background: 'rgba(255,255,255,0.08)', color: 'var(--surface)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', position: 'relative', zIndex: 3 }}>
-          出
+        <button onClick={() => router.push('/dashboard/account')} aria-label="アカウント設定" style={{ width: '56px', height: '56px', padding: 0, fontSize: '22px', fontWeight: 700, background: 'rgba(255,255,255,0.08)', color: 'var(--surface)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', position: 'relative', zIndex: 3 }}>
+          ⚙️
         </button>
       </div>
 

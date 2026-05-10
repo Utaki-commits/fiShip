@@ -16,6 +16,8 @@ type Vessel = {
   charter_accepted: boolean
   beginner_accepted: boolean
   price: string
+  logo_url: string
+  banner_url: string
 }
 
 type Booking = {

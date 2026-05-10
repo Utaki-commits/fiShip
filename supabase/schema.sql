@@ -18,6 +18,8 @@ create table if not exists vessels (
   charter_accepted boolean not null default true,
   beginner_accepted boolean not null default true,
   price            text not null default '',
+  logo_url         text not null default '',
+  banner_url       text not null default '',
   notify_hours     text not null default '6:00〜21:00',
   created_at       timestamptz not null default now()
 );
@@ -90,6 +92,7 @@ create table if not exists bin_settings (
   departure_time text not null default '06:00',
   fish_types     text[] not null default '{}',
   max_capacity   int  not null default 4,
+  price          text not null default '',
   created_at     timestamptz not null default now()
 );
 

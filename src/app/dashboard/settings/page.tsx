@@ -14,6 +14,7 @@ type BinSetting = {
   departure_time: string
   fish_types: string[]
   max_capacity: number
+  price: string
 }
 
 type FormState = {
@@ -26,6 +27,7 @@ type FormState = {
   fish_input: string
   fish_types: string[]
   max_capacity: string
+  price: string
 }
 
 const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
@@ -41,6 +43,7 @@ const defaultForm = (): FormState => ({
   fish_input: '',
   fish_types: [],
   max_capacity: '',
+  price: '',
 })
 
 export default function SettingsPage() {
@@ -95,6 +98,7 @@ export default function SettingsPage() {
       fish_input: '',
       fish_types: [...s.fish_types],
       max_capacity: String(s.max_capacity),
+      price: s.price || '',
     })
     setError('')
     setView('form')
@@ -152,6 +156,7 @@ export default function SettingsPage() {
         departure_time: form.departure_time,
         fish_types: form.fish_types,
         max_capacity: Number(form.max_capacity),
+        price: form.price,
       }
       const res = await fetch('/api/bin-settings', {
         method: editingId ? 'PATCH' : 'POST',
@@ -264,6 +269,11 @@ export default function SettingsPage() {
                             <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{s.max_capacity}名</div>
                           </div>
                         </div>
+                        {s.price && (
+                          <div style={{ marginTop: '8px', fontSize: '16px', color: 'var(--fg-2)', fontWeight: 600 }}>
+                            💴 {s.price}
+                          </div>
+                        )}
                         {/* 曜日バッジ */}
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: s.fish_types.length > 0 ? '10px' : '0' }}>
                           {DAY_NAMES.map((name, i) => (
@@ -454,6 +464,20 @@ export default function SettingsPage() {
                 />
                 <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>名</span>
               </div>
+            </div>
+
+            {/* 乗船料 */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '4px' }}>
+                乗船料 <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（任意）</span>
+              </div>
+              <input
+                type="text"
+                value={form.price}
+                onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                placeholder="例：お一人様 15,000円（エサ・氷代込み）"
+                style={{ width: '100%', padding: '16px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '8px', fontFamily: 'inherit', boxSizing: 'border-box' as const }}
+              />
             </div>
 
             {/* 魚種（任意） */}
