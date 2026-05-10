@@ -20,7 +20,10 @@ create table vessels (
   price              text not null default '',
   logo_url           text not null default '',
   banner_url         text not null default '',
+  notify_enabled     boolean not null default true,
   notify_hours       text not null default '6:00〜21:00',
+  font_size          text not null default 'medium',
+  color_mode         text not null default 'light',
   created_at         timestamptz not null default now()
 );
 
