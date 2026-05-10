@@ -476,7 +476,7 @@ export default function ReservePage() {
                   <span style={{ fontSize: '18px' }}>{activeBinInfo.setting.bin_type === 'day' ? '☀️' : '🌙'}</span>
                   <div>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: activeBinInfo.setting.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
-                      {activeBinInfo.setting.bin_type === 'day' ? '昼便' : '夜便'}　{activeBinInfo.setting.departure_time} 出発
+                      {activeBinInfo.setting.bin_type === 'day' ? '☀️' : '🌙'} {activeBinInfo.setting.name || (activeBinInfo.setting.bin_type === 'day' ? '昼便' : '夜便')}　{activeBinInfo.setting.departure_time} 出発
                     </div>
                     <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>残り {activeBinInfo.remaining}名</div>
                   </div>
