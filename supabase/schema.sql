@@ -49,6 +49,7 @@ create table if not exists bookings (
   message        text,
   status         text not null default 'pending'
                    check (status in ('pending', 'confirmed', 'rejected')),
+  contacted      boolean not null default false,
   channel        text not null default 'page',
   created_at     timestamptz not null default now()
 );

@@ -167,9 +167,9 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json()
-    const { id, status } = body
+    const { id, status, contacted } = body
 
-    if (!id || !status) {
+    if (!id || (status == null && contacted == null)) {
       return NextResponse.json(
         { error: 'idとstatusが必要です' },
         { status: 400 }
@@ -177,6 +177,25 @@ export async function PATCH(req: NextRequest) {
     }
 
     // 許可するステータス値のみ受け付ける
+    if (status == null) {
+      if (typeof contacted !== 'boolean') {
+        return NextResponse.json({ error: 'contactedは真偽値で指定してください' }, { status: 400 })
+      }
+
+      const { data, error } = await supabase
+        .from('bookings')
+        .update({ contacted })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ booking: data })
+    }
+
     const allowedStatuses = ['confirmed', 'rejected', 'pending']
     if (!allowedStatuses.includes(status)) {
       return NextResponse.json(
