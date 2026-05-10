@@ -41,6 +41,7 @@ export default function AccountPage() {
   const [saved, setSaved] = useState(false)
   const [cropImage, setCropImage] = useState<{ src: string, type: 'logo' | 'banner' } | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const bannerInputRef = useRef<HTMLInputElement>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -140,6 +141,13 @@ export default function AccountPage() {
     localStorage.setItem('colormode', colorMode)
     setSaved(true); setSaving(false)
   }
+
+  const handleDeleteAccount = async () => {
+    if (!vessel) return
+    await supabase.from('vessels').delete().eq('id', vessel.id)
+    window.location.href = '/api/auth/logout'
+  }
+
   if (loading) return <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div></main>
   if (!vessel) return null
 
@@ -190,9 +198,32 @@ export default function AccountPage() {
         <button onClick={handleSave} disabled={saving} style={{ width: '100%', minHeight: '64px', border: 'none', borderRadius: '14px', background: saving ? 'var(--border)' : 'var(--ocean)', color: saving ? 'var(--fg-3)' : '#fff', fontSize: '20px', fontWeight: 700 }}>{saving ? '保存中...' : '変更を保存する'}</button>
         <section style={{ ...sectionStyle, marginTop: '12px' }}>
           <div style={titleStyle}>アカウント</div>
-          <button onClick={() => { window.location.href = '/api/auth/logout' }} style={{ width: '100%', minHeight: '64px', border: 'none', borderRadius: '12px', background: 'var(--ocean)', color: '#fff', fontSize: '18px', fontWeight: 700 }}>ログアウト</button>
+          <button onClick={() => { window.location.href = '/api/auth/logout' }} style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700, background: 'var(--ocean)', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', marginBottom: '10px' }}>
+            ログアウト
+          </button>
+          <button onClick={() => setShowDeleteModal(true)} style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>
+            サービスを解約する
+          </button>
         </section>
       </main>
+      {showDeleteModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '28px 22px', width: '100%', maxWidth: '400px' }}>
+            <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>本当に解約しますか？</div>
+            <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginBottom: '24px', lineHeight: 1.7 }}>
+              解約すると船の情報が削除されます。この操作は取り消せません。
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: '14px', fontSize: '18px', fontWeight: 700, background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--fg-1)' }}>
+                キャンセル
+              </button>
+              <button onClick={handleDeleteAccount} style={{ flex: 1, padding: '14px', fontSize: '18px', fontWeight: 700, background: 'var(--status-full-fg)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                解約する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {cropImage && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.72)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ width: '100%', maxWidth: '420px', background: 'var(--surface)', borderRadius: '16px', padding: '18px' }}>
