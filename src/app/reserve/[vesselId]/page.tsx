@@ -459,16 +459,13 @@ export default function ReservePage() {
                   {(() => { const d = new Date(selectedDate + 'T00:00:00'); return `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）の予約` })()}
                 </div>
                 {activeBinInfo && (
-                  <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginTop: '4px' }}>
-                    {activeBinInfo.pendingCount === 0 && (
-                      `残り${activeBinInfo.confirmedRemaining}名`
-                    )}
-                    {activeBinInfo.pendingCount > 0 && activeBinInfo.actualRemaining > 0 && (
-                      `残り${activeBinInfo.confirmedRemaining}名`
-                    )}
-                    {activeBinInfo.actualRemaining <= 0 && (
-                      '満員'
-                    )}
+                  <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginTop: '4px', lineHeight: 1.6 }}>
+                    {selectedBins
+                      .filter(b => !b.isFull)
+                      .map(b => b.setting.bin_type === 'day' ? '昼便' : '夜便')
+                      .filter((v, i, a) => a.indexOf(v) === i)
+                      .join('・')}
+                    {selectedBins.filter(b => !b.isFull).length > 0 ? '受付中' : '満員'}
                   </div>
                 )}
               </div>
