@@ -110,6 +110,15 @@ export default function DashboardBookingsPage() {
     await updateBooking(booking.id, { contacted: true })
   }
 
+  const updateStatus = (id: string, status: 'confirmed' | 'rejected') => {
+    updateBooking(id, { status })
+  }
+
+  const getMaxCap = (binType: 'day' | 'night') => {
+    const bin = binSettings.find(b => b.bin_type === binType)
+    return bin?.max_capacity ?? 0
+  }
+
   const switchView = (nextView: 'month' | 'week') => {
     if (nextView === 'week') {
       const baseDate = selectedDate
@@ -223,6 +232,58 @@ export default function DashboardBookingsPage() {
         .sort((a, b) => (a.bin_type === b.bin_type ? 0 : a.bin_type === 'day' ? -1 : 1))
     : []
 
+  const weekDates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart)
+    d.setDate(weekStart.getDate() + i)
+    return d
+  })
+
+  const hasWeekBookings = weekDates.some(d =>
+    bookings.some(b => b.date === toDateStr(d) && b.status !== 'rejected')
+  )
+
+  const WeekBookingRow = ({ b, callBg, callBorder, callColor }: {
+    b: Booking
+    callBg: string
+    callBorder: string
+    callColor: string
+  }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
+        <div style={{ fontSize: '15px', color: 'var(--fg-2)', marginTop: '2px' }}>
+          {b.count}名　
+          <span style={{ color: b.status === 'confirmed' ? 'var(--status-ok-fg)' : 'var(--status-pending-fg)' }}>
+            {b.status === 'confirmed' ? '承認済み' : '承認待ち'}
+          </span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '6px' }}>
+        {b.status === 'pending' && (
+          <>
+            <button onClick={() => updateStatus(b.id, 'confirmed')}
+              disabled={actionLoading === b.id}
+              style={{ padding: '8px 14px', fontSize: '15px', fontWeight: 700, background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+              承認
+            </button>
+            <button onClick={() => updateStatus(b.id, 'rejected')}
+              disabled={actionLoading === b.id}
+              style={{ padding: '8px 14px', fontSize: '15px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+              お断り
+            </button>
+          </>
+        )}
+        {b.tel && b.status === 'confirmed' && (
+          <button onClick={() => handleCall(b)}
+            disabled={actionLoading === b.id}
+            style={{ width: '44px', height: '44px', borderRadius: '10px', background: callBg, border: `2px solid ${callBorder}`, color: callColor, fontSize: '20px', cursor: actionLoading === b.id ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            📞
+          </button>
+        )}
+      </div>
+    </div>
+  )
+
   if (loading) return (
     <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
@@ -307,6 +368,76 @@ export default function DashboardBookingsPage() {
               </div>
             ))}
           </div>
+
+          {view === 'week' && (
+            <div style={{ marginTop: '16px' }}>
+              {weekDates.map(d => {
+                const dateStr = toDateStr(d)
+                const dayBks = bookings.filter(b => b.date === dateStr && b.bin_type === 'day' && b.status !== 'rejected')
+                const nightBks = bookings.filter(b => b.date === dateStr && b.bin_type === 'night' && b.status !== 'rejected')
+                const pendingBks = bookings.filter(b => b.date === dateStr && b.status === 'pending')
+
+                if (dayBks.length === 0 && nightBks.length === 0) return null
+
+                return (
+                  <div key={dateStr} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', marginBottom: '10px', overflow: 'hidden' }}>
+                    <div style={{ padding: '12px 16px', background: 'var(--ocean-pale)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--ocean)' }}>
+                        {d.getMonth()+1}月{d.getDate()}日（{DAY_NAMES[d.getDay()]}）
+                      </span>
+                      {pendingBks.length > 0 && (
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--status-pending-fg)', background: 'var(--status-pending-bg)', padding: '4px 10px', borderRadius: '99px' }}>
+                          承認待ち {pendingBks.length}件
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ padding: '12px 16px' }}>
+                      {dayBks.length > 0 && (
+                        <div style={{ marginBottom: nightBks.length > 0 ? '12px' : '0' }}>
+                          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '8px' }}>
+                            ☀️ 昼便　{dayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('day')}名
+                          </div>
+                          {dayBks.map(b => (
+                            <WeekBookingRow
+                              key={b.id}
+                              b={b}
+                              callBg="var(--status-day-bg)"
+                              callBorder="var(--ocean-light)"
+                              callColor="var(--ocean)"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {nightBks.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--status-night-fg)', marginBottom: '8px' }}>
+                            🌙 夜便　{nightBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('night')}名
+                          </div>
+                          {nightBks.map(b => (
+                            <WeekBookingRow
+                              key={b.id}
+                              b={b}
+                              callBg="var(--status-night-bg)"
+                              callBorder="var(--status-night-fg)"
+                              callColor="var(--status-night-fg)"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+
+              {!hasWeekBookings && (
+                <div style={{ textAlign: 'center', padding: '32px', color: 'var(--fg-3)', fontSize: '18px', fontWeight: 600 }}>
+                  この週の予約はありません
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {selectedDate && (
