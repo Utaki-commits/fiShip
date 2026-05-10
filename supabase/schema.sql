@@ -185,3 +185,16 @@ create policy "captain full access" on passenger_logs
   with check (
     exists (select 1 from vessels where vessels.id = passenger_logs.vessel_id and vessels.user_id = auth.uid())
   );
+
+-- =============================================
+-- contacts: お問い合わせ
+-- =============================================
+create table if not exists contacts (
+  id uuid primary key default gen_random_uuid(),
+  vessel_id uuid references vessels(id) on delete set null,
+  name text not null default '',
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table contacts disable row level security;
