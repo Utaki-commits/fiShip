@@ -17,6 +17,7 @@ type Vessel = {
   logo_url: string
   banner_url: string
   map_embed_url: string
+  subscribed_at: string
 }
 
 const areas: Record<string, string[]> = {}
@@ -27,6 +28,13 @@ const inputStyle = {
 const sectionStyle = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px', marginBottom: '12px' }
 const titleStyle = { fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '14px' }
 const labelStyle = { fontSize: '16px', fontWeight: 600, color: 'var(--fg-2)', display: 'block', marginBottom: '8px' }
+
+const getExpiryDate = (subscribedAt: string): string => {
+  const start = new Date(subscribedAt)
+  const expiry = new Date(start)
+  expiry.setDate(expiry.getDate() + 30)
+  return `${expiry.getFullYear()}年${expiry.getMonth()+1}月${expiry.getDate()}日`
+}
 
 export default function AccountPage() {
   const router = useRouter()
@@ -236,22 +244,30 @@ export default function AccountPage() {
       {showDeleteModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '28px 22px', width: '100%', maxWidth: '400px' }}>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>本当に解約しますか？</div>
-            <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginBottom: '24px', lineHeight: 1.7 }}>
-              解約すると船の情報・予約データが削除されます。顧客データは運営側で保持されます。
-              <br /><br />
-              <span style={{ display: 'block', background: 'var(--status-full-bg)', border: '2px solid var(--status-full-bd)', borderRadius: '10px', padding: '12px 14px', color: 'var(--status-full-fg)', fontWeight: 700, fontSize: '15px', lineHeight: 1.7 }}>
-                ⚠️ 当月の月額料金は返金されません。<br />
-                残り期間があっても日割り返金は行っておりません。
-              </span>
-              <br />
-              この操作は取り消せません。
+            <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '16px' }}>
+              解約の確認
             </div>
+
+            <div style={{ background: 'var(--status-day-bg)', border: '2px solid var(--ocean-light)', borderRadius: '12px', padding: '14px 16px', marginBottom: '16px' }}>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)', lineHeight: 1.7 }}>
+                解約後も <span style={{ fontSize: '20px' }}>{vessel ? getExpiryDate(vessel.subscribed_at) : ''}</span> までサービスをご利用いただけます。
+              </div>
+              <div style={{ fontSize: '15px', color: 'var(--ocean)', marginTop: '4px', lineHeight: 1.6 }}>
+                それ以降は自動的にサービスが停止されます。
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--status-full-bg)', border: '2px solid var(--status-full-bd)', borderRadius: '12px', padding: '14px 16px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--status-full-fg)', lineHeight: 1.7 }}>
+                ⚠️ 料金の返金はいたしません。
+              </div>
+            </div>
+
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: '14px', fontSize: '18px', fontWeight: 700, background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--fg-1)' }}>
+              <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: '16px', fontSize: '18px', fontWeight: 700, background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--fg-1)' }}>
                 キャンセル
               </button>
-              <button onClick={handleDeleteAccount} style={{ flex: 1, padding: '14px', fontSize: '18px', fontWeight: 700, background: 'var(--status-full-fg)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={handleDeleteAccount} style={{ flex: 1, padding: '16px', fontSize: '18px', fontWeight: 700, background: 'var(--status-full-fg)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}>
                 解約する
               </button>
             </div>
