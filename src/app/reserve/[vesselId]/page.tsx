@@ -649,8 +649,14 @@ export default function ReservePage() {
             </div>
             <div style={{ fontSize: '14px', color: completed.isImmediate ? 'var(--status-ok-fg)' : 'var(--status-pending-fg)', marginBottom: '16px', lineHeight: 1.6 }}>
               {completed.isImmediate
-                ? `${vessel.name}の予約が確定しました。\n当日はお気をつけてお越しください。`
-                : `船長が確認後、折り返しご連絡いたします。\nしばらくお待ちください。`}
+                ? `${vessel.name}の${(() => {
+                    const d = new Date(selectedDate + 'T00:00:00')
+                    return `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）`
+                  })()} ${activeBinInfo?.setting.name || (form.bin_type === 'day' ? '昼便' : '夜便')}の予約が確定しました。\n当日はお気をつけてお越しください。`
+                : `${(() => {
+                    const d = new Date(selectedDate + 'T00:00:00')
+                    return `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）`
+                  })()} ${activeBinInfo?.setting.name || (form.bin_type === 'day' ? '昼便' : '夜便')}の予約リクエストを受け付けました。\n船長が確認後、折り返しご連絡いたします。`}
             </div>
             <button
               onClick={() => { setSelectedDate(null); setCompleted(null) }}
