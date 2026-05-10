@@ -89,9 +89,8 @@ export default function DashboardPage() {
     init()
   }, [router])
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
+  const handleLogout = () => {
+    window.location.href = '/api/auth/logout'
   }
 
   const updateStatus = async (id: string, status: 'confirmed' | 'rejected') => {
