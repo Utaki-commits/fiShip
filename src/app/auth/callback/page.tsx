@@ -48,17 +48,16 @@ const hasVessel = async (userId: string) => {
 }
 
 export default async function AuthCallbackPage() {
-  const auth0Session = await auth0.getSession()
-  const supabase = createCookieClient()
-  const { data: { user: supabaseUser } } = await supabase.auth.getUser()
-
-  if (supabaseUser) {
-    redirect(await hasVessel(supabaseUser.id) ? '/dashboard' : '/register')
-  }
-
-  const auth0UserId = auth0Session?.user?.sub
+  const session = await auth0.getSession()
+  const auth0UserId = session?.user?.sub
   if (auth0UserId) {
     redirect(await hasVessel(auth0UserId) ? '/dashboard' : '/register')
+  }
+
+  const supabase = createCookieClient()
+  const { data: { user: supabaseUser } } = await supabase.auth.getUser()
+  if (supabaseUser) {
+    redirect(await hasVessel(supabaseUser.id) ? '/dashboard' : '/register')
   }
 
   redirect('/login')
