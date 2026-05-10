@@ -85,6 +85,29 @@
   --tap-comfort: 64px;
 }
 
+/* 文字サイズ */
+[data-fontsize="small"] {
+  font-size: 14px;
+}
+
+[data-fontsize="medium"] {
+  font-size: 16px;
+}
+
+[data-fontsize="large"] {
+  font-size: 20px;
+}
+
+/* ダークモード */
+[data-colormode="dark"] {
+  --bg: #0F172A;
+  --surface: #1E293B;
+  --border: #334155;
+  --fg-1: #F1F5F9;
+  --fg-2: #94A3B8;
+  --fg-3: #64748B;
+}
+
 * {
   box-sizing: border-box;
 }
