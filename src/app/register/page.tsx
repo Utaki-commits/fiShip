@@ -3,8 +3,30 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
+const AREA_PREFECTURES: Record<string, string[]> = {
+  '\u5317\u6d77\u9053\u30fb\u6771\u5317': [
+    '\u5317\u6d77\u9053', '\u9752\u68ee\u770c', '\u5ca9\u624b\u770c', '\u5bae\u57ce\u770c', '\u79cb\u7530\u770c', '\u5c71\u5f62\u770c', '\u798f\u5cf6\u770c',
+  ],
+  '\u95a2\u6771\u30fb\u7532\u4fe1\u8d8a': [
+    '\u8328\u57ce\u770c', '\u5343\u8449\u770c', '\u795e\u5948\u5ddd\u770c', '\u6771\u4eac\u90fd', '\u65b0\u6f5f\u770c', '\u5c71\u68a8\u770c', '\u9577\u91ce\u770c',
+  ],
+  '\u6771\u6d77\u30fb\u5317\u9678': [
+    '\u9759\u5ca1\u770c', '\u611b\u77e5\u770c', '\u4e09\u91cd\u770c', '\u5bcc\u5c71\u770c', '\u77f3\u5ddd\u770c', '\u798f\u4e95\u770c',
+  ],
+  '\u8fd1\u757f': [
+    '\u4eac\u90fd\u5e9c', '\u5927\u962a\u5e9c', '\u5175\u5eab\u770c', '\u548c\u6b4c\u5c71\u770c', '\u6ecb\u8cc0\u770c', '\u5948\u826f\u770c',
+  ],
+  '\u4e2d\u56fd\u30fb\u56db\u56fd': [
+    '\u9ce5\u53d6\u770c', '\u5cf6\u6839\u770c', '\u5ca1\u5c71\u770c', '\u5e83\u5cf6\u770c', '\u5c71\u53e3\u770c', '\u5fb3\u5cf6\u770c', '\u9999\u5ddd\u770c', '\u611b\u5a9b\u770c', '\u9ad8\u77e5\u770c',
+  ],
+  '\u4e5d\u5dde\u30fb\u6c96\u7e04': [
+    '\u798f\u5ca1\u770c', '\u4f50\u8cc0\u770c', '\u9577\u5d0e\u770c', '\u718a\u672c\u770c', '\u5927\u5206\u770c', '\u5bae\u5d0e\u770c', '\u9e7f\u5150\u5cf6\u770c', '\u6c96\u7e04\u770c',
+  ],
+}
+
 export default function RegisterPage() {
   const [step, setStep] = useState(1)
+  const [selectedArea, setSelectedArea] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
@@ -30,11 +52,15 @@ export default function RegisterPage() {
   const handleSubmit = async () => {
     setLoading(true)
     setError('')
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    const res = await fetch('/api/auth/profile')
+    const user = await res.json()
+    if (!user?.sub) {
+      router.push('/login')
+      return
+    }
     const { error } = await supabase.from('vessels').insert([{
       ...form,
-      user_id: user.id,
+      user_id: user.sub,
     }])
     if (error) {
       setError('登録に失敗しました。もう一度お試しください。')
@@ -134,7 +160,61 @@ export default function RegisterPage() {
             <div style={{ fontSize:'18px', color:'var(--fg-2)', marginBottom:'28px', lineHeight:1.6 }}>乗船客がアクセス方法を確認するために使います</div>
 
             <label style={styles.label}>都道府県 {requiredBadge}</label>
-            <input style={styles.input} placeholder="例：福岡県" value={form.prefecture} onChange={e => update('prefecture', e.target.value)} />
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px', marginBottom:'12px' }}>
+              {Object.keys(AREA_PREFECTURES).map(area => (
+                <button
+                  key={area}
+                  type="button"
+                  onClick={() => {
+                    setSelectedArea(area)
+                    update('prefecture', '')
+                  }}
+                  style={{
+                    padding:'14px 6px',
+                    minHeight:'56px',
+                    fontSize:'15px',
+                    fontWeight:700,
+                    fontFamily:'inherit',
+                    lineHeight:1.4,
+                    textAlign:'center',
+                    background: selectedArea === area ? 'var(--ocean)' : 'var(--surface)',
+                    border: selectedArea === area ? '3px solid var(--ocean)' : '2px solid var(--border)',
+                    borderRadius:'12px',
+                    cursor:'pointer',
+                    color: selectedArea === area ? '#fff' : 'var(--fg-1)',
+                  }}
+                >
+                  {area}
+                </button>
+              ))}
+            </div>
+
+            {selectedArea && (
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginBottom:'22px' }}>
+                {AREA_PREFECTURES[selectedArea].map(prefecture => (
+                  <button
+                    key={prefecture}
+                    type="button"
+                    onClick={() => update('prefecture', prefecture)}
+                    style={{
+                      padding:'12px 4px',
+                      minHeight:'56px',
+                      fontSize:'16px',
+                      fontWeight:700,
+                      fontFamily:'inherit',
+                      textAlign:'center',
+                      background: form.prefecture === prefecture ? 'var(--ocean-pale)' : 'var(--surface)',
+                      border: form.prefecture === prefecture ? '3px solid var(--ocean)' : '2px solid var(--border)',
+                      borderRadius:'10px',
+                      cursor:'pointer',
+                      color: form.prefecture === prefecture ? 'var(--ocean)' : 'var(--fg-1)',
+                    }}
+                  >
+                    {prefecture.replace('県','').replace('府','').replace('都','').replace('道','')}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <label style={styles.label}>漁港・出船場所の名前 {requiredBadge}</label>
             <input style={styles.input} placeholder="例：糸島市志摩野北漁港" value={form.port_name} onChange={e => update('port_name', e.target.value)} />
