@@ -44,8 +44,12 @@ type BinSetting = {
 
 type BinInfo = {
   setting: BinSetting
+  confirmedRemaining: number
+  pendingCount: number
+  actualRemaining: number
   remaining: number
   isFull: boolean
+  isConfirmedFull: boolean
 }
 
 type Form = {
@@ -134,11 +138,23 @@ export default function ReservePage() {
       .sort((a, b) => (a.bin_type === b.bin_type ? 0 : a.bin_type === 'day' ? -1 : 1))
       .map(bin => {
         const dateStr = toDateStr(year, month, day)
-        const used = bookings
-          .filter(b => b.date === dateStr && b.bin_type === bin.bin_type && (b.status === 'confirmed' || b.status === 'pending'))
+        const confirmedUsed = bookings
+          .filter(b => b.date === dateStr && b.bin_type === bin.bin_type && b.status === 'confirmed')
           .reduce((s, b) => s + b.count, 0)
-        const remaining = bin.max_capacity - used
-        return { setting: bin, remaining, isFull: remaining <= 0 }
+        const pendingCount = bookings
+          .filter(b => b.date === dateStr && b.bin_type === bin.bin_type && b.status === 'pending')
+          .reduce((s, b) => s + b.count, 0)
+        const confirmedRemaining = bin.max_capacity - confirmedUsed
+        const actualRemaining = bin.max_capacity - confirmedUsed - pendingCount
+        return {
+          setting: bin,
+          confirmedRemaining,
+          pendingCount,
+          actualRemaining,
+          remaining: actualRemaining,
+          isFull: actualRemaining <= 0,
+          isConfirmedFull: confirmedRemaining <= 0,
+        }
       })
   }
 
@@ -149,8 +165,10 @@ export default function ReservePage() {
     if (clicked < today) return
 
     const bins = getBinsForDate(year, month, day)
+    const selectable = bins.filter(b => !b.isConfirmedFull)
+    if (selectable.length === 0) return
     const available = bins.filter(b => !b.isFull)
-    if (available.length === 0) return
+    const initialBin = available[0] || selectable[0]
 
     const dateStr = toDateStr(year, month, day)
     setSelectedDate(dateStr)
@@ -161,8 +179,8 @@ export default function ReservePage() {
     setForm(f => ({
       ...f,
       count: 1,
-      bin_setting_id: available[0].setting.id,
-      bin_type: available[0].setting.bin_type,
+      bin_setting_id: initialBin.setting.id,
+      bin_type: initialBin.setting.bin_type,
       name: '',
       tel: '',
       fishing_style: '',
@@ -195,8 +213,8 @@ export default function ReservePage() {
     const activeBin = selectedBins.find(b => b.setting.id === form.bin_setting_id)
     if (!activeBin) return
 
-    if (form.count > activeBin.remaining) {
-      setFormError(`残り${activeBin.remaining}名分しか空きがありません`)
+    if (form.count > activeBin.actualRemaining) {
+      setFormError(`残り${activeBin.actualRemaining}名分しか空きがありません`)
       return
     }
 
@@ -247,7 +265,7 @@ export default function ReservePage() {
     const bins = isPast ? [] : getBinsForDate(year, month, day)
     const dayBin = bins.find(b => b.setting.bin_type === 'day') ?? null
     const nightBin = bins.find(b => b.setting.bin_type === 'night') ?? null
-    const hasAvailable = bins.some(b => !b.isFull)
+    const hasAvailable = bins.some(b => !b.isConfirmedFull)
     const hasPending = bookings.some(b => b.date === dateStr && b.status === 'pending')
     const hasDay = bookings.some(b => b.date === dateStr && b.bin_type === 'day' && b.status !== 'rejected') || Boolean(dayBin)
     const hasNight = bookings.some(b => b.date === dateStr && b.bin_type === 'night' && b.status !== 'rejected') || Boolean(nightBin)
@@ -311,7 +329,7 @@ export default function ReservePage() {
 
   // 選択便の残席上限
   const activeBinInfo = selectedBins.find(b => b.setting.id === form.bin_setting_id)
-  const maxCount = activeBinInfo?.remaining ?? 1
+  const maxCount = activeBinInfo?.actualRemaining ?? 1
 
   if (loading) return (
     <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -441,8 +459,16 @@ export default function ReservePage() {
                   {(() => { const d = new Date(selectedDate + 'T00:00:00'); return `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）の予約` })()}
                 </div>
                 {activeBinInfo && (
-                  <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginTop: '2px' }}>
-                    残り {activeBinInfo.remaining}名
+                  <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginTop: '4px' }}>
+                    {activeBinInfo.pendingCount === 0 && (
+                      `残り${activeBinInfo.confirmedRemaining}名`
+                    )}
+                    {activeBinInfo.pendingCount > 0 && activeBinInfo.actualRemaining > 0 && (
+                      `残り${activeBinInfo.confirmedRemaining}名`
+                    )}
+                    {activeBinInfo.actualRemaining <= 0 && (
+                      '満員'
+                    )}
                   </div>
                 )}
               </div>
@@ -535,6 +561,75 @@ export default function ReservePage() {
                       💴 {activeBinInfo.setting.price}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* パターンB：承認待ちあり・確実に予約できる人数を案内 */}
+              {activeBinInfo && activeBinInfo.pendingCount > 0 && activeBinInfo.actualRemaining > 0 && (
+                <div style={{
+                  background: 'var(--status-pending-bg)',
+                  border: '2px solid var(--status-pending-dot)',
+                  borderRadius: '10px', padding: '12px 14px', marginBottom: '16px',
+                }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--status-pending-fg)', lineHeight: 1.7 }}>
+                    残り{activeBinInfo.confirmedRemaining}名ですが、承認待ちの予約が{activeBinInfo.pendingCount}名分入っています。<br />
+                    {activeBinInfo.actualRemaining}名以下であれば確実にご予約いただけます。
+                  </div>
+                </div>
+              )}
+
+              {/* パターンC：仮押さえで満員・代替日程を提案 */}
+              {activeBinInfo && activeBinInfo.actualRemaining <= 0 && !activeBinInfo.isConfirmedFull && selectedDate && (
+                <div style={{
+                  background: 'var(--status-full-bg)',
+                  border: '2px solid var(--status-full-bd)',
+                  borderRadius: '10px', padding: '14px', marginBottom: '16px',
+                }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--status-full-fg)', lineHeight: 1.7, marginBottom: '12px' }}>
+                    現在満員です。承認待ちの予約が確定すると空きがなくなります。<br />
+                    近い日程でご予約いただける日をご案内します。
+                  </div>
+                  {(() => {
+                    const base = new Date(selectedDate + 'T00:00:00')
+                    const suggestions: { dateStr: string; label: string; remaining: number }[] = []
+                    for (let i = 1; i <= 14 && suggestions.length < 3; i++) {
+                      const d = new Date(base)
+                      d.setDate(base.getDate() + i)
+                      const dStr = toDateStr(d.getFullYear(), d.getMonth(), d.getDate())
+                      const bins = getBinsForDate(d.getFullYear(), d.getMonth(), d.getDate())
+                      const sameBin = bins.find(b => b.setting.bin_type === form.bin_type)
+                      if (sameBin && sameBin.confirmedRemaining > 0) {
+                        suggestions.push({
+                          dateStr: dStr,
+                          label: `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）`,
+                          remaining: sameBin.confirmedRemaining,
+                        })
+                      }
+                    }
+                    return suggestions.map(s => (
+                      <button
+                        key={s.dateStr}
+                        onClick={() => handleDateSelect(
+                          new Date(s.dateStr + 'T00:00:00').getFullYear(),
+                          new Date(s.dateStr + 'T00:00:00').getMonth(),
+                          new Date(s.dateStr + 'T00:00:00').getDate()
+                        )}
+                        style={{
+                          width: '100%', padding: '12px 14px', marginBottom: '8px',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          background: 'var(--surface)', border: '2px solid var(--status-full-bd)',
+                          borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit',
+                        }}
+                      >
+                        <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)' }}>
+                          {s.label}　残り{s.remaining}名
+                        </span>
+                        <span style={{ fontSize: '14px', color: 'var(--ocean)', fontWeight: 700 }}>
+                          この日で予約する →
+                        </span>
+                      </button>
+                    ))
+                  })()}
                 </div>
               )}
 

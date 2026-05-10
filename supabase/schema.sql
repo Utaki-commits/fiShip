@@ -25,6 +25,7 @@ create table if not exists vessels (
   notify_hours     text not null default '6:00〜21:00',
   font_size        text not null default 'medium',
   color_mode       text not null default 'light',
+  auto_confirm     boolean not null default true,
   subscribed_at    timestamptz not null default now(),
   created_at       timestamptz not null default now()
 );

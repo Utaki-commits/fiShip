@@ -14,6 +14,7 @@ type Vessel = {
   notify_hours: string
   font_size?: string
   color_mode?: string
+  auto_confirm: boolean
   logo_url: string
   banner_url: string
   map_embed_url: string
@@ -28,6 +29,15 @@ const inputStyle = {
 const sectionStyle = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px', marginBottom: '12px' }
 const titleStyle = { fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '14px' }
 const labelStyle = { fontSize: '16px', fontWeight: 600, color: 'var(--fg-2)', display: 'block', marginBottom: '8px' }
+const togSw = (active: boolean) => ({
+  width: '64px',
+  height: '36px',
+  borderRadius: '18px',
+  background: active ? 'var(--gold)' : '#D1D5DB',
+  position: 'relative' as const,
+  flexShrink: 0 as const,
+  transition: 'background .2s',
+})
 
 const getExpiryDate = (subscribedAt: string): string => {
   const start = new Date(subscribedAt)
@@ -61,7 +71,7 @@ export default function AccountPage() {
       if (!user?.sub) { router.push('/login'); return }
       const { data } = await supabase.from('vessels').select('*').eq('user_id', user.sub).single()
       if (!data) { router.push('/register'); return }
-      const v = data as Vessel
+      const v = { ...data, auto_confirm: data.auto_confirm ?? true } as Vessel
       setVessel(v)
       setNotifyEnabled(v.notify_enabled ?? true)
       setFontSize((v.font_size as 'small'|'medium'|'large') || 'medium')
@@ -142,6 +152,7 @@ export default function AccountPage() {
       name: vessel.name, captain_name: vessel.captain_name, prefecture: vessel.prefecture,
       port_name: vessel.port_name, access: vessel.access, notify_enabled: notifyEnabled,
       notify_hours: `${notifyStart}:00〜${notifyEnd}:00`, font_size: fontSize, color_mode: colorMode,
+      auto_confirm: vessel.auto_confirm,
       // Googleマップ機能は一時停止中。再開時は下記を戻す。
       // map_embed_url: vessel.map_embed_url,
     }).eq('id', vessel.id)
@@ -229,6 +240,38 @@ export default function AccountPage() {
           <div style={titleStyle}>通知設定</div>
           <button onClick={() => setNotifyEnabled(v => !v)} style={{ width: '100%', minHeight: '64px', padding: '14px', borderRadius: '12px', border: notifyEnabled ? '2px solid var(--gold)' : '2px solid var(--border)', background: notifyEnabled ? '#FBF3D4' : 'var(--surface)', fontSize: '18px', fontWeight: 700, textAlign: 'left' }}>予約通知を受け取る: {notifyEnabled ? 'オン' : 'オフ'}</button>
           {notifyEnabled && <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px' }}><select value={notifyStart} onChange={e => setNotifyStart(e.target.value)} style={{ ...inputStyle, flex: 1 }}>{Array.from({ length: 24 }, (_, i) => <option key={i} value={String(i)}>{i}:00</option>)}</select><span>〜</span><select value={notifyEnd} onChange={e => setNotifyEnd(e.target.value)} style={{ ...inputStyle, flex: 1 }}>{Array.from({ length: 24 }, (_, i) => <option key={i} value={String(i)}>{i}:00</option>)}</select></div>}
+        </section>
+        <section style={sectionStyle}>
+          <div style={titleStyle}>予約設定</div>
+          <button
+            type="button"
+            onClick={() => setVessel(v => v ? { ...v, auto_confirm: !v.auto_confirm } : v)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              width: '100%', padding: '16px',
+              background: vessel.auto_confirm ? '#FBF3D4' : 'var(--surface)',
+              border: vessel.auto_confirm ? '2px solid var(--gold)' : '2px solid var(--border)',
+              borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>
+                空きがある予約を自動で承認する
+              </div>
+              <div style={{ fontSize: '15px', color: 'var(--fg-2)', marginTop: '4px', lineHeight: 1.6 }}>
+                OFFにすると全ての予約が承認待ちになります
+              </div>
+            </div>
+            <div style={togSw(vessel.auto_confirm ?? true)}>
+              <div style={{
+                position: 'absolute', top: '4px',
+                left: vessel.auto_confirm ? '32px' : '4px',
+                width: '28px', height: '28px', borderRadius: '50%',
+                background: 'var(--surface)', boxShadow: '0 2px 6px rgba(0,0,0,.25)',
+                transition: 'left .2s'
+              }} />
+            </div>
+          </button>
         </section>
         <button onClick={handleSave} disabled={saving} style={{ width: '100%', minHeight: '64px', border: 'none', borderRadius: '14px', background: saving ? 'var(--border)' : 'var(--ocean)', color: saving ? 'var(--fg-3)' : '#fff', fontSize: '20px', fontWeight: 700 }}>{saving ? '保存中...' : '変更を保存する'}</button>
         <section style={{ ...sectionStyle, marginTop: '12px' }}>

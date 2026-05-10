@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-// POST: 予約を新規作成する
+// POST: 莠育ｴ・ｒ譁ｰ隕丈ｽ懈・縺吶ｋ
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -17,7 +17,6 @@ export async function POST(req: NextRequest) {
       channel = 'page',
     } = body
 
-    // 必須項目のバリデーション（tel はwebhook経由で空になる場合があるため任意）
     if (!vessel_id || !date || !bin_type || !name || !count) {
       return NextResponse.json(
         { error: '必須項目が不足しています' },
@@ -25,14 +24,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // bin_settingsからその日・その便のmax_capacityを確認
+    const { data: vesselData } = await supabase
+      .from('vessels')
+      .select('max_bookings_per_customer, auto_confirm')
+      .eq('id', vessel_id)
+      .single()
+
     const { data: binSettingsData } = await supabase
       .from('bin_settings')
       .select('max_capacity, start_month, end_month, days_of_week')
       .eq('vessel_id', vessel_id)
       .eq('bin_type', bin_type)
 
-    // 指定日に対応する便設定を特定する
     const d = new Date(date)
     const month = d.getMonth()
     const dow = d.getDay()
@@ -43,7 +46,7 @@ export async function POST(req: NextRequest) {
       return inPeriod && (bin.days_of_week as number[]).includes(dow)
     })
 
-    // 便設定が見つかった場合は定員チェックを行う
+    let confirmedCount = 0
     if (matchingBin) {
       const { data: existingBookings } = await supabase
         .from('bookings')
@@ -51,10 +54,10 @@ export async function POST(req: NextRequest) {
         .eq('vessel_id', vessel_id)
         .eq('date', date)
         .eq('bin_type', bin_type)
-        .in('status', ['confirmed', 'pending'])
+        .eq('status', 'confirmed')
 
-      const usedCount = (existingBookings || []).reduce((s, b) => s + (b.count as number), 0)
-      if (usedCount + Number(count) > matchingBin.max_capacity) {
+      confirmedCount = (existingBookings || []).reduce((s, b) => s + (b.count as number), 0)
+      if (confirmedCount + Number(count) > matchingBin.max_capacity) {
         return NextResponse.json(
           { error: '満員のため予約できません', code: 'FULL' },
           { status: 409 }
@@ -62,13 +65,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 同一電話番号の予約件数が上限を超えていないか確認
     if (tel) {
-      const { data: vesselData } = await supabase
-        .from('vessels')
-        .select('max_bookings_per_customer')
-        .eq('id', vessel_id)
-        .single()
       const maxPerCustomer = vesselData?.max_bookings_per_customer ?? 5
       const { count: customerCount } = await supabase
         .from('bookings')
@@ -78,26 +75,15 @@ export async function POST(req: NextRequest) {
         .in('status', ['confirmed', 'pending'])
       if ((customerCount ?? 0) >= maxPerCustomer) {
         return NextResponse.json(
-          { error: 'ご予約の上限に達しています。お電話でお問い合わせください', code: 'LIMIT_EXCEEDED' },
+          { error: 'この電話番号での予約上限に達しています。船長へお問い合わせください', code: 'LIMIT_EXCEEDED' },
           { status: 409 }
         )
       }
     }
 
-    // 同じ日・同じ便の承認待ち件数を確認
-    const { data: pendingBookings } = await supabase
-      .from('bookings')
-      .select('id')
-      .eq('vessel_id', vessel_id)
-      .eq('date', date)
-      .eq('bin_type', bin_type)
-      .eq('status', 'pending')
-
-    const pendingCount = pendingBookings?.length ?? 0
-
-    // チャーターは常に承認待ち、承認待ち0件かつ非チャーターなら即時成立
     const isCharter = channel === 'charter'
-    const status = isCharter || pendingCount > 0 ? 'pending' : 'confirmed'
+    const isImmediate = !isCharter && (vesselData?.auto_confirm ?? true) && confirmedCount === 0
+    const status = isImmediate ? 'confirmed' : 'pending'
 
     const { data, error } = await supabase
       .from('bookings')
@@ -120,11 +106,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({
-      booking: data,
-      isImmediate: status === 'confirmed',
-    })
-
+    return NextResponse.json({ booking: data, isImmediate }, { status: 201 })
   } catch {
     return NextResponse.json(
       { error: 'サーバーエラーが発生しました' },
@@ -132,8 +114,7 @@ export async function POST(req: NextRequest) {
     )
   }
 }
-
-// GET: 予約一覧を取得する（vessel_id必須、dateは任意）
+// GET: 予約一覧を取得する
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const vessel_id = searchParams.get('vessel_id')
@@ -149,7 +130,7 @@ export async function GET(req: NextRequest) {
     .eq('vessel_id', vessel_id)
     .order('date', { ascending: true })
 
-  // 日付が指定されていれば絞り込む
+  // dateが指定されていれば絞り込む
   if (date) {
     query = query.eq('date', date)
   }
@@ -163,7 +144,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ bookings: data })
 }
 
-// PATCH: 予約の承認またはお断りをする
+// PATCH: 予約の承認、却下、連絡済みを更新する
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json()
@@ -171,15 +152,15 @@ export async function PATCH(req: NextRequest) {
 
     if (!id || (status == null && contacted == null)) {
       return NextResponse.json(
-        { error: 'idとstatusが必要です' },
+        { error: 'idとstatusまたはcontactedが必要です' },
         { status: 400 }
       )
     }
 
-    // 許可するステータス値のみ受け付ける
+    // contactedのみの更新
     if (status == null) {
       if (typeof contacted !== 'boolean') {
-        return NextResponse.json({ error: 'contactedは真偽値で指定してください' }, { status: 400 })
+        return NextResponse.json({ error: 'contactedはbooleanで指定してください' }, { status: 400 })
       }
 
       const { data, error } = await supabase
@@ -224,3 +205,4 @@ export async function PATCH(req: NextRequest) {
     )
   }
 }
+
