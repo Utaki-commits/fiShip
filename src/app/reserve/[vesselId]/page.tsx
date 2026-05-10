@@ -335,7 +335,17 @@ export default function ReservePage() {
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
 
       {/* ヘッダー */}
-      <div style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '32px 22px 48px', position: 'relative', overflow: 'hidden', isolation: 'isolate' }}>
+      <div style={{
+        background: vessel.banner_url
+          ? `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${vessel.banner_url})`
+          : 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        padding: '32px 22px 48px',
+        position: 'relative',
+        overflow: 'hidden',
+        isolation: 'isolate',
+      }}>
         <div style={{ position: 'absolute', bottom: '-16px', left: 0, right: 0, height: '32px', background: 'var(--bg)', borderRadius: '50% 50% 0 0 / 100% 100% 0 0' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
           <div style={{ width: '56px', height: '56px', background: vessel.logo_url ? 'transparent' : 'var(--gold)', borderRadius: '12px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>
