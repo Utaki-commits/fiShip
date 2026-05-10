@@ -50,6 +50,7 @@ type Form = {
   name: string
   tel: string
   count: number
+  bin_setting_id: string
   bin_type: 'day' | 'night'
   fishing_style: string
   message: string
@@ -83,7 +84,7 @@ export default function ReservePage() {
   const [calM, setCalM] = useState(new Date().getMonth())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedBins, setSelectedBins] = useState<BinInfo[]>([])
-  const [form, setForm] = useState<Form>({ name: '', tel: '', count: 1, bin_type: 'day', fishing_style: '', message: '' })
+  const [form, setForm] = useState<Form>({ name: '', tel: '', count: 1, bin_setting_id: '', bin_type: 'day', fishing_style: '', message: '' })
   const [submitting, setSubmitting] = useState(false)
   const [completed, setCompleted] = useState<{ isImmediate: boolean } | null>(null)
   const [formError, setFormError] = useState('')
@@ -155,7 +156,16 @@ export default function ReservePage() {
     setCompleted(null)
     setFormError('')
     // 利用可能な最初の便を初期選択
-    setForm(f => ({ ...f, count: 1, bin_type: available[0].setting.bin_type, name: '', tel: '', fishing_style: '', message: '' }))
+    setForm(f => ({
+      ...f,
+      count: 1,
+      bin_setting_id: available[0].setting.id,
+      bin_type: available[0].setting.bin_type,
+      name: '',
+      tel: '',
+      fishing_style: '',
+      message: '',
+    }))
 
     setTimeout(() => {
       document.getElementById('reserve-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -180,7 +190,7 @@ export default function ReservePage() {
     }
     if (!selectedDate) return
 
-    const activeBin = selectedBins.find(b => b.setting.bin_type === form.bin_type)
+    const activeBin = selectedBins.find(b => b.setting.id === form.bin_setting_id)
     if (!activeBin) return
 
     if (form.count > activeBin.remaining) {
@@ -298,7 +308,7 @@ export default function ReservePage() {
   }
 
   // 選択便の残席上限
-  const activeBinInfo = selectedBins.find(b => b.setting.bin_type === form.bin_type)
+  const activeBinInfo = selectedBins.find(b => b.setting.id === form.bin_setting_id)
   const maxCount = activeBinInfo?.remaining ?? 1
 
   if (loading) return (
@@ -438,11 +448,16 @@ export default function ReservePage() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                     {selectedBins.map(b => {
                       const isDay = b.setting.bin_type === 'day'
-                      const isActive = form.bin_type === b.setting.bin_type
+                      const isActive = form.bin_setting_id === b.setting.id
                       return (
                         <button
-                          key={b.setting.bin_type}
-                          onClick={() => !b.isFull && setForm(f => ({ ...f, bin_type: b.setting.bin_type, count: 1 }))}
+                          key={b.setting.id}
+                          onClick={() => !b.isFull && setForm(f => ({
+                            ...f,
+                            bin_setting_id: b.setting.id,
+                            bin_type: b.setting.bin_type,
+                            count: 1,
+                          }))}
                           disabled={b.isFull}
                           style={{
                             padding: '14px 8px', textAlign: 'center', borderRadius: '10px',
