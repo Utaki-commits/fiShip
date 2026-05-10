@@ -244,15 +244,21 @@ export default function ReservePage() {
     return (
       <div
         key={dateStr}
-        onClick={() => !isPast && hasAvailable && handleDateSelect(year, month, day)}
+        onClick={() => {
+          if (isSelected) {
+            setSelectedDate(null)
+            setSelectedBins([])
+            return
+          }
+          if (!isPast && hasAvailable) handleDateSelect(year, month, day)
+        }}
         style={{
           borderRadius: '10px',
-          minHeight: '56px', transition: 'border-color .15s',
+          minHeight: '56px',
           cursor: isPast || (!hasAvailable && bins.length > 0) ? 'default' : bins.length === 0 ? 'default' : 'pointer',
           opacity: isPast ? 0.4 : 1,
           border: isSelected ? '3px solid var(--ocean)' : isToday ? '3px solid var(--gold)' : '3px solid transparent',
           padding: '6px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-          background: bins.length === 0 ? (isPast ? 'var(--bg)' : 'var(--status-closed-bg)') : 'var(--surface)',
         }}
       >
         <span style={{ fontSize: '18px', fontWeight: 700,
@@ -272,9 +278,6 @@ export default function ReservePage() {
           {hasDay && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--ocean)' }} />}
           {hasNight && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--status-night-fg)' }} />}
         </div>
-        {bins.length > 0 && !hasAvailable && (
-          <div style={{ fontSize: '10px', color: 'var(--status-full-fg)', fontWeight: 700 }}>満員</div>
-        )}
       </div>
     )
   }
