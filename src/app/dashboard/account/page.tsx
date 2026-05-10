@@ -291,11 +291,14 @@ export default function AccountPage() {
               解約の確認
             </div>
 
-            <div style={{ background: 'var(--status-day-bg)', border: '2px solid var(--ocean-light)', borderRadius: '12px', padding: '14px 16px', marginBottom: '16px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)', lineHeight: 1.7 }}>
-                解約後も <span style={{ fontSize: '20px' }}>{vessel ? getExpiryDate(vessel.subscribed_at) : ''}</span> までサービスをご利用いただけます。
+            <div style={{ background: 'var(--status-day-bg)', border: '2px solid var(--ocean-light)', borderRadius: '12px', padding: '14px 16px', marginBottom: '14px' }}>
+              <div style={{ fontSize: '15px', color: 'var(--ocean)', marginBottom: '8px' }}>
+                解約後もご利用いただける期限
               </div>
-              <div style={{ fontSize: '15px', color: 'var(--ocean)', marginTop: '4px', lineHeight: 1.6 }}>
+              <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--ocean)', lineHeight: 1.2, marginBottom: '8px' }}>
+                {vessel ? getExpiryDate(vessel.subscribed_at) : ''}
+              </div>
+              <div style={{ fontSize: '14px', color: 'var(--ocean)', lineHeight: 1.6 }}>
                 それ以降は自動的にサービスが停止されます。
               </div>
             </div>
