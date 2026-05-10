@@ -376,7 +376,7 @@ export default function ReservePage() {
             )}
           </div>
           <div>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2, textShadow: '0 1px 4px rgba(0,0,0,0.8), 0 0 12px rgba(0,0,0,0.6)' }}>{vessel.name}</div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2, textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{vessel.name}</div>
             <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.92)', marginTop: '2px', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{vessel.captain_name} 船長</div>
           </div>
         </div>
@@ -388,10 +388,10 @@ export default function ReservePage() {
         )}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {vessel.beginner_accepted && (
-            <span style={{ background: 'rgba(255,255,255,0.25)', color: 'var(--surface)', fontSize: '14px', padding: '3px 10px', borderRadius: '99px', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>初心者歓迎</span>
+            <span style={{ background: 'rgba(255,255,255,0.25)', color: 'var(--surface)', fontSize: '14px', padding: '3px 10px', borderRadius: '99px', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>初心者歓迎</span>
           )}
           {vessel.charter_accepted && (
-            <span style={{ background: 'rgba(255,255,255,0.25)', color: 'var(--surface)', fontSize: '14px', padding: '3px 10px', borderRadius: '99px', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>貸切OK</span>
+            <span style={{ background: 'rgba(255,255,255,0.25)', color: 'var(--surface)', fontSize: '14px', padding: '3px 10px', borderRadius: '99px', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>貸切OK</span>
           )}
         </div>
       </div>
