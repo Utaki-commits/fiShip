@@ -57,12 +57,17 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/login'); return }
+      const res = await fetch('/api/auth/profile')
+      if (!res.ok) { router.push('/login'); return }
+
+      const user = await res.json()
+      if (!user?.sub) { router.push('/login'); return }
+
       const { data: vessel } = await supabase
-        .from('vessels').select('id').eq('user_id', session.user.id).single()
+        .from('vessels').select('id').eq('user_id', user.sub).single()
       if (!vessel) { router.push('/register'); return }
       setVesselId(vessel.id)
+
       const { data: bs } = await supabase
         .from('bin_settings').select('*').eq('vessel_id', vessel.id)
       setSettings(bs || [])
