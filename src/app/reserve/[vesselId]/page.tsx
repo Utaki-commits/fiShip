@@ -676,7 +676,7 @@ export default function ReservePage() {
           </div>
         )}
 
-        {/* Googleマップ */}
+        {/* Googleマップ機能は一時停止中。再開時はこのブロックを戻す。
         {vessel.map_embed_url && (
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
@@ -692,6 +692,7 @@ export default function ReservePage() {
             />
           </div>
         )}
+        */}
 
       </div>
     </div>

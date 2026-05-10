@@ -134,7 +134,8 @@ export default function AccountPage() {
       name: vessel.name, captain_name: vessel.captain_name, prefecture: vessel.prefecture,
       port_name: vessel.port_name, access: vessel.access, notify_enabled: notifyEnabled,
       notify_hours: `${notifyStart}:00〜${notifyEnd}:00`, font_size: fontSize, color_mode: colorMode,
-      map_embed_url: vessel.map_embed_url,
+      // Googleマップ機能は一時停止中。再開時は下記を戻す。
+      // map_embed_url: vessel.map_embed_url,
     }).eq('id', vessel.id)
     if (saveError) { setError('保存に失敗しました'); setSaving(false); return }
     document.body.dataset.fontsize = fontSize
@@ -183,6 +184,7 @@ export default function AccountPage() {
           <label style={labelStyle}>都道府県</label><input style={{ ...inputStyle, marginBottom: '14px' }} value={vessel.prefecture} onChange={e => update('prefecture', e.target.value)} />
           <label style={labelStyle}>港名・出船場所</label><input style={{ ...inputStyle, marginBottom: '14px' }} value={vessel.port_name} onChange={e => update('port_name', e.target.value)} />
           <label style={labelStyle}>アクセス情報</label><input style={{ ...inputStyle, marginBottom: '14px' }} value={vessel.access} onChange={e => update('access', e.target.value)} />
+          {/* Googleマップ機能は一時停止中。再開時はこのブロックを戻す。
           <label style={labelStyle}>Googleマップ埋め込みURL（任意）</label>
           <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginBottom: '8px', lineHeight: 1.6 }}>
             Googleマップで出港場所を検索 → 「共有」→「地図を埋め込む」→「HTMLをコピー」のsrc属性のURLを貼り付けてください
@@ -205,6 +207,7 @@ export default function AccountPage() {
               />
             </div>
           )}
+          */}
         </section>
         <section style={sectionStyle}>
           <div style={titleStyle}>文字サイズ</div>
