@@ -376,22 +376,22 @@ export default function ReservePage() {
             )}
           </div>
           <div>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,1), 0 0 20px rgba(0,0,0,1)' }}>{vessel.name}</div>
-            <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.92)', marginTop: '2px', textShadow: '0 2px 8px rgba(0,0,0,1)' }}>{vessel.captain_name} 船長</div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,1), 0 0 20px rgba(0,0,0,1)' }}>{vessel.name}</div>
+            <div style={{ fontSize: '18px', color: '#ffffff', marginTop: '2px', textShadow: '0 2px 8px rgba(0,0,0,1)' }}>{vessel.captain_name} 船長</div>
           </div>
         </div>
-        <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.92)', marginBottom: '4px', textShadow: '0 2px 8px rgba(0,0,0,1)' }}>
+        <div style={{ fontSize: '18px', color: '#ffffff', marginBottom: '4px', textShadow: '0 2px 8px rgba(0,0,0,1)' }}>
           📍 {vessel.prefecture}・{vessel.port_name}
         </div>
         {vessel.price && (
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--gold)', marginBottom: '6px', textShadow: '0 2px 8px rgba(0,0,0,1)' }}>{formatPrice(vessel.price)}</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff', marginBottom: '6px', textShadow: '0 2px 8px rgba(0,0,0,1)' }}>{formatPrice(vessel.price)}</div>
         )}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {vessel.beginner_accepted && (
-            <span style={{ background: 'rgba(0,0,0,0.45)', color: 'var(--surface)', fontSize: '14px', padding: '3px 10px', borderRadius: '99px', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>初心者歓迎</span>
+            <span style={{ background: 'rgba(0,0,0,0.45)', color: '#ffffff', fontSize: '14px', padding: '3px 10px', borderRadius: '99px', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>初心者歓迎</span>
           )}
           {vessel.charter_accepted && (
-            <span style={{ background: 'rgba(0,0,0,0.45)', color: 'var(--surface)', fontSize: '14px', padding: '3px 10px', borderRadius: '99px', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>貸切OK</span>
+            <span style={{ background: 'rgba(0,0,0,0.45)', color: '#ffffff', fontSize: '14px', padding: '3px 10px', borderRadius: '99px', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>貸切OK</span>
           )}
         </div>
       </div>
