@@ -32,6 +32,7 @@ type BinSetting = {
   id: string
   name: string | null
   bin_type: 'day' | 'night'
+  price: string
   start_month: number
   end_month: number
   days_of_week: number[]
@@ -476,24 +477,44 @@ export default function ReservePage() {
                           }))}
                           disabled={b.isFull}
                           style={{
-                            padding: '14px 8px', textAlign: 'center', borderRadius: '10px',
-                            cursor: b.isFull ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                            background: b.isFull ? 'var(--bg)' : isActive ? (isDay ? 'var(--status-day-bg)' : 'var(--status-night-bg)') : 'var(--surface)',
+                            padding: '14px 12px',
+                            textAlign: 'left',
+                            borderRadius: '10px',
+                            cursor: b.isFull ? 'not-allowed' : 'pointer',
+                            fontFamily: 'inherit',
+                            width: '100%',
+                            background: b.isFull
+                              ? 'var(--bg)'
+                              : isDay
+                                ? 'var(--status-day-bg)'
+                                : 'var(--status-night-bg)',
                             border: isActive
-                              ? `2px solid ${isDay ? 'var(--ocean-light)' : 'var(--status-night-fg)'}`
-                              : '2px solid var(--border)',
+                              ? `3px solid ${isDay ? 'var(--ocean)' : 'var(--status-night-fg)'}`
+                              : `2px solid ${isDay ? 'var(--ocean-light)' : 'var(--status-night-fg)'}`,
                             opacity: b.isFull ? 0.5 : 1,
                           }}
                         >
-                          <div style={{ fontSize: '18px', fontWeight: 700, color: b.isFull ? 'var(--fg-3)' : isActive ? (isDay ? 'var(--ocean)' : 'var(--status-night-fg)') : 'var(--fg-2)' }}>
+                          <div style={{
+                            fontSize: '18px',
+                            fontWeight: 700,
+                            color: b.isFull ? 'var(--fg-3)' : isDay ? 'var(--ocean)' : 'var(--status-night-fg)',
+                            marginBottom: '4px',
+                          }}>
                             {isDay ? '☀️' : '🌙'} {b.setting.name || (isDay ? '昼便' : '夜便')}
                           </div>
-                          <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '4px' }}>
-                            {b.isFull ? '満員' : `残り${b.remaining}名`}
+                          <div style={{ fontSize: '14px', color: 'var(--fg-2)', lineHeight: 1.6 }}>
+                            {b.isFull ? '満員' : `残り${b.remaining}名`}　{b.setting.departure_time} 出発
                           </div>
-                          <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '2px' }}>
-                            {b.setting.departure_time} 出発
-                          </div>
+                          {b.setting.price && (
+                            <div style={{
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: isDay ? 'var(--ocean)' : 'var(--status-night-fg)',
+                              marginTop: '4px',
+                            }}>
+                              💴 {b.setting.price}
+                            </div>
+                          )}
                         </button>
                       )
                     })}
@@ -503,14 +524,16 @@ export default function ReservePage() {
 
               {/* 単便のとき出発時刻を表示 */}
               {selectedBins.length === 1 && activeBinInfo && (
-                <div style={{ background: activeBinInfo.setting.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '18px' }}>{activeBinInfo.setting.bin_type === 'day' ? '☀️' : '🌙'}</span>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: activeBinInfo.setting.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
-                      {activeBinInfo.setting.bin_type === 'day' ? '☀️' : '🌙'} {activeBinInfo.setting.name || (activeBinInfo.setting.bin_type === 'day' ? '昼便' : '夜便')}　{activeBinInfo.setting.departure_time} 出発
-                    </div>
-                    <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>残り {activeBinInfo.remaining}名</div>
+                <div style={{ background: activeBinInfo.setting.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: activeBinInfo.setting.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
+                    {activeBinInfo.setting.bin_type === 'day' ? '☀️' : '🌙'} {activeBinInfo.setting.name || (activeBinInfo.setting.bin_type === 'day' ? '昼便' : '夜便')}　{activeBinInfo.setting.departure_time} 出発
                   </div>
+                  <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>残り {activeBinInfo.remaining}名</div>
+                  {activeBinInfo.setting.price && (
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: activeBinInfo.setting.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)', marginTop: '4px' }}>
+                      💴 {activeBinInfo.setting.price}
+                    </div>
+                  )}
                 </div>
               )}
 
