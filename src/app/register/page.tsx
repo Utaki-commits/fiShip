@@ -170,9 +170,9 @@ export default function RegisterPage() {
                     update('prefecture', '')
                   }}
                   style={{
-                    padding:'14px 6px',
-                    minHeight:'56px',
-                    fontSize:'15px',
+                    padding:'18px 6px',
+                    minHeight:'72px',
+                    fontSize:'17px',
                     fontWeight:700,
                     fontFamily:'inherit',
                     lineHeight:1.4,
@@ -190,30 +190,44 @@ export default function RegisterPage() {
             </div>
 
             {selectedArea && (
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginBottom:'22px' }}>
-                {AREA_PREFECTURES[selectedArea].map(prefecture => (
-                  <button
-                    key={prefecture}
-                    type="button"
-                    onClick={() => update('prefecture', prefecture)}
-                    style={{
-                      padding:'12px 4px',
-                      minHeight:'56px',
-                      fontSize:'16px',
-                      fontWeight:700,
-                      fontFamily:'inherit',
-                      textAlign:'center',
-                      background: form.prefecture === prefecture ? 'var(--ocean-pale)' : 'var(--surface)',
-                      border: form.prefecture === prefecture ? '3px solid var(--ocean)' : '2px solid var(--border)',
-                      borderRadius:'10px',
-                      cursor:'pointer',
-                      color: form.prefecture === prefecture ? 'var(--ocean)' : 'var(--fg-1)',
-                    }}
-                  >
-                    {prefecture.replace('県','').replace('府','').replace('都','').replace('道','')}
-                  </button>
-                ))}
-              </div>
+              <>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  margin: '16px 0 12px',
+                }}>
+                  <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+                  <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    {selectedArea}の都道府県
+                  </span>
+                  <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginBottom:'22px' }}>
+                  {AREA_PREFECTURES[selectedArea].map(prefecture => (
+                    <button
+                      key={prefecture}
+                      type="button"
+                      onClick={() => update('prefecture', prefecture)}
+                      style={{
+                        padding:'18px 4px',
+                        minHeight:'72px',
+                        fontSize:'17px',
+                        fontWeight:700,
+                        fontFamily:'inherit',
+                        textAlign:'center',
+                        background: form.prefecture === prefecture ? 'var(--ocean-pale)' : 'var(--surface)',
+                        border: form.prefecture === prefecture ? '3px solid var(--ocean)' : '2px solid var(--border)',
+                        borderRadius:'10px',
+                        cursor:'pointer',
+                        color: form.prefecture === prefecture ? 'var(--ocean)' : 'var(--fg-1)',
+                      }}
+                    >
+                      {prefecture.replace('県','').replace('府','').replace('都','').replace('道','')}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
 
             <label style={styles.label}>漁港・出船場所の名前 {requiredBadge}</label>
