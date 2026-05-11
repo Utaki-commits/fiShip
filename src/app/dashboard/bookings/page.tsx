@@ -39,6 +39,20 @@ type BinSetting = {
 const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
 const DAY_NAMES = ['日','月','火','水','木','金','土']
 
+type BookingCandidate = {
+  id: string
+  channel: 'line_official' | 'instagram' | 'line' | 'phone' | 'other'
+  raw_message: string
+  parsed_date: string | null
+  parsed_bin_type: string | null
+  parsed_name: string | null
+  parsed_tel: string | null
+  parsed_count: number | null
+  parsed_note: string | null
+  status: 'pending' | 'approved' | 'ignored'
+  created_at: string
+}
+
 const toDateStr = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 
@@ -61,6 +75,13 @@ export default function DashboardBookingsPage() {
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekSunday(new Date()))
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [candidates, setCandidates] = useState<BookingCandidate[]>([])
+  const [inputChannel, setInputChannel] = useState<'line' | 'phone' | 'other'>('line')
+  const [inputMessage, setInputMessage] = useState('')
+  const [inputDate, setInputDate] = useState('')
+  const [inputBinType, setInputBinType] = useState<'day' | 'night' | ''>('')
+  const [inputCount, setInputCount] = useState(0)
+  const [analyzing, setAnalyzing] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -78,16 +99,133 @@ export default function DashboardBookingsPage() {
       if (!v) { router.push('/register'); return }
       setVessel(v)
 
-      const [{ data: bk }, { data: bs }] = await Promise.all([
+      const [{ data: bk }, { data: bs }, { data: cd }] = await Promise.all([
         supabase.from('bookings').select('*').eq('vessel_id', v.id).order('date', { ascending: true }),
         supabase.from('bin_settings').select('*').eq('vessel_id', v.id),
+        supabase.from('booking_candidates').select('*').eq('vessel_id', v.id).eq('status', 'pending').order('created_at', { ascending: false }),
       ])
       setBookings(bk || [])
       setBinSettings(bs || [])
+      setCandidates(cd || [])
       setLoading(false)
     }
     init()
   }, [router])
+
+  const normalizeBinType = (value: unknown): 'day' | 'night' | null => {
+    if (value === 'day' || value === '昼' || value === '昼便') return 'day'
+    if (value === 'night' || value === '夜' || value === '夜便') return 'night'
+    const text = typeof value === 'string' ? value.toLowerCase() : ''
+    if (text.includes('night') || text.includes('夜') || text.includes('螟')) return 'night'
+    if (text.includes('day') || text.includes('昼') || text.includes('譏')) return 'day'
+    return null
+  }
+
+  const handleAnalyzeAndRegister = async () => {
+    if (!vessel?.id || (!inputMessage.trim() && !inputDate && !inputBinType && !inputCount)) return
+
+    setAnalyzing(true)
+    try {
+      let parsed: {
+        date?: string | null
+        bin_type?: string | null
+        bin_preference?: string | null
+        name?: string | null
+        tel?: string | null
+        count?: number | null
+        note?: string | null
+        fishing_style?: string | null
+      } = {}
+
+      if (inputMessage.trim()) {
+        const res = await fetch('/api/extract', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: inputMessage,
+            vessel_id: vessel.id,
+            channel: inputChannel,
+          }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          parsed = data.extracted || {}
+        }
+      }
+
+      const finalDate = inputDate || parsed.date || null
+      const finalBinType = inputBinType || normalizeBinType(parsed.bin_type || parsed.bin_preference)
+      const finalCount = inputCount || parsed.count || 1
+
+      const { data: candidate } = await supabase
+        .from('booking_candidates')
+        .insert([{
+          vessel_id: vessel.id,
+          channel: inputChannel,
+          raw_message: inputMessage,
+          parsed_date: finalDate,
+          parsed_bin_type: finalBinType,
+          parsed_name: parsed.name || null,
+          parsed_tel: parsed.tel || null,
+          parsed_count: finalCount,
+          parsed_note: parsed.note || parsed.fishing_style || null,
+          status: 'pending',
+        }])
+        .select()
+        .single()
+
+      if (candidate) {
+        setCandidates(prev => [candidate, ...prev])
+      }
+
+      setInputMessage('')
+      setInputDate('')
+      setInputBinType('')
+      setInputCount(0)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  const handleApproveCandidate = async (c: BookingCandidate) => {
+    if (!c.parsed_date || !c.parsed_bin_type || !vessel?.id) return
+
+    const res = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vessel_id: vessel.id,
+        date: c.parsed_date,
+        bin_type: c.parsed_bin_type,
+        name: c.parsed_name || '名前不明',
+        tel: c.parsed_tel || '',
+        count: c.parsed_count || 1,
+        message: c.parsed_note || '',
+        channel: c.channel,
+      }),
+    })
+    if (!res.ok) return
+
+    const data = await res.json()
+    const booking = data.booking as Booking | undefined
+    if (booking) {
+      const normalized = { ...booking, status: 'confirmed' as const }
+      if (booking.status !== 'confirmed') {
+        await updateBooking(booking.id, { status: 'confirmed' })
+      }
+      setBookings(prev => [normalized, ...prev.filter(b => b.id !== booking.id)])
+    }
+
+    await supabase.from('booking_candidates').update({ status: 'approved' }).eq('id', c.id)
+    setCandidates(prev => prev.filter(cd => cd.id !== c.id))
+  }
+
+  const handleIgnoreCandidate = async (id: string) => {
+    await supabase.from('booking_candidates').update({ status: 'ignored' }).eq('id', id)
+    setCandidates(prev => prev.filter(c => c.id !== id))
+  }
 
   const updateBooking = async (id: string, patch: { status?: 'confirmed' | 'rejected'; contacted?: boolean }) => {
     setActionLoading(id)
@@ -117,6 +255,23 @@ export default function DashboardBookingsPage() {
   const getMaxCap = (binType: 'day' | 'night') => {
     const bin = binSettings.find(b => b.bin_type === binType)
     return bin?.max_capacity ?? 0
+  }
+
+  const getChannelBadge = (channel: string) => {
+    const map: Record<string, { label: string; bg: string; color: string }> = {
+      page: { label: '📱 予約ページ', bg: 'var(--status-day-bg)', color: 'var(--ocean)' },
+      line: { label: '💬 LINE', bg: '#E8F8EE', color: '#06C755' },
+      line_official: { label: '💬 LINE公式', bg: '#E8F8EE', color: '#06C755' },
+      instagram: { label: '📸 Instagram', bg: '#FDE8F4', color: '#C13584' },
+      phone: { label: '📞 電話', bg: 'var(--status-closed-bg)', color: 'var(--fg-2)' },
+      other: { label: 'その他', bg: 'var(--status-closed-bg)', color: 'var(--fg-2)' },
+    }
+    const badge = map[channel] || map.other
+    return (
+      <span style={{ fontSize: '13px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', background: badge.bg, color: badge.color }}>
+        {badge.label}
+      </span>
+    )
   }
 
   const switchView = (nextView: 'month' | 'week') => {
@@ -250,6 +405,12 @@ export default function DashboardBookingsPage() {
   }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
       <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '15px', fontWeight: 700, color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
+            {b.bin_type === 'day' ? '☀️ 昼便' : '🌙 夜便'}
+          </span>
+          {getChannelBadge(b.channel)}
+        </div>
         <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
         <div style={{ fontSize: '15px', color: 'var(--fg-2)', marginTop: '2px' }}>
           {b.count}名　
@@ -306,6 +467,111 @@ export default function DashboardBookingsPage() {
       </div>
 
       <main style={{ padding: '16px' }}>
+        {candidates.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>
+              取り込み候補　{candidates.length}件
+            </div>
+            {candidates.map(c => (
+              <div key={c.id} style={{ background: 'var(--surface)', border: '2px solid var(--status-pending-dot)', borderRadius: '14px', padding: '16px', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px', background: 'var(--status-pending-bg)', color: 'var(--status-pending-fg)' }}>
+                    {c.channel === 'line' ? '💬 LINE' : c.channel === 'line_official' ? '💬 LINE公式' : c.channel === 'instagram' ? '📸 Instagram' : c.channel === 'phone' ? '📞 電話' : 'その他'}
+                  </span>
+                  <span style={{ fontSize: '14px', color: 'var(--fg-3)' }}>
+                    {new Date(c.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+
+                {c.raw_message && (
+                  <div style={{ fontSize: '14px', color: 'var(--fg-3)', background: 'var(--bg)', borderRadius: '8px', padding: '8px 12px', marginBottom: '10px', lineHeight: 1.6 }}>
+                    「{c.raw_message}」
+                  </div>
+                )}
+
+                <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>
+                  {c.parsed_date ? `${new Date(c.parsed_date + 'T00:00:00').getMonth()+1}月${new Date(c.parsed_date + 'T00:00:00').getDate()}日` : '日付不明'}
+                  　{c.parsed_bin_type === 'day' ? '☀️ 昼便' : c.parsed_bin_type === 'night' ? '🌙 夜便' : '便不明'}
+                  　{c.parsed_count || '?'}名
+                </div>
+                {c.parsed_name && <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginBottom: '4px' }}>{c.parsed_name}</div>}
+                {c.parsed_tel && <div style={{ fontSize: '15px', color: 'var(--fg-3)', marginBottom: '10px' }}>{c.parsed_tel}</div>}
+
+                {(!c.parsed_date || !c.parsed_bin_type || !c.parsed_name) && (
+                  <div style={{ fontSize: '13px', color: 'var(--status-pending-fg)', background: 'var(--status-pending-bg)', borderRadius: '8px', padding: '8px 12px', marginBottom: '10px' }}>
+                    ⚠️ {[!c.parsed_date && '日付', !c.parsed_bin_type && '便', !c.parsed_name && '氏名'].filter(Boolean).join('・')}が不明です。登録後に編集してください。
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => handleApproveCandidate(c)}
+                    style={{ flex: 1, padding: '14px', fontSize: '16px', fontWeight: 700, background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >予約として登録</button>
+                  <button
+                    onClick={() => handleIgnoreCandidate(c.id)}
+                    style={{ flex: 1, padding: '14px', fontSize: '16px', fontWeight: 700, background: 'var(--surface)', color: 'var(--fg-3)', border: '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >無視する</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '16px' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>
+            メッセージから予約を作る
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            {([{ key: 'line', label: '💬 LINE' }, { key: 'phone', label: '📞 電話' }, { key: 'other', label: 'その他' }] as const).map(({ key, label }) => (
+              <button key={key} onClick={() => setInputChannel(key)}
+                style={{ flex: 1, padding: '10px 6px', fontSize: '15px', fontWeight: 700, fontFamily: 'inherit', background: inputChannel === key ? 'var(--ocean)' : 'var(--surface)', color: inputChannel === key ? '#fff' : 'var(--fg-2)', border: inputChannel === key ? '2px solid var(--ocean)' : '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <textarea
+            value={inputMessage}
+            onChange={e => setInputMessage(e.target.value)}
+            placeholder={'メッセージを貼り付けまたは入力してください\n例：「土曜昼便2人 たなか 090-XXXX」'}
+            style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', resize: 'none', height: '100px', boxSizing: 'border-box', color: 'var(--fg-1)', background: 'var(--surface)', marginBottom: '12px' }}
+          />
+
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <input type="date" value={inputDate} onChange={e => setInputDate(e.target.value)}
+              style={{ flex: 2, padding: '12px', fontSize: '15px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)' }} />
+
+            <button onClick={() => setInputBinType(v => v === 'day' ? '' : 'day')}
+              style={{ flex: 1, padding: '12px 6px', fontSize: '15px', fontWeight: 700, fontFamily: 'inherit', background: inputBinType === 'day' ? 'var(--status-day-bg)' : 'var(--surface)', color: inputBinType === 'day' ? 'var(--ocean)' : 'var(--fg-3)', border: inputBinType === 'day' ? '2px solid var(--ocean-light)' : '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer' }}>
+              ☀️ 昼
+            </button>
+            <button onClick={() => setInputBinType(v => v === 'night' ? '' : 'night')}
+              style={{ flex: 1, padding: '12px 6px', fontSize: '15px', fontWeight: 700, fontFamily: 'inherit', background: inputBinType === 'night' ? 'var(--status-night-bg)' : 'var(--surface)', color: inputBinType === 'night' ? 'var(--status-night-fg)' : 'var(--fg-3)', border: inputBinType === 'night' ? '2px solid var(--status-night-fg)' : '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer' }}>
+              🌙 夜
+            </button>
+
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <button onClick={() => setInputCount(v => Math.max(0, v - 1))}
+                style={{ width: '36px', height: '44px', borderRadius: '8px', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)' }}>－</button>
+              <span style={{ fontSize: '16px', fontWeight: 700, color: inputCount > 0 ? 'var(--fg-1)' : 'var(--fg-3)', minWidth: '24px', textAlign: 'center' }}>
+                {inputCount > 0 ? inputCount : '?'}
+              </span>
+              <button onClick={() => setInputCount(v => v + 1)}
+                style={{ width: '36px', height: '44px', borderRadius: '8px', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)' }}>＋</button>
+            </div>
+          </div>
+
+          <button
+            onClick={handleAnalyzeAndRegister}
+            disabled={analyzing || (!inputMessage.trim() && !inputDate && !inputBinType && !inputCount)}
+            style={{ width: '100%', padding: '16px', fontSize: '18px', fontWeight: 700, background: analyzing ? 'var(--border)' : 'var(--ocean)', color: analyzing ? 'var(--fg-3)' : '#fff', border: 'none', borderRadius: '12px', cursor: analyzing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+          >
+            {analyzing ? 'AI解析中...' : '解析して予約候補にする'}
+          </button>
+        </div>
+
         <section style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
             <button
@@ -471,6 +737,7 @@ export default function DashboardBookingsPage() {
                     }}>
                       {b.bin_type === 'day' ? '昼便' : '夜便'}
                     </span>
+                    {getChannelBadge(b.channel)}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)', lineHeight: 1.25 }}>{b.name}</div>
                       <div style={{ fontSize: '18px', color: 'var(--fg-2)', marginTop: '6px', lineHeight: 1.6, whiteSpace: 'pre-line' }}>

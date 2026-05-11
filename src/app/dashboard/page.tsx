@@ -131,6 +131,23 @@ export default function DashboardPage() {
     return bin?.max_capacity ?? 0
   }
 
+  const getChannelBadge = (channel: string) => {
+    const map: Record<string, { label: string; bg: string; color: string }> = {
+      page: { label: '📱 予約ページ', bg: 'var(--status-day-bg)', color: 'var(--ocean)' },
+      line: { label: '💬 LINE', bg: '#E8F8EE', color: '#06C755' },
+      line_official: { label: '💬 LINE公式', bg: '#E8F8EE', color: '#06C755' },
+      instagram: { label: '📸 Instagram', bg: '#FDE8F4', color: '#C13584' },
+      phone: { label: '📞 電話', bg: 'var(--status-closed-bg)', color: 'var(--fg-2)' },
+      other: { label: 'その他', bg: 'var(--status-closed-bg)', color: 'var(--fg-2)' },
+    }
+    const badge = map[channel] || map.other
+    return (
+      <span style={{ fontSize: '13px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', background: badge.bg, color: badge.color }}>
+        {badge.label}
+      </span>
+    )
+  }
+
   const oceanGradient =
     'radial-gradient(120% 200% at 88% 110%, rgba(46,134,193,.45) 0%, transparent 55%),' +
     'radial-gradient(80% 120% at 12% -20%, rgba(212,172,13,.18) 0%, transparent 60%),' +
@@ -148,6 +165,7 @@ export default function DashboardPage() {
         <span style={{ fontSize: '14px', fontWeight: 700, padding: '6px 12px', borderRadius: '99px', flexShrink: 0, background: b.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)', color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
           {b.bin_type === 'day' ? '昼便' : '夜便'}
         </span>
+        {getChannelBadge(b.channel)}
         <div>
           <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
           <div style={{ fontSize: '18px', color: 'var(--fg-2)', marginTop: '4px' }}>
@@ -175,6 +193,12 @@ export default function DashboardPage() {
   const BookingCard = ({ b }: { b: Booking }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 0', borderBottom: '1px solid var(--border)' }}>
       <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '15px', fontWeight: 700, color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
+            {b.bin_type === 'day' ? '☀️ 昼便' : '🌙 夜便'}
+          </span>
+          {getChannelBadge(b.channel)}
+        </div>
         <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
         <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginTop: '2px' }}>{b.count}名　{b.status === 'confirmed' ? '承認済み' : '承認待ち'}</div>
       </div>
