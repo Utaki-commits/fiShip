@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+const DEFAULT_ICON = 'https://whnpkellpiauxovxtpnz.supabase.co/storage/v1/object/public/vessel-images/Fiship_icon.png'
+
 type Step = 'start' | 'phone' | 'code'
 
 export default function LoginPage() {
@@ -122,20 +124,8 @@ export default function LoginPage() {
           padding: '32px 20px 28px',
         }}>
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '16px',
-              background: 'var(--gold)',
-              color: 'var(--ocean-deep)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '32px',
-              margin: '0 auto 18px',
-              fontWeight: 700,
-            }}>
-              ⚓
+            <div style={{ width: '64px', height: '64px', borderRadius: '16px', overflow: 'hidden', margin: '0 auto 18px' }}>
+              <img src={DEFAULT_ICON} alt="fiShip" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <h1 style={{
               margin: 0,

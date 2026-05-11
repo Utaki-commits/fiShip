@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
+const DEFAULT_ICON = 'https://whnpkellpiauxovxtpnz.supabase.co/storage/v1/object/public/vessel-images/Fiship_icon.png'
+
 type VesselStatus = 'active' | 'locked' | 'suspended' | 'proxy'
 
 type VesselWithStatus = {
@@ -379,10 +381,9 @@ function CaptainCard({
         }}
       >
         {/* 船アイコン */}
-        <div style={{
-          width: '44px', height: '44px', borderRadius: '10px', flexShrink: 0,
-          background: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px',
-        }}>⚓</div>
+        <div style={{ width: '44px', height: '44px', borderRadius: '10px', flexShrink: 0, overflow: 'hidden' }}>
+          <img src={DEFAULT_ICON} alt="fiShip" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
 
         {/* 情報 */}
         <div style={{ flex: 1, minWidth: 0 }}>

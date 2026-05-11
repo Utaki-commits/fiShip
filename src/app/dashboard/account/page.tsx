@@ -3,6 +3,8 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+const DEFAULT_ICON = 'https://whnpkellpiauxovxtpnz.supabase.co/storage/v1/object/public/vessel-images/Fiship_icon.png'
+
 type Vessel = {
   id: string
   name: string
@@ -191,7 +193,9 @@ export default function AccountPage() {
             <input ref={bannerInputRef} type='file' accept='image/*' style={{ display: 'none' }} onChange={e => handleImageSelect(e, 'banner')} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ width: '72px', height: '72px', borderRadius: '16px', overflow: 'hidden', background: vessel.logo_url ? 'transparent' : 'var(--ocean-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>{vessel.logo_url ? <img src={vessel.logo_url} alt='ロゴ画像' style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '⚓'}</div>
+            <div style={{ width: '72px', height: '72px', borderRadius: '16px', overflow: 'hidden', flexShrink: 0 }}>
+              <img src={vessel?.logo_url || DEFAULT_ICON} alt='ロゴ画像' style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
             <button onClick={() => logoInputRef.current?.click()} style={{ minHeight: '56px', padding: '0 20px', border: '2px solid var(--border)', borderRadius: '10px', background: 'var(--surface)', fontSize: '16px', fontWeight: 700 }}>ロゴを変更する</button>
             <input ref={logoInputRef} type='file' accept='image/*' style={{ display: 'none' }} onChange={e => handleImageSelect(e, 'logo')} />
           </div>

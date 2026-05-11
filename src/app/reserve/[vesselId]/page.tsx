@@ -4,6 +4,8 @@ import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getHolidayInfo } from '@/lib/holidays'
 
+const DEFAULT_ICON = 'https://whnpkellpiauxovxtpnz.supabase.co/storage/v1/object/public/vessel-images/Fiship_icon.png'
+
 type Vessel = {
   id: string
   name: string
@@ -376,7 +378,9 @@ export default function ReservePage() {
   if (!vessel) return (
     <main style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'var(--font-sans)' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚓</div>
+        <div style={{ width: '64px', height: '64px', borderRadius: '16px', overflow: 'hidden', margin: '0 auto 12px' }}>
+          <img src={DEFAULT_ICON} alt="fiShip" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
         <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>
           {fetchError || '船の情報が見つかりません'}
         </div>
@@ -404,12 +408,8 @@ export default function ReservePage() {
       }}>
         <div style={{ position: 'absolute', bottom: '-16px', left: 0, right: 0, height: '32px', background: 'var(--bg)', borderRadius: '50% 50% 0 0 / 100% 100% 0 0' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-          <div style={{ width: '56px', height: '56px', background: vessel.logo_url ? 'transparent' : 'var(--gold)', borderRadius: '12px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>
-            {vessel.logo_url ? (
-              <img src={vessel.logo_url} alt={`${vessel.name} ロゴ`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <span style={{ fontSize: '20px' }}>⚓</span>
-            )}
+          <div style={{ width: '56px', height: '56px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}>
+            <img src={vessel.logo_url || DEFAULT_ICON} alt={`${vessel.name} ロゴ`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div>
             <div style={{ fontSize: '28px', fontWeight: 700, color: '#ffffff', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,1), 0 0 20px rgba(0,0,0,1)' }}>{vessel.name}</div>

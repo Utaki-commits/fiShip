@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
+const DEFAULT_ICON = 'https://whnpkellpiauxovxtpnz.supabase.co/storage/v1/object/public/vessel-images/Fiship_icon.png'
+
 type Vessel = {
   id: string
   name: string
@@ -243,13 +245,8 @@ export default function DashboardPage() {
         <div style={{
           width: '56px', height: '56px', borderRadius: '12px',
           overflow: 'hidden', flexShrink: 0,
-          background: vessel?.logo_url ? 'transparent' : 'var(--surface)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '24px', fontWeight: 700, color: 'var(--ocean)',
         }}>
-          {vessel?.logo_url
-            ? <img src={vessel.logo_url} alt={`${vessel.name} ロゴ`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : 'fi'}
+          <img src={vessel?.logo_url || DEFAULT_ICON} alt={`${vessel?.name || 'fiShip'} ロゴ`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>{vessel?.name}</div>

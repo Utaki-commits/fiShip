@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
+const DEFAULT_ICON = 'https://whnpkellpiauxovxtpnz.supabase.co/storage/v1/object/public/vessel-images/Fiship_icon.png'
+
 const AREA_PREFECTURES: Record<string, string[]> = {
   '\u5317\u6d77\u9053\u30fb\u6771\u5317': [
     '\u5317\u6d77\u9053', '\u9752\u68ee\u770c', '\u5ca9\u624b\u770c', '\u5bae\u57ce\u770c', '\u79cb\u7530\u770c', '\u5c71\u5f62\u770c', '\u798f\u5cf6\u770c',
@@ -285,7 +287,9 @@ export default function RegisterPage() {
         {/* 登録完了・オンボーディング画面 */}
         {step === 4 && (
           <div style={{ textAlign:'center', paddingTop:'20px' }}>
-            <div style={{ width:'84px', height:'84px', borderRadius:'18px', border:'2px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px', fontSize:'40px', color:'var(--ocean)', fontWeight:700 }}>fi</div>
+            <div style={{ width:'64px', height:'64px', borderRadius:'16px', overflow:'hidden', margin:'0 auto 18px' }}>
+              <img src={DEFAULT_ICON} alt="fiShip" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+            </div>
             <div style={{ fontSize:'28px', fontWeight:700, color:'var(--fg-1)', marginBottom:'10px', lineHeight:1.35 }}>
               登録が完了しました！
             </div>
