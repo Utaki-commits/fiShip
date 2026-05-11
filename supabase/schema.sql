@@ -100,6 +100,7 @@ create table if not exists bin_settings (
   fish_types     text[] not null default '{}',
   max_capacity   int  not null default 4,
   price          text not null default '',
+  enabled        boolean not null default true,
   created_at     timestamptz not null default now()
 );
 
@@ -120,6 +121,26 @@ create policy "captain full access" on bin_settings
 create policy "public read" on bin_settings
   for select
   using (true);
+
+
+-- =============================================
+-- blocked_dates: 休船日・受付停止日
+-- =============================================
+create table if not exists blocked_dates (
+  id         uuid primary key default gen_random_uuid(),
+  vessel_id  uuid not null references vessels(id) on delete cascade,
+  date_from  date not null,
+  date_to    date not null,
+  bin_type   text check (bin_type in ('day', 'night')),
+  type       text not null default 'maintenance' check (type in ('maintenance', 'weather', 'trouble', 'other')),
+  reason     text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists blocked_dates_vessel_idx on blocked_dates(vessel_id);
+create index if not exists blocked_dates_date_idx on blocked_dates(date_from, date_to);
+
+alter table blocked_dates disable row level security;
 
 
 -- =============================================
