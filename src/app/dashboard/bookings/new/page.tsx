@@ -84,7 +84,7 @@ export default function NewBookingPage() {
     try {
       await supabase.from('booking_candidates').insert([{
         vessel_id: vesselId,
-        channel: 'line',
+        channel: 'phone',
         raw_message: message,
         parsed_date: parsed.date,
         parsed_bin_type: parsed.bin_type,
@@ -106,7 +106,7 @@ export default function NewBookingPage() {
           tel: parsed.tel || '',
           count: parsed.count || 1,
           message: parsed.note || '',
-          channel: 'line',
+          channel: 'phone',
         }),
       })
       if (!res.ok) throw new Error('booking failed')
