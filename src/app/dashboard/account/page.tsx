@@ -238,7 +238,7 @@ export default function AccountPage() {
         </section>
         <section style={sectionStyle}>
           <div style={titleStyle}>通知設定</div>
-          <button onClick={() => setNotifyEnabled(v => !v)} style={{ width: '100%', minHeight: '64px', padding: '14px', borderRadius: '12px', border: notifyEnabled ? '2px solid var(--gold)' : '2px solid var(--border)', background: notifyEnabled ? '#FBF3D4' : 'var(--surface)', fontSize: '18px', fontWeight: 700, textAlign: 'left' }}>予約通知を受け取る: {notifyEnabled ? 'オン' : 'オフ'}</button>
+          <button onClick={() => setNotifyEnabled(v => !v)} style={{ width: '100%', minHeight: '64px', padding: '14px', borderRadius: '12px', border: notifyEnabled ? '2px solid var(--gold)' : '2px solid var(--border)', background: notifyEnabled ? '#FBF3D4' : 'var(--surface)', color: notifyEnabled ? '#7A5800' : 'var(--fg-1)', fontSize: '18px', fontWeight: 700, textAlign: 'left' }}>予約通知を受け取る: {notifyEnabled ? 'オン' : 'オフ'}</button>
           {notifyEnabled && <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px' }}><select value={notifyStart} onChange={e => setNotifyStart(e.target.value)} style={{ ...inputStyle, flex: 1 }}>{Array.from({ length: 24 }, (_, i) => <option key={i} value={String(i)}>{i}:00</option>)}</select><span>〜</span><select value={notifyEnd} onChange={e => setNotifyEnd(e.target.value)} style={{ ...inputStyle, flex: 1 }}>{Array.from({ length: 24 }, (_, i) => <option key={i} value={String(i)}>{i}:00</option>)}</select></div>}
         </section>
         <section style={sectionStyle}>
@@ -255,10 +255,10 @@ export default function AccountPage() {
             }}
           >
             <div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: vessel.auto_confirm ? '#7A5800' : 'var(--fg-1)' }}>
                 空きがある予約を自動で承認する
               </div>
-              <div style={{ fontSize: '15px', color: 'var(--fg-2)', marginTop: '4px', lineHeight: 1.6 }}>
+              <div style={{ fontSize: '15px', color: vessel.auto_confirm ? '#7A5800' : 'var(--fg-2)', marginTop: '4px', lineHeight: 1.6 }}>
                 OFFにすると全ての予約が承認待ちになります
               </div>
             </div>
