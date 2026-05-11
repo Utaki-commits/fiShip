@@ -34,7 +34,7 @@ type Booking = {
 type BinSetting = {
   id: string
   name: string | null
-  bin_type: 'day' | 'night'
+  bin_type: 'day' | 'night' | 'relay'
   price: string
   start_month: number
   end_month: number
@@ -50,7 +50,7 @@ type BlockedDate = {
   date_from: string
   date_to: string
   bin_type: string | null
-  type: 'maintenance' | 'weather' | 'trouble' | 'other'
+  type: 'maintenance' | 'weather' | 'trouble' | 'expedition' | 'other'
   reason: string
   created_at: string
 }
@@ -70,7 +70,7 @@ type Form = {
   tel: string
   count: number
   bin_setting_id: string
-  bin_type: 'day' | 'night'
+  bin_type: 'day' | 'night' | 'relay'
   fishing_style: string
   message: string
 }
@@ -89,6 +89,21 @@ const formatPrice = (price: string): string => {
   }
   return price
 }
+
+const getBinIcon = (binType: 'day' | 'night' | 'relay') =>
+  binType === 'day' ? '☀️' : binType === 'relay' ? '🌅' : '🌙'
+
+const getBinDefaultName = (binType: 'day' | 'night' | 'relay') =>
+  binType === 'day' ? '昼便' : binType === 'relay' ? '昼夜便' : '夜便'
+
+const getBinColor = (binType: 'day' | 'night' | 'relay') =>
+  binType === 'day' ? 'var(--ocean)' : binType === 'relay' ? 'var(--gold)' : 'var(--status-night-fg)'
+
+const getBinBg = (binType: 'day' | 'night' | 'relay') =>
+  binType === 'day' ? 'var(--status-day-bg)' : binType === 'relay' ? 'var(--status-pending-bg)' : 'var(--status-night-bg)'
+
+const getBinBorder = (binType: 'day' | 'night' | 'relay') =>
+  binType === 'day' ? 'var(--ocean-light)' : binType === 'relay' ? 'var(--gold)' : 'var(--status-night-fg)'
 
 export default function ReservePage() {
   const params = useParams()
@@ -166,7 +181,7 @@ export default function ReservePage() {
           : month >= bin.start_month || month <= bin.end_month
         return inPeriod && bin.days_of_week.map(Number).includes(dow)
       })
-      .sort((a, b) => (a.bin_type === b.bin_type ? 0 : a.bin_type === 'day' ? -1 : 1))
+      .sort((a, b) => ['day', 'relay', 'night'].indexOf(a.bin_type) - ['day', 'relay', 'night'].indexOf(b.bin_type))
       .flatMap(bin => {
         const dateStr = toDateStr(year, month, day)
         const isBlocked = (blockedDates || []).some(b => {
@@ -295,6 +310,9 @@ export default function ReservePage() {
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const cellDate = new Date(year, month, day)
     const dateStr = toDateStr(year, month, day)
+    const expeditionBlock = blockedDates.find(b =>
+      b.date_from <= dateStr && dateStr <= b.date_to && b.type === 'expedition'
+    )
     const isPast = cellDate < today
     const isToday = cellDate.getTime() === today.getTime()
     const isSelected = selectedDate === dateStr
@@ -303,10 +321,12 @@ export default function ReservePage() {
     const bins = isPast ? [] : getBinsForDate(year, month, day)
     const dayBin = bins.find(b => b.setting.bin_type === 'day') ?? null
     const nightBin = bins.find(b => b.setting.bin_type === 'night') ?? null
+    const relayBin = bins.find(b => b.setting.bin_type === 'relay') ?? null
     const hasAvailable = bins.some(b => !b.isConfirmedFull)
     const hasPending = bookings.some(b => b.date === dateStr && b.status === 'pending')
     const hasDay = bookings.some(b => b.date === dateStr && b.bin_type === 'day' && b.status !== 'rejected') || Boolean(dayBin)
     const hasNight = bookings.some(b => b.date === dateStr && b.bin_type === 'night' && b.status !== 'rejected') || Boolean(nightBin)
+    const hasRelay = bookings.some(b => b.date === dateStr && b.bin_type === 'relay' && b.status !== 'rejected') || Boolean(relayBin)
     // 祝日判定
     const holiday = getHolidayInfo(new Date(year, month, day))
 
@@ -314,6 +334,7 @@ export default function ReservePage() {
       <div
         key={dateStr}
         onClick={() => {
+          if (expeditionBlock) return
           if (isSelected) {
             setSelectedDate(null)
             setSelectedBins([])
@@ -324,7 +345,7 @@ export default function ReservePage() {
         style={{
           borderRadius: '10px',
           minHeight: '56px',
-          cursor: isPast || (!hasAvailable && bins.length > 0) ? 'default' : bins.length === 0 ? 'default' : 'pointer',
+          cursor: expeditionBlock || isPast || (!hasAvailable && bins.length > 0) ? 'default' : bins.length === 0 ? 'default' : 'pointer',
           opacity: isPast ? 0.4 : 1,
           border: isSelected ? '3px solid var(--ocean)' : isToday ? '3px solid var(--gold)' : '3px solid transparent',
           padding: '6px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
@@ -342,10 +363,18 @@ export default function ReservePage() {
           </div>
         )}
 
+        {expeditionBlock && (
+          <div style={{ fontSize: '10px', color: 'var(--fg-3)', fontWeight: 700,
+            width: '100%', textAlign: 'center', lineHeight: 1.2 }}>
+            遠征
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
           {hasPending && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--status-pending-dot)' }} />}
           {hasDay && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--ocean)' }} />}
           {hasNight && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--status-night-fg)' }} />}
+          {hasRelay && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--gold)' }} />}
         </div>
       </div>
     )
@@ -368,6 +397,17 @@ export default function ReservePage() {
   // 選択便の残席上限
   const activeBinInfo = selectedBins.find(b => b.setting.id === form.bin_setting_id)
   const maxCount = activeBinInfo?.actualRemaining ?? 1
+  const expeditionDates = blockedDates
+    .filter(b => b.type === 'expedition')
+    .flatMap(b => {
+      const dates: string[] = []
+      const start = new Date(b.date_from + 'T00:00:00')
+      const end = new Date(b.date_to + 'T00:00:00')
+      for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dates.push(toDateStr(d.getFullYear(), d.getMonth(), d.getDate()))
+      }
+      return dates
+    })
 
   if (loading) return (
     <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -473,6 +513,7 @@ export default function ReservePage() {
             {[
               { bg: 'var(--status-day-bg)', color: 'var(--ocean)', label: '昼便' },
               { bg: 'var(--status-night-bg)', color: 'var(--status-night-fg)', label: '夜便' },
+              { bg: 'var(--status-pending-bg)', color: 'var(--gold)', label: '昼夜便' },
               { bg: 'var(--status-full-bg)', color: 'var(--status-full-fg)', label: '満員' },
               { bg: 'var(--status-closed-bg)', color: 'var(--fg-3)', label: '休船日' },
             ].map(({ bg, color, label }) => (
@@ -498,7 +539,7 @@ export default function ReservePage() {
                   <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginTop: '4px', lineHeight: 1.6 }}>
                     {selectedBins
                       .filter(b => !b.isFull)
-                      .map(b => b.setting.bin_type === 'day' ? '昼便' : '夜便')
+                      .map(b => getBinDefaultName(b.setting.bin_type))
                       .filter((v, i, a) => a.indexOf(v) === i)
                       .join('・')}
                     {selectedBins.filter(b => !b.isFull).length > 0 ? '受付中' : '満員'}
@@ -518,13 +559,19 @@ export default function ReservePage() {
                 </p>
               )}
 
+              {selectedDate && expeditionDates.includes(selectedDate) && (
+                <div style={{ background: 'var(--status-closed-bg)', border: '2px solid var(--border)', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', fontSize: '16px', fontWeight: 700, color: 'var(--fg-2)', textAlign: 'center' }}>
+                  ⚓ 遠征便のため予約不可です
+                </div>
+              )}
+
               {/* 便の種類（複数便がある日のみ表示） */}
               {selectedBins.length > 1 && (
                 <>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '8px' }}>便の種類</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
                     {selectedBins.map(b => {
-                      const isDay = b.setting.bin_type === 'day'
+                      const binColor = getBinColor(b.setting.bin_type)
                       const isActive = form.bin_setting_id === b.setting.id
                       return (
                         <button
@@ -545,22 +592,20 @@ export default function ReservePage() {
                             width: '100%',
                             background: b.isFull
                               ? 'var(--bg)'
-                              : isDay
-                                ? 'var(--status-day-bg)'
-                                : 'var(--status-night-bg)',
+                              : getBinBg(b.setting.bin_type),
                             border: isActive
-                              ? `3px solid ${isDay ? 'var(--ocean)' : 'var(--status-night-fg)'}`
-                              : `2px solid ${isDay ? 'var(--ocean-light)' : 'var(--status-night-fg)'}`,
+                              ? `3px solid ${binColor}`
+                              : `2px solid ${getBinBorder(b.setting.bin_type)}`,
                             opacity: b.isFull ? 0.5 : 1,
                           }}
                         >
                           <div style={{
                             fontSize: '18px',
                             fontWeight: 700,
-                            color: b.isFull ? 'var(--fg-3)' : isDay ? 'var(--ocean)' : 'var(--status-night-fg)',
+                            color: b.isFull ? 'var(--fg-3)' : binColor,
                             marginBottom: '4px',
                           }}>
-                            {isDay ? '☀️' : '🌙'} {b.setting.name || (isDay ? '昼便' : '夜便')}
+                            {getBinIcon(b.setting.bin_type)} {b.setting.name || getBinDefaultName(b.setting.bin_type)}
                           </div>
                           <div style={{ fontSize: '14px', color: 'var(--fg-2)', lineHeight: 1.6 }}>
                             {b.isFull ? '満員' : `残り${b.remaining}名`}　{b.setting.departure_time} 出発
@@ -569,7 +614,7 @@ export default function ReservePage() {
                             <div style={{
                               fontSize: '14px',
                               fontWeight: 700,
-                              color: isDay ? 'var(--ocean)' : 'var(--status-night-fg)',
+                              color: binColor,
                               marginTop: '4px',
                             }}>
                               💴 {b.setting.price}
@@ -584,13 +629,13 @@ export default function ReservePage() {
 
               {/* 単便のとき出発時刻を表示 */}
               {selectedBins.length === 1 && activeBinInfo && (
-                <div style={{ background: activeBinInfo.setting.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)', borderRadius: '10px', padding: '10px 14px', marginBottom: '16px' }}>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: activeBinInfo.setting.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
-                    {activeBinInfo.setting.bin_type === 'day' ? '☀️' : '🌙'} {activeBinInfo.setting.name || (activeBinInfo.setting.bin_type === 'day' ? '昼便' : '夜便')}　{activeBinInfo.setting.departure_time} 出発
+                <div style={{ background: getBinBg(activeBinInfo.setting.bin_type), borderRadius: '10px', padding: '10px 14px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: getBinColor(activeBinInfo.setting.bin_type) }}>
+                    {getBinIcon(activeBinInfo.setting.bin_type)} {activeBinInfo.setting.name || getBinDefaultName(activeBinInfo.setting.bin_type)}　{activeBinInfo.setting.departure_time} 出発
                   </div>
                   <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>残り {activeBinInfo.remaining}名</div>
                   {activeBinInfo.setting.price && (
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: activeBinInfo.setting.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)', marginTop: '4px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: getBinColor(activeBinInfo.setting.bin_type), marginTop: '4px' }}>
                       💴 {activeBinInfo.setting.price}
                     </div>
                   )}
@@ -781,11 +826,11 @@ export default function ReservePage() {
                 ? `${vessel.name}の${(() => {
                     const d = new Date(selectedDate + 'T00:00:00')
                     return `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）`
-                  })()} ${activeBinInfo?.setting.name || (form.bin_type === 'day' ? '昼便' : '夜便')}の予約が確定しました。\n当日はお気をつけてお越しください。`
+                  })()} ${activeBinInfo?.setting.name || getBinDefaultName(form.bin_type)}の予約が確定しました。\n当日はお気をつけてお越しください。`
                 : `${(() => {
                     const d = new Date(selectedDate + 'T00:00:00')
                     return `${d.getMonth()+1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）`
-                  })()} ${activeBinInfo?.setting.name || (form.bin_type === 'day' ? '昼便' : '夜便')}の予約リクエストを受け付けました。\n船長が確認後、折り返しご連絡いたします。`}
+                  })()} ${activeBinInfo?.setting.name || getBinDefaultName(form.bin_type)}の予約リクエストを受け付けました。\n船長が確認後、折り返しご連絡いたします。`}
             </div>
             <button
               onClick={() => { setSelectedDate(null); setCompleted(null) }}
@@ -796,13 +841,55 @@ export default function ReservePage() {
           </div>
         )}
 
-        {/* アクセス情報 */}
-        {vessel.access && (
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '8px' }}>アクセス</div>
-            <div style={{ fontSize: '14px', color: 'var(--fg-1)', lineHeight: 1.6 }}>{vessel.access}</div>
+        {/* 船の詳細情報 */}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
+          <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>船の情報</div>
+
+          <div style={{ display: 'grid', gap: '8px' }}>
+            {vessel.capacity && (
+              <div style={{ display: 'flex', gap: '12px', fontSize: '15px' }}>
+                <span style={{ color: 'var(--fg-3)', minWidth: '80px' }}>定員</span>
+                <span style={{ color: 'var(--fg-1)', fontWeight: 600 }}>{vessel.capacity}名</span>
+              </div>
+            )}
+            {vessel.departure_time && (
+              <div style={{ display: 'flex', gap: '12px', fontSize: '15px' }}>
+                <span style={{ color: 'var(--fg-3)', minWidth: '80px' }}>出船時刻</span>
+                <span style={{ color: 'var(--fg-1)', fontWeight: 600 }}>{vessel.departure_time}</span>
+              </div>
+            )}
+            {vessel.port_name && (
+              <div style={{ display: 'flex', gap: '12px', fontSize: '15px' }}>
+                <span style={{ color: 'var(--fg-3)', minWidth: '80px' }}>出港場所</span>
+                <span style={{ color: 'var(--fg-1)', fontWeight: 600 }}>{vessel.port_name}</span>
+              </div>
+            )}
+            {vessel.access && (
+              <div style={{ display: 'flex', gap: '12px', fontSize: '15px' }}>
+                <span style={{ color: 'var(--fg-3)', minWidth: '80px' }}>アクセス</span>
+                <span style={{ color: 'var(--fg-1)', fontWeight: 600 }}>{vessel.access}</span>
+              </div>
+            )}
+            {vessel.price && (
+              <div style={{ display: 'flex', gap: '12px', fontSize: '15px' }}>
+                <span style={{ color: 'var(--fg-3)', minWidth: '80px' }}>乗船料</span>
+                <span style={{ color: 'var(--fg-1)', fontWeight: 600 }}>{vessel.price}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+              {vessel.beginner_accepted && (
+                <span style={{ fontSize: '13px', background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>
+                  初心者歓迎
+                </span>
+              )}
+              {vessel.charter_accepted && (
+                <span style={{ fontSize: '13px', background: 'var(--status-day-bg)', color: 'var(--ocean)', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>
+                  貸切OK
+                </span>
+              )}
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Googleマップ機能は一時停止中。再開時はこのブロックを戻す。
         {vessel.map_embed_url && (

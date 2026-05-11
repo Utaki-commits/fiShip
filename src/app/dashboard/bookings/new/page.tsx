@@ -159,6 +159,15 @@ export default function NewBookingPage() {
 
   const handleRegister = async () => {
     if (!parsed || !vesselId) return
+    if (parsed.date) {
+      const bookingDate = new Date(parsed.date + 'T00:00:00')
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      if (bookingDate < today) {
+        setError('過去の日付には予約を登録できません。日付を確認してください。')
+        return
+      }
+    }
     setRegistering(true)
     setError('')
     try {

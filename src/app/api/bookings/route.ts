@@ -148,37 +148,32 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json()
-    const { id, status, contacted } = body
+    const { id, status, contacted, date, bin_type, name, tel, count, fishing_style, message } = body
 
-    if (!id || (status == null && contacted == null)) {
+    const updatePayload: Record<string, unknown> = {}
+    if (status != null) updatePayload.status = status
+    if (contacted != null) updatePayload.contacted = contacted
+    if (date != null) updatePayload.date = date
+    if (bin_type != null) updatePayload.bin_type = bin_type
+    if (name != null) updatePayload.name = name
+    if (tel != null) updatePayload.tel = tel
+    if (count != null) updatePayload.count = Number(count)
+    if (fishing_style != null) updatePayload.fishing_style = fishing_style || null
+    if (message != null) updatePayload.message = message || null
+
+    if (!id || Object.keys(updatePayload).length === 0) {
       return NextResponse.json(
-        { error: 'idとstatusまたはcontactedが必要です' },
+        { error: 'idと更新内容が必要です' },
         { status: 400 }
       )
     }
 
-    // contactedのみの更新
-    if (status == null) {
-      if (typeof contacted !== 'boolean') {
-        return NextResponse.json({ error: 'contactedはbooleanで指定してください' }, { status: 400 })
-      }
-
-      const { data, error } = await supabase
-        .from('bookings')
-        .update({ contacted })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
-      }
-
-      return NextResponse.json({ booking: data })
+    if (contacted != null && typeof contacted !== 'boolean') {
+      return NextResponse.json({ error: 'contactedはbooleanで指定してください' }, { status: 400 })
     }
 
     const allowedStatuses = ['confirmed', 'rejected', 'pending']
-    if (!allowedStatuses.includes(status)) {
+    if (status != null && !allowedStatuses.includes(status)) {
       return NextResponse.json(
         { error: '無効なstatusです' },
         { status: 400 }
@@ -187,7 +182,7 @@ export async function PATCH(req: NextRequest) {
 
     const { data, error } = await supabase
       .from('bookings')
-      .update({ status })
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single()

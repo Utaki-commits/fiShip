@@ -7,7 +7,7 @@ type BinSetting = {
   id: string
   vessel_id: string
   name: string
-  bin_type: 'day' | 'night'
+  bin_type: 'day' | 'night' | 'relay'
   start_month: number
   end_month: number
   days_of_week: number[]
@@ -24,14 +24,14 @@ type BlockedDate = {
   date_from: string
   date_to: string
   bin_type: string | null
-  type: 'maintenance' | 'weather' | 'trouble' | 'other'
+  type: 'maintenance' | 'weather' | 'trouble' | 'expedition' | 'other'
   reason: string
   created_at: string
 }
 
 type FormState = {
   name: string
-  bin_type: 'day' | 'night'
+  bin_type: 'day' | 'night' | 'relay'
   start_month: number
   end_month: number
   days_of_week: number[]
@@ -49,6 +49,7 @@ const BLOCK_TYPES = [
   { key: 'maintenance', label: '🔧 メンテナンス' },
   { key: 'weather', label: '⛅ 天候・波による中止' },
   { key: 'trouble', label: '🚢 船のトラブル' },
+  { key: 'expedition', label: '⚓ 遠征便' },
   { key: 'other', label: '📅 その他' },
 ] as const
 
@@ -82,7 +83,7 @@ export default function SchedulePage() {
   const [blockDateFrom, setBlockDateFrom] = useState('')
   const [blockDateTo, setBlockDateTo] = useState('')
   const [blockBinType, setBlockBinType] = useState<string>('')
-  const [blockType, setBlockType] = useState<'maintenance'|'weather'|'trouble'|'other'>('maintenance')
+  const [blockType, setBlockType] = useState<'maintenance'|'weather'|'trouble'|'expedition'|'other'>('maintenance')
   const [blockReason, setBlockReason] = useState('')
   const [blockSaving, setBlockSaving] = useState(false)
   const [blockDeleting, setBlockDeleting] = useState<string | null>(null)
@@ -522,13 +523,17 @@ export default function SchedulePage() {
             <div style={cardStyle}>
               <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>便の種類</div>
               <div style={{ display: 'flex', gap: '8px' }}>
-                {([{ key: 'day', label: '☀️ 昼便', desc: '朝〜夕方' }, { key: 'night', label: '🌙 夜便', desc: '夕方〜深夜' }] as const).map(opt => (
+                {([
+                  { key: 'day', label: '☀️ 昼便', desc: '朝〜夕方' },
+                  { key: 'night', label: '🌙 夜便', desc: '夕方〜深夜' },
+                  { key: 'relay', label: '🌅 昼夜便', desc: '昼と夜を連続で行う釣行' },
+                ] as const).map(opt => (
                   <button
                     key={opt.key}
-                    onClick={() => setForm(f => ({ ...f, bin_type: opt.key, departure_time: opt.key === 'day' ? '06:00' : '17:00' }))}
-                    style={{ flex: 1, padding: '14px 8px', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', background: form.bin_type === opt.key ? (opt.key === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)') : 'var(--bg)', border: form.bin_type === opt.key ? (opt.key === 'day' ? '2px solid var(--ocean-light)' : '2px solid var(--status-night-fg)') : '2px solid transparent' }}
+                    onClick={() => setForm(f => ({ ...f, bin_type: opt.key, departure_time: opt.key === 'day' ? '06:00' : opt.key === 'relay' ? '12:00' : '17:00' }))}
+                    style={{ flex: 1, padding: '14px 8px', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', background: form.bin_type === opt.key ? (opt.key === 'day' ? 'var(--status-day-bg)' : opt.key === 'relay' ? 'var(--status-pending-bg)' : 'var(--status-night-bg)') : 'var(--bg)', border: form.bin_type === opt.key ? (opt.key === 'day' ? '2px solid var(--ocean-light)' : opt.key === 'relay' ? '2px solid var(--gold)' : '2px solid var(--status-night-fg)') : '2px solid transparent' }}
                   >
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: form.bin_type === opt.key ? (opt.key === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)') : 'var(--fg-3)' }}>{opt.label}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: form.bin_type === opt.key ? (opt.key === 'day' ? 'var(--ocean)' : opt.key === 'relay' ? 'var(--gold)' : 'var(--status-night-fg)') : 'var(--fg-3)' }}>{opt.label}</div>
                     <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '4px' }}>{opt.desc}</div>
                   </button>
                 ))}

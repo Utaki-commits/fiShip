@@ -10,10 +10,12 @@ type Vessel = {
   captain_name: string
 }
 
+type BinType = 'day' | 'night' | 'relay'
+
 type Booking = {
   id: string
   date: string
-  bin_type: 'day' | 'night'
+  bin_type: BinType
   name: string
   tel: string
   count: number
@@ -27,7 +29,7 @@ type Booking = {
 type BinSetting = {
   id: string
   vessel_id: string
-  bin_type: 'day' | 'night'
+  bin_type: BinType
   start_month: number
   end_month: number
   days_of_week: number[]
@@ -83,6 +85,15 @@ export default function DashboardBookingsPage() {
   const [inputCount, setInputCount] = useState(0)
   const [analyzing, setAnalyzing] = useState(false)
   const [showCandidates, setShowCandidates] = useState(false)
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null)
+  const [editForm, setEditForm] = useState({
+    date: '',
+    bin_type: 'day' as BinType,
+    name: '',
+    tel: '',
+    count: 1,
+    message: '',
+  })
 
   useEffect(() => {
     const init = async () => {
@@ -113,10 +124,12 @@ export default function DashboardBookingsPage() {
     init()
   }, [router])
 
-  const normalizeBinType = (value: unknown): 'day' | 'night' | null => {
+  const normalizeBinType = (value: unknown): BinType | null => {
     if (value === 'day' || value === '昼' || value === '昼便') return 'day'
     if (value === 'night' || value === '夜' || value === '夜便') return 'night'
+    if (value === 'relay' || value === '昼夜' || value === '昼夜便') return 'relay'
     const text = typeof value === 'string' ? value.toLowerCase() : ''
+    if (text.includes('relay') || text.includes('昼夜')) return 'relay'
     if (text.includes('night') || text.includes('夜') || text.includes('螟')) return 'night'
     if (text.includes('day') || text.includes('昼') || text.includes('譏')) return 'day'
     return null
@@ -253,7 +266,52 @@ export default function DashboardBookingsPage() {
     updateBooking(id, { status })
   }
 
-  const getMaxCap = (binType: 'day' | 'night') => {
+  const handleEditSave = async () => {
+    if (!editingBooking) return
+    const res = await fetch('/api/bookings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: editingBooking.id,
+        ...editForm,
+      }),
+    })
+    if (res.ok) {
+      setBookings(prev => prev.map(b =>
+        b.id === editingBooking.id ? { ...b, ...editForm } : b
+      ))
+      setEditingBooking(null)
+    }
+  }
+
+  const startEditBooking = (b: Booking) => {
+    setEditingBooking(b)
+    setEditForm({
+      date: b.date,
+      bin_type: b.bin_type,
+      name: b.name,
+      tel: b.tel,
+      count: b.count,
+      message: b.message || '',
+    })
+  }
+
+  const getBinLabel = (binType: BinType) =>
+    binType === 'day' ? '☀️ 昼便' : binType === 'relay' ? '🌅 昼夜便' : '🌙 夜便'
+
+  const getBinName = (binType: BinType) =>
+    binType === 'day' ? '昼便' : binType === 'relay' ? '昼夜便' : '夜便'
+
+  const getBinColor = (binType: BinType) =>
+    binType === 'day' ? 'var(--ocean)' : binType === 'relay' ? 'var(--gold)' : 'var(--status-night-fg)'
+
+  const getBinBg = (binType: BinType) =>
+    binType === 'day' ? 'var(--status-day-bg)' : binType === 'relay' ? 'var(--status-pending-bg)' : 'var(--status-night-bg)'
+
+  const getBinBorder = (binType: BinType) =>
+    binType === 'day' ? 'var(--ocean-light)' : binType === 'relay' ? 'var(--gold)' : 'var(--status-night-fg)'
+
+  const getMaxCap = (binType: BinType) => {
     const bin = binSettings.find(b => b.bin_type === binType)
     return bin?.max_capacity ?? 0
   }
@@ -305,6 +363,7 @@ export default function DashboardBookingsPage() {
     const hasPending = dateBookings.some(b => b.status === 'pending')
     const hasDay = dateBookings.some(b => b.bin_type === 'day')
     const hasNight = dateBookings.some(b => b.bin_type === 'night')
+    const hasRelay = dateBookings.some(b => b.bin_type === 'relay')
     const hasSchedule = getBinsForDate(year, month, day).length > 0
 
     return (
@@ -348,6 +407,7 @@ export default function DashboardBookingsPage() {
           {hasPending && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--status-pending-dot)' }} />}
           {hasDay && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--ocean)' }} />}
           {hasNight && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--status-night-fg)' }} />}
+          {hasRelay && <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--gold)' }} />}
         </div>
       </div>
     )
@@ -385,7 +445,7 @@ export default function DashboardBookingsPage() {
   const selectedBookings = selectedDate
     ? bookings
         .filter(b => b.date === selectedDate && b.status !== 'rejected')
-        .sort((a, b) => (a.bin_type === b.bin_type ? 0 : a.bin_type === 'day' ? -1 : 1))
+        .sort((a, b) => ['day', 'relay', 'night'].indexOf(a.bin_type) - ['day', 'relay', 'night'].indexOf(b.bin_type))
     : []
 
   const weekDates = Array.from({ length: 7 }, (_, i) => {
@@ -407,8 +467,8 @@ export default function DashboardBookingsPage() {
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '15px', fontWeight: 700, color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
-            {b.bin_type === 'day' ? '☀️ 昼便' : '🌙 夜便'}
+          <span style={{ fontSize: '15px', fontWeight: 700, color: getBinColor(b.bin_type) }}>
+            {getBinLabel(b.bin_type)}
           </span>
           {getChannelBadge(b.channel)}
         </div>
@@ -421,6 +481,12 @@ export default function DashboardBookingsPage() {
         </div>
       </div>
       <div style={{ display: 'flex', gap: '6px' }}>
+        <button
+          onClick={() => startEditBooking(b)}
+          style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, background: 'var(--surface)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          編集
+        </button>
         {b.status === 'pending' && (
           <>
             <button onClick={() => updateStatus(b.id, 'confirmed')}
@@ -512,7 +578,7 @@ export default function DashboardBookingsPage() {
 
                 <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>
                   {c.parsed_date ? `${new Date(c.parsed_date + 'T00:00:00').getMonth()+1}月${new Date(c.parsed_date + 'T00:00:00').getDate()}日` : '日付不明'}
-                  　{c.parsed_bin_type === 'day' ? '☀️ 昼便' : c.parsed_bin_type === 'night' ? '🌙 夜便' : '便不明'}
+                  　{c.parsed_bin_type === 'day' ? '☀️ 昼便' : c.parsed_bin_type === 'night' ? '🌙 夜便' : c.parsed_bin_type === 'relay' ? '🌅 昼夜便' : '便不明'}
                   　{c.parsed_count || '?'}名
                 </div>
                 {c.parsed_name && <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginBottom: '4px' }}>{c.parsed_name}</div>}
@@ -594,6 +660,7 @@ export default function DashboardBookingsPage() {
               { color: 'var(--status-pending-dot)', label: '承認待ち' },
               { color: 'var(--ocean)', label: '昼便' },
               { color: 'var(--status-night-fg)', label: '夜便' },
+              { color: 'var(--gold)', label: '昼夜便' },
             ].map(({ color, label }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color }} />
@@ -608,9 +675,10 @@ export default function DashboardBookingsPage() {
                 const dateStr = toDateStr(d)
                 const dayBks = bookings.filter(b => b.date === dateStr && b.bin_type === 'day' && b.status !== 'rejected')
                 const nightBks = bookings.filter(b => b.date === dateStr && b.bin_type === 'night' && b.status !== 'rejected')
+                const relayBks = bookings.filter(b => b.date === dateStr && b.bin_type === 'relay' && b.status !== 'rejected')
                 const pendingBks = bookings.filter(b => b.date === dateStr && b.status === 'pending')
 
-                if (dayBks.length === 0 && nightBks.length === 0) return null
+                if (dayBks.length === 0 && nightBks.length === 0 && relayBks.length === 0) return null
 
                 return (
                   <div key={dateStr} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', marginBottom: '10px', overflow: 'hidden' }}>
@@ -627,7 +695,7 @@ export default function DashboardBookingsPage() {
 
                     <div style={{ padding: '12px 16px' }}>
                       {dayBks.length > 0 && (
-                        <div style={{ marginBottom: nightBks.length > 0 ? '12px' : '0' }}>
+                        <div style={{ marginBottom: nightBks.length > 0 || relayBks.length > 0 ? '12px' : '0' }}>
                           <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '8px' }}>
                             ☀️ 昼便　{dayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('day')}名
                           </div>
@@ -638,6 +706,23 @@ export default function DashboardBookingsPage() {
                               callBg="var(--status-day-bg)"
                               callBorder="var(--ocean-light)"
                               callColor="var(--ocean)"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {relayBks.length > 0 && (
+                        <div style={{ marginBottom: nightBks.length > 0 ? '12px' : '0' }}>
+                          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--gold)', marginBottom: '8px' }}>
+                            🌅 昼夜便　{relayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('relay')}名
+                          </div>
+                          {relayBks.map(b => (
+                            <WeekBookingRow
+                              key={b.id}
+                              b={b}
+                              callBg="var(--status-pending-bg)"
+                              callBorder="var(--gold)"
+                              callColor="var(--gold)"
                             />
                           ))}
                         </div>
@@ -699,10 +784,10 @@ export default function DashboardBookingsPage() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px' }}>
                     <span style={{
                       fontSize: '14px', fontWeight: 700, padding: '8px 12px', borderRadius: '99px', flexShrink: 0,
-                      background: b.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)',
-                      color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)',
+                      background: getBinBg(b.bin_type),
+                      color: getBinColor(b.bin_type),
                     }}>
-                      {b.bin_type === 'day' ? '昼便' : '夜便'}
+                      {getBinName(b.bin_type)}
                     </span>
                     {getChannelBadge(b.channel)}
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -722,6 +807,12 @@ export default function DashboardBookingsPage() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => startEditBooking(b)}
+                      style={{ flex: '1 1 100px', padding: '14px', fontSize: '18px', fontWeight: 700, minHeight: '56px', background: 'var(--surface)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                    >
+                      編集
+                    </button>
                     {b.status === 'pending' && (
                       <>
                         <button
@@ -775,6 +866,70 @@ export default function DashboardBookingsPage() {
               ))
             )}
           </section>
+        )}
+
+        {editingBooking && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+            <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '440px' }}>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '16px' }}>予約を編集する</div>
+
+              <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>日付</label>
+              <input type="date" value={editForm.date}
+                onChange={e => setEditForm(f => ({ ...f, date: e.target.value }))}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' as const, color: 'var(--fg-1)', background: 'var(--surface)' }} />
+
+              <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>便</label>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                {([
+                  { key: 'day', label: '☀️ 昼便' },
+                  { key: 'night', label: '🌙 夜便' },
+                  { key: 'relay', label: '🌅 昼夜便' },
+                ] as const).map(({ key, label }) => (
+                  <button key={key}
+                    onClick={() => setEditForm(f => ({ ...f, bin_type: key }))}
+                    style={{ flex: 1, padding: '10px 4px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit',
+                      background: editForm.bin_type === key ? 'var(--ocean-pale)' : 'var(--surface)',
+                      color: editForm.bin_type === key ? 'var(--ocean)' : 'var(--fg-3)',
+                      border: editForm.bin_type === key ? '2px solid var(--ocean)' : '2px solid var(--border)',
+                      borderRadius: '10px', cursor: 'pointer' }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>氏名</label>
+              <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' as const, color: 'var(--fg-1)', background: 'var(--surface)' }} />
+
+              <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>電話番号</label>
+              <input value={editForm.tel} onChange={e => setEditForm(f => ({ ...f, tel: e.target.value }))}
+                type="tel" style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box' as const, color: 'var(--fg-1)', background: 'var(--surface)' }} />
+
+              <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>人数</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                <button onClick={() => setEditForm(f => ({ ...f, count: Math.max(1, f.count - 1) }))}
+                  style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)' }}>－</button>
+                <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--ocean)', minWidth: '40px', textAlign: 'center' }}>{editForm.count}</span>
+                <button onClick={() => setEditForm(f => ({ ...f, count: f.count + 1 }))}
+                  style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)' }}>＋</button>
+              </div>
+
+              <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>メモ</label>
+              <input value={editForm.message} onChange={e => setEditForm(f => ({ ...f, message: e.target.value }))}
+                style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', marginBottom: '16px', boxSizing: 'border-box' as const, color: 'var(--fg-1)', background: 'var(--surface)' }} />
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={() => setEditingBooking(null)}
+                  style={{ flex: 1, padding: '14px', fontSize: '16px', fontWeight: 700, background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--fg-1)' }}>
+                  キャンセル
+                </button>
+                <button onClick={handleEditSave}
+                  style={{ flex: 1, padding: '14px', fontSize: '16px', fontWeight: 700, background: 'var(--ocean)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  保存する
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>
