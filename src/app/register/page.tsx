@@ -94,8 +94,8 @@ export default function RegisterPage() {
     btn: { width:'100%', padding:'20px 26px', fontSize:'24px', fontWeight:600, background:'linear-gradient(180deg,var(--ocean) 0%,#164B73 100%)', color:'var(--surface)', border:'none', borderRadius:'14px', cursor:'pointer', fontFamily:'inherit', marginTop:'8px', minHeight:'64px', boxShadow:'inset 0 1px 0 rgba(255,255,255,.18), 0 2px 0 rgba(0,0,0,.18), 0 4px 12px rgba(15,69,112,.30)' },
     capBtn: (active: boolean) => ({ flex:1, padding:'22px 8px', textAlign:'center' as const, background: active ? 'var(--ocean-pale)' : 'var(--surface)', border: active ? '3px solid var(--ocean)' : '2px solid var(--border)', borderRadius:'14px', cursor:'pointer', fontFamily:'inherit', fontSize:'22px', fontWeight:700, color: active ? 'var(--ocean)' : 'var(--fg-1)', minHeight:'80px' }),
     togRow: (active: boolean) => ({ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'18px', padding:'22px', background: active ? '#FBF3D4' : 'var(--surface)', border: active ? '2px solid var(--gold)' : '2px solid var(--border)', borderRadius:'14px', cursor:'pointer', marginBottom:'14px', width:'100%', fontFamily:'inherit', textAlign:'left' as const }),
-    togLabel: { fontSize:'20px', fontWeight:700, color:'var(--fg-1)', lineHeight:1.35 },
-    togSub: { fontSize:'18px', color:'var(--fg-2)', marginTop:'8px', lineHeight:1.5 },
+    togLabel: (active: boolean) => ({ fontSize:'20px', fontWeight:700, color: active ? '#7A5800' : 'var(--fg-1)', lineHeight:1.35 }),
+    togSub: (active: boolean) => ({ fontSize:'18px', color: active ? '#7A5800' : 'var(--fg-2)', marginTop:'8px', lineHeight:1.5 }),
     togSw: (active: boolean) => ({ width:'72px', height:'40px', borderRadius:'20px', background: active ? 'var(--gold)' : '#D1D5DB', position:'relative' as const, flexShrink:0 as const, transition:'background .2s' }),
   }
 
@@ -253,8 +253,8 @@ export default function RegisterPage() {
 
             <button type="button" style={styles.togRow(form.charter_accepted)} onClick={() => update('charter_accepted', !form.charter_accepted)}>
               <div>
-                <div style={styles.togLabel}>貸切（チャーター）も受け付ける</div>
-                <div style={styles.togSub}>グループで船を借り切る予約です</div>
+                <div style={styles.togLabel(form.charter_accepted)}>貸切（チャーター）も受け付ける</div>
+                <div style={styles.togSub(form.charter_accepted)}>グループで船を借り切る予約です</div>
               </div>
               <div style={styles.togSw(form.charter_accepted)}>
                 <div style={{ position:'absolute', top:'4px', left: form.charter_accepted ? '36px' : '4px', width:'32px', height:'32px', borderRadius:'50%', background:'var(--surface)', boxShadow:'0 2px 6px rgba(0,0,0,.25)', transition:'left .2s' }}></div>
@@ -263,8 +263,8 @@ export default function RegisterPage() {
 
             <button type="button" style={styles.togRow(form.beginner_accepted)} onClick={() => update('beginner_accepted', !form.beginner_accepted)}>
               <div>
-                <div style={styles.togLabel}>釣り初心者も受け付ける</div>
-                <div style={styles.togSub}>「初心者歓迎」と案内に表示されます</div>
+                <div style={styles.togLabel(form.beginner_accepted)}>釣り初心者も受け付ける</div>
+                <div style={styles.togSub(form.beginner_accepted)}>「初心者歓迎」と案内に表示されます</div>
               </div>
               <div style={styles.togSw(form.beginner_accepted)}>
                 <div style={{ position:'absolute', top:'4px', left: form.beginner_accepted ? '36px' : '4px', width:'32px', height:'32px', borderRadius:'50%', background:'var(--surface)', boxShadow:'0 2px 6px rgba(0,0,0,.25)', transition:'left .2s' }}></div>
