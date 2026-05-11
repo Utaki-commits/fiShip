@@ -12,7 +12,17 @@ type ParsedResult = {
   note: string | null
 }
 
+type SavedMemo = {
+  id: string
+  message: string
+  date: string
+  binType: string
+  count: number
+  savedAt: string
+}
+
 const DAY_NAMES = ['日','月','火','水','木','金','土']
+const OFFLINE_MEMO_KEY = 'fiship_offline_memos'
 
 export default function NewBookingPage() {
   const router = useRouter()
@@ -25,6 +35,18 @@ export default function NewBookingPage() {
   const [parsed, setParsed] = useState<ParsedResult | null>(null)
   const [registering, setRegistering] = useState(false)
   const [error, setError] = useState('')
+  const [savedMemos, setSavedMemos] = useState<SavedMemo[]>([])
+  const [sendingMemoId, setSendingMemoId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem(OFFLINE_MEMO_KEY)
+    if (!stored) return
+    try {
+      setSavedMemos(JSON.parse(stored))
+    } catch {
+      localStorage.removeItem(OFFLINE_MEMO_KEY)
+    }
+  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -39,6 +61,28 @@ export default function NewBookingPage() {
     init()
   }, [router])
 
+  const persistSavedMemos = (memos: SavedMemo[]) => {
+    setSavedMemos(memos)
+    localStorage.setItem(OFFLINE_MEMO_KEY, JSON.stringify(memos))
+  }
+
+  const makeMemoId = () => {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+      return crypto.randomUUID()
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  }
+
+  const normalizeBinType = (value: unknown): 'day' | 'night' | null => {
+    if (value === 'day' || value === '昼' || value === '昼便') return 'day'
+    if (value === 'night' || value === '夜' || value === '夜便') return 'night'
+    if (typeof value === 'string') {
+      if (value.includes('夜') || value.toLowerCase().includes('night')) return 'night'
+      if (value.includes('昼') || value.toLowerCase().includes('day')) return 'day'
+    }
+    return null
+  }
+
   const handleAnalyze = async () => {
     setAnalyzing(true)
     setError('')
@@ -47,34 +91,78 @@ export default function NewBookingPage() {
       const res = await fetch('/api/analyze-booking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          date,
-          binType,
-          count,
-        }),
+        body: JSON.stringify({ message, date, binType, count }),
       })
-
-      if (!res.ok) {
-        setError('解析に失敗しました。もう一度お試しください。')
-        return
-      }
-
+      if (!res.ok) throw new Error('failed')
       const result = await res.json()
-
       setParsed({
         date: date || result.date,
-        bin_type: (binType || result.bin_type) as 'day' | 'night' | null,
+        bin_type: binType || normalizeBinType(result.bin_type),
         name: result.name,
         tel: result.tel,
         count: count > 0 ? count : (result.count || 1),
         note: result.note,
       })
     } catch {
-      setError('解析に失敗しました。もう一度お試しください。')
+      const memo = {
+        id: makeMemoId(),
+        message,
+        date,
+        binType,
+        count,
+        savedAt: new Date().toISOString(),
+      }
+      persistSavedMemos([...savedMemos, memo])
+      setError('電波が届きませんでした。メモとして保存しました。電波が回復したら送信できます。')
     } finally {
       setAnalyzing(false)
     }
+  }
+
+  const handleSendMemo = async (memo: SavedMemo) => {
+    if (!vesselId) return
+    setSendingMemoId(memo.id)
+    try {
+      const res = await fetch('/api/analyze-booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: memo.message,
+          date: memo.date,
+          binType: memo.binType,
+          count: memo.count,
+        }),
+      })
+      if (!res.ok) throw new Error('failed')
+      const result = await res.json()
+
+      const bookingRes = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vessel_id: vesselId,
+          date: memo.date || result.date || new Date().toISOString().split('T')[0],
+          bin_type: memo.binType || normalizeBinType(result.bin_type) || 'day',
+          name: result.name || '名前不明',
+          tel: result.tel || '',
+          count: memo.count > 0 ? memo.count : (result.count || 1),
+          message: result.note || '',
+          channel: 'phone',
+          status: 'confirmed',
+        }),
+      })
+      if (!bookingRes.ok) throw new Error('booking failed')
+
+      persistSavedMemos(savedMemos.filter(m => m.id !== memo.id))
+    } catch {
+      alert('まだ電波が届きません。もう少し待ってから試してください。')
+    } finally {
+      setSendingMemoId(null)
+    }
+  }
+
+  const handleDeleteMemo = (id: string) => {
+    persistSavedMemos(savedMemos.filter(m => m.id !== id))
   }
 
   const handleRegister = async () => {
@@ -143,6 +231,48 @@ export default function NewBookingPage() {
 
         {!parsed && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {savedMemos.length > 0 && (
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--status-pending-fg)', marginBottom: '8px' }}>
+                  ⚠️ 未送信のメモ {savedMemos.length}件
+                </div>
+                {savedMemos.map(memo => (
+                  <div key={memo.id} style={{ background: 'var(--surface)', border: '2px solid var(--status-pending-dot)', borderRadius: '14px', padding: '16px', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--fg-3)', marginBottom: '8px' }}>
+                      {new Date(memo.savedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} に保存
+                    </div>
+
+                    <div style={{ fontSize: '16px', color: 'var(--fg-1)', marginBottom: '6px', lineHeight: 1.6 }}>
+                      「{memo.message}」
+                    </div>
+                    {(memo.date || memo.binType || memo.count > 0) && (
+                      <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginBottom: '10px' }}>
+                        {memo.date && `${new Date(memo.date + 'T00:00:00').getMonth()+1}月${new Date(memo.date + 'T00:00:00').getDate()}日`}
+                        {memo.binType && `　${memo.binType === 'day' ? '☀️昼便' : '🌙夜便'}`}
+                        {memo.count > 0 && `　${memo.count}名`}
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => handleSendMemo(memo)}
+                        disabled={sendingMemoId === memo.id}
+                        style={{ flex: 1, padding: '14px', fontSize: '16px', fontWeight: 700, background: sendingMemoId === memo.id ? 'var(--border)' : 'var(--ocean)', color: sendingMemoId === memo.id ? 'var(--fg-3)' : '#fff', border: 'none', borderRadius: '10px', cursor: sendingMemoId === memo.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                      >
+                        {sendingMemoId === memo.id ? '送信中...' : '解析して送信する'}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMemo(memo.id)}
+                        style={{ padding: '14px 16px', fontSize: '16px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                      >
+                        削除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px' }}>
               <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>
                 メッセージ・メモ
