@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
@@ -82,6 +82,7 @@ export default function DashboardBookingsPage() {
   const [inputBinType, setInputBinType] = useState<'day' | 'night' | ''>('')
   const [inputCount, setInputCount] = useState(0)
   const [analyzing, setAnalyzing] = useState(false)
+  const [showCandidates, setShowCandidates] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -467,7 +468,27 @@ export default function DashboardBookingsPage() {
       </div>
 
       <main style={{ padding: '16px' }}>
-        {candidates.length > 0 && (
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          <button
+            onClick={() => setShowCandidates(v => !v)}
+            style={{ flex: 1, padding: '16px', fontSize: '17px', fontWeight: 700, fontFamily: 'inherit', borderRadius: '12px', cursor: 'pointer', background: showCandidates ? 'var(--ocean)' : 'var(--surface)', color: showCandidates ? '#fff' : 'var(--fg-1)', border: showCandidates ? '2px solid var(--ocean)' : '2px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+          >
+            📥 予約を取り込む
+            {candidates.length > 0 && (
+              <span style={{ background: 'var(--status-pending-dot)', color: '#fff', fontSize: '13px', fontWeight: 700, padding: '2px 8px', borderRadius: '99px' }}>
+                {candidates.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => router.push('/dashboard/bookings/new')}
+            style={{ flex: 1, padding: '16px', fontSize: '17px', fontWeight: 700, fontFamily: 'inherit', borderRadius: '12px', cursor: 'pointer', background: 'var(--surface)', color: 'var(--fg-1)', border: '2px solid var(--border)' }}
+          >
+            ✏️ メモから予約を入れる
+          </button>
+        </div>
+
+        {showCandidates && candidates.length > 0 && (
           <div style={{ marginBottom: '16px' }}>
             <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>
               取り込み候補　{candidates.length}件
@@ -517,60 +538,6 @@ export default function DashboardBookingsPage() {
             ))}
           </div>
         )}
-
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>
-            メッセージから予約を作る
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-            {([{ key: 'line', label: '💬 LINE' }, { key: 'phone', label: '📞 電話' }, { key: 'other', label: 'その他' }] as const).map(({ key, label }) => (
-              <button key={key} onClick={() => setInputChannel(key)}
-                style={{ flex: 1, padding: '10px 6px', fontSize: '15px', fontWeight: 700, fontFamily: 'inherit', background: inputChannel === key ? 'var(--ocean)' : 'var(--surface)', color: inputChannel === key ? '#fff' : 'var(--fg-2)', border: inputChannel === key ? '2px solid var(--ocean)' : '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer' }}>
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <textarea
-            value={inputMessage}
-            onChange={e => setInputMessage(e.target.value)}
-            placeholder={'メッセージを貼り付けまたは入力してください\n例：「土曜昼便2人 たなか 090-XXXX」'}
-            style={{ width: '100%', padding: '14px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', resize: 'none', height: '100px', boxSizing: 'border-box', color: 'var(--fg-1)', background: 'var(--surface)', marginBottom: '12px' }}
-          />
-
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-            <input type="date" value={inputDate} onChange={e => setInputDate(e.target.value)}
-              style={{ flex: 2, padding: '12px', fontSize: '15px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)' }} />
-
-            <button onClick={() => setInputBinType(v => v === 'day' ? '' : 'day')}
-              style={{ flex: 1, padding: '12px 6px', fontSize: '15px', fontWeight: 700, fontFamily: 'inherit', background: inputBinType === 'day' ? 'var(--status-day-bg)' : 'var(--surface)', color: inputBinType === 'day' ? 'var(--ocean)' : 'var(--fg-3)', border: inputBinType === 'day' ? '2px solid var(--ocean-light)' : '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer' }}>
-              ☀️ 昼
-            </button>
-            <button onClick={() => setInputBinType(v => v === 'night' ? '' : 'night')}
-              style={{ flex: 1, padding: '12px 6px', fontSize: '15px', fontWeight: 700, fontFamily: 'inherit', background: inputBinType === 'night' ? 'var(--status-night-bg)' : 'var(--surface)', color: inputBinType === 'night' ? 'var(--status-night-fg)' : 'var(--fg-3)', border: inputBinType === 'night' ? '2px solid var(--status-night-fg)' : '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer' }}>
-              🌙 夜
-            </button>
-
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <button onClick={() => setInputCount(v => Math.max(0, v - 1))}
-                style={{ width: '36px', height: '44px', borderRadius: '8px', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)' }}>－</button>
-              <span style={{ fontSize: '16px', fontWeight: 700, color: inputCount > 0 ? 'var(--fg-1)' : 'var(--fg-3)', minWidth: '24px', textAlign: 'center' }}>
-                {inputCount > 0 ? inputCount : '?'}
-              </span>
-              <button onClick={() => setInputCount(v => v + 1)}
-                style={{ width: '36px', height: '44px', borderRadius: '8px', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '18px', fontWeight: 700, color: 'var(--fg-2)' }}>＋</button>
-            </div>
-          </div>
-
-          <button
-            onClick={handleAnalyzeAndRegister}
-            disabled={analyzing || (!inputMessage.trim() && !inputDate && !inputBinType && !inputCount)}
-            style={{ width: '100%', padding: '16px', fontSize: '18px', fontWeight: 700, background: analyzing ? 'var(--border)' : 'var(--ocean)', color: analyzing ? 'var(--fg-3)' : '#fff', border: 'none', borderRadius: '12px', cursor: analyzing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
-          >
-            {analyzing ? 'AI解析中...' : '解析して予約候補にする'}
-          </button>
-        </div>
 
         <section style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
