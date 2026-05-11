@@ -120,7 +120,6 @@ export default function NewBookingPage() {
   }
 
   const handleSendMemo = async (memo: SavedMemo) => {
-    if (!vesselId) return
     setSendingMemoId(memo.id)
     try {
       const res = await fetch('/api/analyze-booking', {
@@ -136,22 +135,15 @@ export default function NewBookingPage() {
       if (!res.ok) throw new Error('failed')
       const result = await res.json()
 
-      const bookingRes = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          vessel_id: vesselId,
-          date: memo.date || result.date || new Date().toISOString().split('T')[0],
-          bin_type: memo.binType || normalizeBinType(result.bin_type) || 'day',
-          name: result.name || '名前不明',
-          tel: result.tel || '',
-          count: memo.count > 0 ? memo.count : (result.count || 1),
-          message: result.note || '',
-          channel: 'phone',
-          status: 'confirmed',
-        }),
+      setParsed({
+        date: memo.date || result.date,
+        bin_type: normalizeBinType(memo.binType || result.bin_type),
+        name: result.name,
+        tel: result.tel,
+        count: memo.count > 0 ? memo.count : (result.count || 1),
+        note: result.note,
       })
-      if (!bookingRes.ok) throw new Error('booking failed')
+      setMessage(memo.message)
 
       persistSavedMemos(savedMemos.filter(m => m.id !== memo.id))
     } catch {
