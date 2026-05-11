@@ -39,42 +39,36 @@ export default function NewBookingPage() {
     init()
   }, [router])
 
-  const normalizeBinType = (value: unknown): 'day' | 'night' | null => {
-    if (value === 'day' || value === '昼' || value === '昼便') return 'day'
-    if (value === 'night' || value === '夜' || value === '夜便') return 'night'
-    const text = typeof value === 'string' ? value.toLowerCase() : ''
-    if (text.includes('night') || text.includes('夜')) return 'night'
-    if (text.includes('day') || text.includes('昼')) return 'day'
-    return null
-  }
-
   const handleAnalyze = async () => {
-    if (!vesselId) return
     setAnalyzing(true)
     setError('')
     setParsed(null)
     try {
-      const res = await fetch('/api/extract', {
+      const res = await fetch('/api/analyze-booking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message,
-          vessel_id: vesselId,
-          channel: 'line',
+          date,
+          binType,
+          count,
         }),
       })
-      if (!res.ok) throw new Error('extract failed')
 
-      const data = await res.json()
-      const result = data.extracted || {}
+      if (!res.ok) {
+        setError('解析に失敗しました。もう一度お試しください。')
+        return
+      }
+
+      const result = await res.json()
 
       setParsed({
-        date: date || result.date || null,
-        bin_type: (binType || normalizeBinType(result.bin_type || result.bin_preference)) as 'day' | 'night' | null,
-        name: result.name || null,
-        tel: result.tel || null,
+        date: date || result.date,
+        bin_type: (binType || result.bin_type) as 'day' | 'night' | null,
+        name: result.name,
+        tel: result.tel,
         count: count > 0 ? count : (result.count || 1),
-        note: result.note || result.fishing_style || null,
+        note: result.note,
       })
     } catch {
       setError('解析に失敗しました。もう一度お試しください。')
