@@ -279,6 +279,15 @@ export default function AccountPage() {
         </section>
         <button onClick={handleSave} disabled={saving} style={{ width: '100%', minHeight: '64px', border: 'none', borderRadius: '14px', background: saving ? 'var(--border)' : 'var(--ocean)', color: saving ? 'var(--fg-3)' : '#fff', fontSize: '20px', fontWeight: 700 }}>{saving ? '保存中...' : '変更を保存する'}</button>
         <section style={{ ...sectionStyle, marginTop: '12px' }}>
+          <div style={titleStyle}>サポート</div>
+          <a href="/legal/privacy" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--border)', textDecoration: 'none', color: 'var(--fg-1)', fontSize: '18px', fontWeight: 600 }}>
+            プライバシーポリシー <span style={{ color: 'var(--fg-3)' }}>→</span>
+          </a>
+          <a href="/legal/terms" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', textDecoration: 'none', color: 'var(--fg-1)', fontSize: '18px', fontWeight: 600 }}>
+            利用規約 <span style={{ color: 'var(--fg-3)' }}>→</span>
+          </a>
+        </section>
+        <section style={{ ...sectionStyle, marginTop: '12px' }}>
           <div style={titleStyle}>アカウント</div>
           <button onClick={() => { window.location.href = '/api/auth/logout' }} style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700, background: 'var(--ocean)', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', marginBottom: '10px' }}>
             ログアウト

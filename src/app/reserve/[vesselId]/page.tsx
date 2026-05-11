@@ -230,10 +230,10 @@ export default function ReservePage() {
     }, 100)
   }
 
-  // 電話番号バリデーション（ハイフンを除いて11桁）
+  // 電話番号バリデーション（国内番号または国際電話番号）
   const isValidTel = (tel: string): boolean => {
-    const digits = tel.replace(/-/g, '')
-    return /^\d{11}$/.test(digits)
+    const cleaned = tel.replace(/[-\s()]/g, '')
+    return /^\d{10,11}$/.test(cleaned) || /^\+\d{7,15}$/.test(cleaned)
   }
 
   // フォーム送信
@@ -243,7 +243,7 @@ export default function ReservePage() {
       return
     }
     if (!isValidTel(form.tel)) {
-      setFormError('電話番号は11桁（例：09012345678）または13桁（例：090-1234-5678）で入力してください')
+      setFormError('電話番号は国内番号または国際電話番号で入力してください')
       return
     }
     if (!selectedDate) return
@@ -697,7 +697,7 @@ export default function ReservePage() {
               </label>
               <input
                 style={{ width: '100%', padding: '14px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box' }}
-                placeholder="例：090-1234-5678"
+                placeholder="例：090-1234-5678 または +1-XXX-XXXX-XXXX"
                 type="tel"
                 value={form.tel}
                 onChange={e => setForm(f => ({ ...f, tel: e.target.value }))}

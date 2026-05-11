@@ -211,6 +211,14 @@ export default function LoginPage() {
               >
                 電話番号ではじめる
               </button>
+
+              <p style={{ fontSize: '13px', color: 'var(--fg-2)', textAlign: 'center', marginTop: '2px', lineHeight: 1.8 }}>
+                ご利用いただくことで
+                <a href="/legal/terms" target="_blank" style={{ color: 'var(--ocean)', textDecoration: 'underline' }}>利用規約</a>
+                および
+                <a href="/legal/privacy" target="_blank" style={{ color: 'var(--ocean)', textDecoration: 'underline' }}>プライバシーポリシー</a>
+                に同意したものとみなします
+              </p>
             </div>
           )}
 
