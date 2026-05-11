@@ -42,6 +42,17 @@ type BinSetting = {
   max_capacity: number
 }
 
+type BlockedDate = {
+  id: string
+  vessel_id: string
+  date_from: string
+  date_to: string
+  bin_type: string | null
+  type: 'maintenance' | 'weather' | 'trouble' | 'other'
+  reason: string
+  created_at: string
+}
+
 type BinInfo = {
   setting: BinSetting
   confirmedRemaining: number
@@ -86,6 +97,7 @@ export default function ReservePage() {
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [binSettings, setBinSettings] = useState<BinSetting[]>([])
+  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([])
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calM, setCalM] = useState(new Date().getMonth())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -129,12 +141,14 @@ export default function ReservePage() {
       if (!v) { setLoading(false); return }
       setVessel(v)
 
-      const [{ data: bk }, { data: bs }] = await Promise.all([
+      const [{ data: bk }, { data: bs }, { data: bd }] = await Promise.all([
         supabase.from('bookings').select('id, date, bin_type, count, status').eq('vessel_id', vesselId).neq('status', 'rejected'),
-        supabase.from('bin_settings').select('*').eq('vessel_id', vesselId),
+        supabase.from('bin_settings').select('*').eq('vessel_id', vesselId).eq('enabled', true),
+        supabase.from('blocked_dates').select('*').eq('vessel_id', vesselId),
       ])
       setBookings(bk || [])
       setBinSettings(bs || [])
+      setBlockedDates(bd || [])
       setLoading(false)
     }
     init()
@@ -151,8 +165,15 @@ export default function ReservePage() {
         return inPeriod && bin.days_of_week.map(Number).includes(dow)
       })
       .sort((a, b) => (a.bin_type === b.bin_type ? 0 : a.bin_type === 'day' ? -1 : 1))
-      .map(bin => {
+      .flatMap(bin => {
         const dateStr = toDateStr(year, month, day)
+        const isBlocked = (blockedDates || []).some(b => {
+          const inRange = b.date_from <= dateStr && dateStr <= b.date_to
+          const binMatch = !b.bin_type || b.bin_type === bin.bin_type
+          return inRange && binMatch
+        })
+        if (isBlocked) return []
+
         const confirmedUsed = bookings
           .filter(b => b.date === dateStr && b.bin_type === bin.bin_type && b.status === 'confirmed')
           .reduce((s, b) => s + b.count, 0)
@@ -161,7 +182,7 @@ export default function ReservePage() {
           .reduce((s, b) => s + b.count, 0)
         const confirmedRemaining = bin.max_capacity - confirmedUsed
         const actualRemaining = bin.max_capacity - confirmedUsed - pendingCount
-        return {
+        return [{
           setting: bin,
           confirmedRemaining,
           pendingCount,
@@ -169,7 +190,7 @@ export default function ReservePage() {
           remaining: actualRemaining,
           isFull: actualRemaining <= 0,
           isConfirmedFull: confirmedRemaining <= 0,
-        }
+        }]
       })
   }
 
