@@ -8,6 +8,8 @@ type Vessel = {
   name: string
   captain_name: string
   capacity: number
+  logo_url: string
+  banner_url: string
 }
 
 type Booking = {
@@ -117,6 +119,7 @@ export default function DashboardPage() {
   }
 
   const pendingBookings = bookings.filter(b => b.status === 'pending')
+  const getPendingCount = () => pendingBookings.length
   const todayBookings = bookings.filter(b => b.date === todayStr && b.status !== 'rejected')
   const tomorrowBookings = bookings.filter(b => b.date === tomorrowStr && b.status !== 'rejected')
   const tomorrowUncontacted = tomorrowBookings.filter(b => b.status === 'confirmed' && !b.contacted)
@@ -226,16 +229,47 @@ export default function DashboardPage() {
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
-      <div style={{ background: oceanGradient, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, zIndex: 20, minHeight: '80px' }}>
-        <div style={{ width: '56px', height: '56px', background: 'var(--surface)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 700, color: 'var(--ocean)', flexShrink: 0 }}>fi</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vessel?.name}</div>
-          <div style={{ fontSize: '18px', color: 'rgba(255,255,255,.86)', marginTop: '4px' }}>{vessel?.captain_name}</div>
+      <div style={{
+        background: vessel?.banner_url
+          ? `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${vessel.banner_url})`
+          : oceanGradient,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        padding: '18px 20px',
+        display: 'flex', alignItems: 'center', gap: '16px',
+        position: 'sticky', top: 0, zIndex: 20, minHeight: '80px',
+        overflow: 'hidden', isolation: 'isolate'
+      }}>
+        <div style={{
+          width: '56px', height: '56px', borderRadius: '12px',
+          overflow: 'hidden', flexShrink: 0,
+          background: vessel?.logo_url ? 'transparent' : 'var(--surface)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '24px', fontWeight: 700, color: 'var(--ocean)',
+        }}>
+          {vessel?.logo_url
+            ? <img src={vessel.logo_url} alt={`${vessel.name} ロゴ`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : 'fi'}
         </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>{vessel?.name}</div>
+          <div style={{ fontSize: '18px', color: '#ffffff', marginTop: '4px', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>{vessel?.captain_name}</div>
+        </div>
+        {getPendingCount() > 0 && (
+          <div style={{
+            background: 'rgba(212,172,13,.18)', color: 'var(--gold)',
+            fontSize: '14px', fontWeight: 700, padding: '10px 14px',
+            border: '2px solid rgba(242,199,68,.55)', borderRadius: '99px',
+            whiteSpace: 'nowrap', minHeight: '44px', display: 'flex', alignItems: 'center',
+            position: 'relative', zIndex: 3,
+          }}>
+            承認待ち {getPendingCount()}件
+          </div>
+        )}
         <button
           onClick={() => router.push('/dashboard/account')}
           aria-label="アカウント設定"
-          style={{ width: '56px', height: '56px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '12px', color: 'var(--surface)', fontSize: '22px', cursor: 'pointer' }}
+          style={{ width: '56px', height: '56px', padding: 0, background: 'rgba(255,255,255,0.15)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', fontSize: '22px' }}
         >⚙️</button>
       </div>
 
