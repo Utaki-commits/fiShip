@@ -314,7 +314,7 @@ export default function DashboardPage() {
             { icon: '📅', label: '予約一覧', path: '/dashboard/bookings' },
             { icon: '👥', label: '顧客名簿', path: '/dashboard/customers' },
             { icon: '📋', label: '乗船名簿', path: '/dashboard/logs' },
-            { icon: '⚙️', label: '便の設定', path: '/dashboard/settings' },
+            { icon: '🗓️', label: 'スケジュール', path: '/dashboard/schedule' },
           ].map(({ icon, label, path }) => (
             <button
               key={path}
