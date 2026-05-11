@@ -20,7 +20,7 @@ export default function NewBookingPage() {
   const [message, setMessage] = useState('')
   const [date, setDate] = useState('')
   const [binType, setBinType] = useState<'day'|'night'|''>('')
-  const [count, setCount] = useState(1)
+  const [count, setCount] = useState(0)
   const [analyzing, setAnalyzing] = useState(false)
   const [parsed, setParsed] = useState<ParsedResult | null>(null)
   const [registering, setRegistering] = useState(false)
@@ -188,9 +188,9 @@ export default function NewBookingPage() {
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '20px' }}>
               <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>人数</div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px' }}>
-                <button onClick={() => setCount(v => Math.max(1, v - 1))}
+                <button onClick={() => setCount(v => Math.max(0, v - 1))}
                   style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '24px', fontWeight: 700, color: 'var(--fg-2)' }}>－</button>
-                <span style={{ fontSize: '32px', fontWeight: 700, color: 'var(--ocean)', minWidth: '48px', textAlign: 'center' }}>{count}</span>
+                <span style={{ fontSize: '32px', fontWeight: 700, color: count > 0 ? 'var(--ocean)' : 'var(--fg-3)', minWidth: '48px', textAlign: 'center' }}>{count > 0 ? count : '?'}</span>
                 <button onClick={() => setCount(v => v + 1)}
                   style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '24px', fontWeight: 700, color: 'var(--fg-2)' }}>＋</button>
               </div>
@@ -207,56 +207,60 @@ export default function NewBookingPage() {
         )}
 
         {parsed && (
-          <>
-            <div style={{ background: 'var(--surface)', border: '2px solid var(--status-ok-bd)', borderRadius: '14px', padding: '20px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ background: 'var(--surface)', border: '2px solid var(--status-ok-bd)', borderRadius: '14px', padding: '20px' }}>
               <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--status-ok-fg)', marginBottom: '14px' }}>
                 ✅ 解析結果
               </div>
-
-              <div style={{ display: 'grid', gap: '10px' }}>
-                <ResultRow label="日付" value={parsed.date ? formatDate(parsed.date) : '不明'} warning={!parsed.date} />
-                <ResultRow label="便" value={parsed.bin_type === 'day' ? '☀️ 昼便' : parsed.bin_type === 'night' ? '🌙 夜便' : '不明'} warning={!parsed.bin_type} />
-                <ResultRow label="人数" value={`${parsed.count || 1}名`} />
-                <ResultRow label="氏名" value={parsed.name || '不明'} warning={!parsed.name} />
-                {parsed.tel && <ResultRow label="電話" value={parsed.tel} />}
-                {parsed.note && <ResultRow label="メモ" value={parsed.note} small />}
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {[
+                  { label: '日付', value: parsed.date ? formatDate(parsed.date) : null },
+                  { label: '便', value: parsed.bin_type === 'day' ? '☀️ 昼便' : parsed.bin_type === 'night' ? '🌙 夜便' : null },
+                  { label: '人数', value: parsed.count ? `${parsed.count}名` : null },
+                  { label: '氏名', value: parsed.name },
+                  { label: '電話', value: parsed.tel },
+                  { label: 'メモ', value: parsed.note },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '10px 12px', background: 'var(--bg)', borderRadius: '10px' }}>
+                    <span style={{ fontSize: '14px', color: 'var(--fg-3)', minWidth: '40px' }}>{label}</span>
+                    <span style={{ fontSize: '17px', fontWeight: 700, color: value ? 'var(--fg-1)' : 'var(--status-full-fg)' }}>
+                      {value || '不明'}
+                    </span>
+                  </div>
+                ))}
               </div>
 
               {(!parsed.date || !parsed.bin_type || !parsed.name) && (
-                <div style={{ marginTop: '12px', background: 'var(--status-pending-bg)', border: '2px solid var(--status-pending-dot)', borderRadius: '10px', padding: '12px 14px', fontSize: '15px', fontWeight: 700, color: 'var(--status-pending-fg)' }}>
-                  ⚠️ {[!parsed.date && '日付', !parsed.bin_type && '便', !parsed.name && '氏名'].filter(Boolean).join('・')}が不明です。登録後に予約カードから修正できます。
+                <div style={{ marginTop: '12px', background: 'var(--status-pending-bg)', border: '2px solid var(--status-pending-dot)', borderRadius: '10px', padding: '12px 14px', fontSize: '14px', fontWeight: 700, color: 'var(--status-pending-fg)' }}>
+                  ⚠️ {[!parsed.date && '日付', !parsed.bin_type && '便', !parsed.name && '氏名'].filter(Boolean).join('・')}が不明です。登録後に編集できます。
                 </div>
               )}
             </div>
 
+            {message && (
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--fg-3)', marginBottom: '4px' }}>元メッセージ</div>
+                <div style={{ fontSize: '14px', color: 'var(--fg-2)', lineHeight: 1.6 }}>「{message}」</div>
+              </div>
+            )}
+
             <button
               onClick={handleRegister}
               disabled={registering}
-              style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700, background: registering ? 'var(--border)' : 'var(--status-ok-bg)', color: registering ? 'var(--fg-3)' : 'var(--status-ok-fg)', border: `2px solid ${registering ? 'var(--border)' : 'var(--status-ok-bd)'}`, borderRadius: '14px', cursor: registering ? 'not-allowed' : 'pointer', fontFamily: 'inherit', marginBottom: '10px' }}
+              style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700, background: registering ? 'var(--border)' : 'var(--status-ok-bg)', color: registering ? 'var(--fg-3)' : 'var(--status-ok-fg)', border: `2px solid ${registering ? 'var(--border)' : 'var(--status-ok-bd)'}`, borderRadius: '14px', cursor: registering ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
             >
               {registering ? '登録中...' : 'この内容で予約を登録する'}
             </button>
 
             <button
               onClick={() => setParsed(null)}
-              style={{ width: '100%', padding: '16px', fontSize: '18px', fontWeight: 700, background: 'transparent', color: 'var(--fg-2)', border: '2px solid var(--border)', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ width: '100%', padding: '16px', fontSize: '17px', fontWeight: 700, background: 'transparent', color: 'var(--fg-2)', border: '2px solid var(--border)', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               入力し直す
             </button>
-          </>
+          </div>
         )}
       </div>
-    </div>
-  )
-}
-
-function ResultRow({ label, value, warning, small }: { label: string; value: string; warning?: boolean; small?: boolean }) {
-  return (
-    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '12px', background: 'var(--bg)', borderRadius: '10px' }}>
-      <span style={{ fontSize: '15px', color: 'var(--fg-3)', minWidth: '48px' }}>{label}</span>
-      <span style={{ fontSize: small ? '16px' : '18px', fontWeight: small ? 400 : 700, color: warning ? 'var(--status-full-fg)' : small ? 'var(--fg-2)' : 'var(--fg-1)' }}>
-        {value}
-      </span>
     </div>
   )
 }
