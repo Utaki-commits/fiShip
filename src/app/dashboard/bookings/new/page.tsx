@@ -3,34 +3,58 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
+type BinType = 'day' | 'night' | 'relay'
+
 type ParsedResult = {
   date: string | null
-  bin_type: 'day' | 'night' | null
+  date_to: string | null
+  bin_type: BinType | null
   name: string | null
   tel: string | null
   count: number | null
   note: string | null
+  is_charter: boolean
 }
 
 type SavedMemo = {
   id: string
   message: string
   date: string
+  dateTo: string
   binType: string
   count: number
+  isCharter: boolean
   savedAt: string
 }
 
 const DAY_NAMES = ['日','月','火','水','木','金','土']
 const OFFLINE_MEMO_KEY = 'fiship_offline_memos'
 
+const normalizeBinType = (value: unknown): BinType | null => {
+  if (value === 'day' || value === '昼' || value === '昼便') return 'day'
+  if (value === 'night' || value === '夜' || value === '夜便') return 'night'
+  if (value === 'relay' || value === '昼夜' || value === '昼夜便') return 'relay'
+  if (typeof value === 'string') {
+    const text = value.toLowerCase()
+    if (text.includes('relay') || text.includes('昼夜')) return 'relay'
+    if (text.includes('night') || text.includes('夜')) return 'night'
+    if (text.includes('day') || text.includes('昼')) return 'day'
+  }
+  return null
+}
+
+const getBinLabel = (binType: BinType | null) =>
+  binType === 'day' ? '☀️ 昼便' : binType === 'night' ? '🌙 夜便' : binType === 'relay' ? '🌅 昼夜便' : null
+
 export default function NewBookingPage() {
   const router = useRouter()
   const [vesselId, setVesselId] = useState<string | null>(null)
   const [message, setMessage] = useState('')
   const [date, setDate] = useState('')
-  const [binType, setBinType] = useState<'day'|'night'|''>('')
+  const [dateTo, setDateTo] = useState('')
+  const [binType, setBinType] = useState<BinType | ''>('')
   const [count, setCount] = useState(0)
+  const [isCharter, setIsCharter] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [parsed, setParsed] = useState<ParsedResult | null>(null)
   const [registering, setRegistering] = useState(false)
@@ -73,15 +97,22 @@ export default function NewBookingPage() {
     return `${Date.now()}-${Math.random().toString(36).slice(2)}`
   }
 
-  const normalizeBinType = (value: unknown): 'day' | 'night' | null => {
-    if (value === 'day' || value === '昼' || value === '昼便') return 'day'
-    if (value === 'night' || value === '夜' || value === '夜便') return 'night'
-    if (typeof value === 'string') {
-      if (value.includes('夜') || value.toLowerCase().includes('night')) return 'night'
-      if (value.includes('昼') || value.toLowerCase().includes('day')) return 'day'
-    }
-    return null
-  }
+  const buildParsed = (result: Record<string, unknown>, fallback: {
+    date: string
+    dateTo: string
+    binType: string
+    count: number
+    isCharter: boolean
+  }): ParsedResult => ({
+    date: fallback.date || (typeof result.date === 'string' ? result.date : null),
+    date_to: fallback.dateTo || (typeof result.date_to === 'string' ? result.date_to : null),
+    bin_type: normalizeBinType(fallback.binType || result.bin_type),
+    name: typeof result.name === 'string' ? result.name : null,
+    tel: typeof result.tel === 'string' ? result.tel : null,
+    count: fallback.count > 0 ? fallback.count : (typeof result.count === 'number' ? result.count : 1),
+    note: typeof result.note === 'string' ? result.note : null,
+    is_charter: Boolean(result.is_charter) || fallback.isCharter,
+  })
 
   const handleAnalyze = async () => {
     setAnalyzing(true)
@@ -95,21 +126,19 @@ export default function NewBookingPage() {
       })
       if (!res.ok) throw new Error('failed')
       const result = await res.json()
-      setParsed({
-        date: date || result.date,
-        bin_type: binType || normalizeBinType(result.bin_type),
-        name: result.name,
-        tel: result.tel,
-        count: count > 0 ? count : (result.count || 1),
-        note: result.note,
-      })
+      const nextParsed = buildParsed(result, { date, dateTo, binType, count, isCharter })
+      setParsed(nextParsed)
+      if (nextParsed.is_charter) setIsCharter(true)
+      if (nextParsed.date_to) setDateTo(nextParsed.date_to)
     } catch {
       const memo = {
         id: makeMemoId(),
         message,
         date,
+        dateTo,
         binType,
         count,
+        isCharter,
         savedAt: new Date().toISOString(),
       }
       persistSavedMemos([...savedMemos, memo])
@@ -134,16 +163,21 @@ export default function NewBookingPage() {
       })
       if (!res.ok) throw new Error('failed')
       const result = await res.json()
-
-      setParsed({
-        date: memo.date || result.date,
-        bin_type: normalizeBinType(memo.binType || result.bin_type),
-        name: result.name,
-        tel: result.tel,
-        count: memo.count > 0 ? memo.count : (result.count || 1),
-        note: result.note,
+      const nextParsed = buildParsed(result, {
+        date: memo.date,
+        dateTo: memo.dateTo || '',
+        binType: memo.binType,
+        count: memo.count,
+        isCharter: memo.isCharter,
       })
+
+      setParsed(nextParsed)
       setMessage(memo.message)
+      setDate(memo.date)
+      setDateTo(nextParsed.date_to || '')
+      setBinType(nextParsed.bin_type || '')
+      setCount(nextParsed.count || 0)
+      setIsCharter(nextParsed.is_charter)
 
       persistSavedMemos(savedMemos.filter(m => m.id !== memo.id))
     } catch {
@@ -190,12 +224,15 @@ export default function NewBookingPage() {
         body: JSON.stringify({
           vessel_id: vesselId,
           date: parsed.date || new Date().toISOString().split('T')[0],
+          date_to: parsed.date_to || dateTo || null,
           bin_type: parsed.bin_type || 'day',
           name: parsed.name || '名前不明',
           tel: parsed.tel || '',
           count: parsed.count || 1,
           message: parsed.note || '',
           channel: 'phone',
+          status: 'confirmed',
+          is_charter: parsed.is_charter || isCharter,
         }),
       })
       if (!res.ok) throw new Error('booking failed')
@@ -242,14 +279,15 @@ export default function NewBookingPage() {
                     <div style={{ fontSize: '13px', color: 'var(--fg-3)', marginBottom: '8px' }}>
                       {new Date(memo.savedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} に保存
                     </div>
-
                     <div style={{ fontSize: '16px', color: 'var(--fg-1)', marginBottom: '6px', lineHeight: 1.6 }}>
                       「{memo.message}」
                     </div>
-                    {(memo.date || memo.binType || memo.count > 0) && (
+                    {(memo.date || memo.dateTo || memo.binType || memo.count > 0 || memo.isCharter) && (
                       <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginBottom: '10px' }}>
-                        {memo.date && `${new Date(memo.date + 'T00:00:00').getMonth()+1}月${new Date(memo.date + 'T00:00:00').getDate()}日`}
-                        {memo.binType && `　${memo.binType === 'day' ? '☀️昼便' : '🌙夜便'}`}
+                        {memo.isCharter && '⛵ チャーター　'}
+                        {memo.date && `${formatDate(memo.date)}`}
+                        {memo.dateTo && ` 〜 ${formatDate(memo.dateTo)}`}
+                        {memo.binType && `　${getBinLabel(normalizeBinType(memo.binType))}`}
                         {memo.count > 0 && `　${memo.count}名`}
                       </div>
                     )}
@@ -296,15 +334,47 @@ export default function NewBookingPage() {
                 <input type="date" value={date} onChange={e => setDate(e.target.value)}
                   style={{ width: '100%', padding: '14px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)', boxSizing: 'border-box' as const }} />
 
+                <button
+                  type="button"
+                  onClick={() => { setIsCharter(v => !v); if (isCharter) setDateTo('') }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    width: '100%', padding: '14px',
+                    background: isCharter ? '#FBF3D4' : 'var(--surface)',
+                    border: isCharter ? '2px solid var(--gold)' : '2px solid var(--border)',
+                    borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: isCharter ? '#7A5800' : 'var(--fg-1)' }}>貸切（チャーター）</div>
+                    <div style={{ fontSize: '13px', color: isCharter ? '#7A5800' : 'var(--fg-2)', marginTop: '2px' }}>複数日の場合は終了日も入力してください</div>
+                  </div>
+                  <div style={{ width: '52px', height: '30px', borderRadius: '15px', background: isCharter ? 'var(--gold)' : '#D1D5DB', position: 'relative', flexShrink: 0 }}>
+                    <div style={{ position: 'absolute', top: '3px', left: isCharter ? '25px' : '3px', width: '24px', height: '24px', borderRadius: '50%', background: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,.2)', transition: 'left .2s' }} />
+                  </div>
+                </button>
+
+                {isCharter && (
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', marginBottom: '6px' }}>
+                      終了日 <span style={{ fontSize: '12px', color: 'var(--fg-3)', fontWeight: 400 }}>（複数日の場合）</span>
+                    </div>
+                    <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                      style={{ width: '100%', padding: '12px', fontSize: '16px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)', boxSizing: 'border-box' as const }} />
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => setBinType(v => v === 'day' ? '' : 'day')}
-                    style={{ flex: 1, padding: '14px', fontSize: '18px', fontWeight: 700, fontFamily: 'inherit', background: binType === 'day' ? 'var(--status-day-bg)' : 'var(--surface)', color: binType === 'day' ? 'var(--ocean)' : 'var(--fg-3)', border: binType === 'day' ? '3px solid var(--ocean-light)' : '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer' }}>
-                    ☀️ 昼便
-                  </button>
-                  <button onClick={() => setBinType(v => v === 'night' ? '' : 'night')}
-                    style={{ flex: 1, padding: '14px', fontSize: '18px', fontWeight: 700, fontFamily: 'inherit', background: binType === 'night' ? 'var(--status-night-bg)' : 'var(--surface)', color: binType === 'night' ? 'var(--status-night-fg)' : 'var(--fg-3)', border: binType === 'night' ? '3px solid var(--status-night-fg)' : '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer' }}>
-                    🌙 夜便
-                  </button>
+                  {([
+                    { key: 'day', label: '☀️ 昼便' },
+                    { key: 'night', label: '🌙 夜便' },
+                    { key: 'relay', label: '🌅 昼夜便' },
+                  ] as const).map(({ key, label }) => (
+                    <button key={key} onClick={() => setBinType(v => v === key ? '' : key)}
+                      style={{ flex: 1, padding: '14px 6px', fontSize: '16px', fontWeight: 700, fontFamily: 'inherit', background: binType === key ? 'var(--ocean-pale)' : 'var(--surface)', color: binType === key ? 'var(--ocean)' : 'var(--fg-3)', border: binType === key ? '3px solid var(--ocean)' : '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer' }}>
+                      {label}
+                    </button>
+                  ))}
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', padding: '8px 0' }}>
@@ -339,9 +409,16 @@ export default function NewBookingPage() {
                 ✅ 解析結果
               </div>
               <div style={{ display: 'grid', gap: '8px' }}>
+                {parsed.is_charter && (
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '10px 12px', background: '#FBF3D4', borderRadius: '10px' }}>
+                    <span style={{ fontSize: '14px', color: 'var(--fg-3)', minWidth: '40px' }}>種別</span>
+                    <span style={{ fontSize: '17px', fontWeight: 700, color: '#7A5800' }}>⛵ チャーター</span>
+                  </div>
+                )}
                 {[
                   { label: '日付', value: parsed.date ? formatDate(parsed.date) : null },
-                  { label: '便', value: parsed.bin_type === 'day' ? '☀️ 昼便' : parsed.bin_type === 'night' ? '🌙 夜便' : null },
+                  { label: '終了日', value: parsed.date_to ? formatDate(parsed.date_to) : null },
+                  { label: '便', value: getBinLabel(parsed.bin_type) },
                   { label: '人数', value: parsed.count ? `${parsed.count}名` : null },
                   { label: '氏名', value: parsed.name },
                   { label: '電話', value: parsed.tel },

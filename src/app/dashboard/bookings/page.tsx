@@ -15,6 +15,7 @@ type BinType = 'day' | 'night' | 'relay'
 type Booking = {
   id: string
   date: string
+  date_to: string | null
   bin_type: BinType
   name: string
   tel: string
@@ -24,6 +25,7 @@ type Booking = {
   status: 'pending' | 'confirmed' | 'rejected'
   channel: string
   contacted: boolean
+  is_charter: boolean
 }
 
 type BinSetting = {
@@ -360,6 +362,10 @@ export default function DashboardBookingsPage() {
     const dow = new Date(year, month, day).getDay()
     const holiday = getHolidayInfo(new Date(year, month, day))
     const dateBookings = bookings.filter(b => b.date === dateStr && b.status !== 'rejected')
+    const isCharterDate = bookings.some(b => {
+      if (!b.is_charter || !b.date_to) return false
+      return b.date <= dateStr && dateStr <= b.date_to
+    })
     const hasPending = dateBookings.some(b => b.status === 'pending')
     const hasDay = dateBookings.some(b => b.bin_type === 'day')
     const hasNight = dateBookings.some(b => b.bin_type === 'night')
@@ -400,6 +406,13 @@ export default function DashboardBookingsPage() {
           <div style={{ fontSize: '10px', color: 'var(--status-full-fg)', fontWeight: 700,
             width: '100%', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {holiday.name}
+          </div>
+        )}
+
+        {isCharterDate && (
+          <div style={{ fontSize: '10px', color: 'var(--fg-3)', fontWeight: 700,
+            width: '100%', textAlign: 'center' }}>
+            貸切
           </div>
         )}
 

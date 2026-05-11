@@ -26,9 +26,11 @@ type Vessel = {
 type Booking = {
   id: string
   date: string
+  date_to: string | null
   bin_type: string
   count: number
   status: string
+  is_charter: boolean
 }
 
 type BinSetting = {
@@ -50,7 +52,7 @@ type BlockedDate = {
   date_from: string
   date_to: string
   bin_type: string | null
-  type: 'maintenance' | 'weather' | 'trouble' | 'expedition' | 'other'
+  type: 'maintenance' | 'weather' | 'trouble' | 'other'
   reason: string
   created_at: string
 }
@@ -159,7 +161,7 @@ export default function ReservePage() {
       setVessel(v)
 
       const [{ data: bk }, { data: bs }, { data: bd }] = await Promise.all([
-        supabase.from('bookings').select('id, date, bin_type, count, status').eq('vessel_id', vesselId).neq('status', 'rejected'),
+        supabase.from('bookings').select('id, date, date_to, bin_type, count, status, is_charter').eq('vessel_id', vesselId).neq('status', 'rejected'),
         supabase.from('bin_settings').select('*').eq('vessel_id', vesselId).eq('enabled', true),
         supabase.from('blocked_dates').select('*').eq('vessel_id', vesselId),
       ])
@@ -296,7 +298,7 @@ export default function ReservePage() {
 
       // 予約リストを再取得して残数を更新
       const { data: bk } = await supabase
-        .from('bookings').select('id, date, bin_type, count, status').eq('vessel_id', vesselId).neq('status', 'rejected')
+        .from('bookings').select('id, date, date_to, bin_type, count, status, is_charter').eq('vessel_id', vesselId).neq('status', 'rejected')
       setBookings(bk || [])
     } catch {
       setFormError('通信エラーが発生しました。電波の状態を確認してください。')
@@ -310,9 +312,10 @@ export default function ReservePage() {
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const cellDate = new Date(year, month, day)
     const dateStr = toDateStr(year, month, day)
-    const expeditionBlock = blockedDates.find(b =>
-      b.date_from <= dateStr && dateStr <= b.date_to && b.type === 'expedition'
-    )
+    const isCharterDate = bookings.some(b => {
+      if (!b.is_charter || !b.date_to) return false
+      return b.date <= dateStr && dateStr <= b.date_to
+    })
     const isPast = cellDate < today
     const isToday = cellDate.getTime() === today.getTime()
     const isSelected = selectedDate === dateStr
@@ -334,7 +337,7 @@ export default function ReservePage() {
       <div
         key={dateStr}
         onClick={() => {
-          if (expeditionBlock) return
+          if (isCharterDate) return
           if (isSelected) {
             setSelectedDate(null)
             setSelectedBins([])
@@ -345,7 +348,7 @@ export default function ReservePage() {
         style={{
           borderRadius: '10px',
           minHeight: '56px',
-          cursor: expeditionBlock || isPast || (!hasAvailable && bins.length > 0) ? 'default' : bins.length === 0 ? 'default' : 'pointer',
+          cursor: isCharterDate || isPast || (!hasAvailable && bins.length > 0) ? 'default' : bins.length === 0 ? 'default' : 'pointer',
           opacity: isPast ? 0.4 : 1,
           border: isSelected ? '3px solid var(--ocean)' : isToday ? '3px solid var(--gold)' : '3px solid transparent',
           padding: '6px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
@@ -363,10 +366,10 @@ export default function ReservePage() {
           </div>
         )}
 
-        {expeditionBlock && (
+        {isCharterDate && (
           <div style={{ fontSize: '10px', color: 'var(--fg-3)', fontWeight: 700,
-            width: '100%', textAlign: 'center', lineHeight: 1.2 }}>
-            遠征
+            width: '100%', textAlign: 'center' }}>
+            貸切
           </div>
         )}
 
@@ -397,17 +400,12 @@ export default function ReservePage() {
   // 選択便の残席上限
   const activeBinInfo = selectedBins.find(b => b.setting.id === form.bin_setting_id)
   const maxCount = activeBinInfo?.actualRemaining ?? 1
-  const expeditionDates = blockedDates
-    .filter(b => b.type === 'expedition')
-    .flatMap(b => {
-      const dates: string[] = []
-      const start = new Date(b.date_from + 'T00:00:00')
-      const end = new Date(b.date_to + 'T00:00:00')
-      for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        dates.push(toDateStr(d.getFullYear(), d.getMonth(), d.getDate()))
-      }
-      return dates
-    })
+  const selectedIsCharterDate = selectedDate
+    ? bookings.some(b => {
+        if (!b.is_charter || !b.date_to) return false
+        return b.date <= selectedDate && selectedDate <= b.date_to
+      })
+    : false
 
   if (loading) return (
     <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -559,9 +557,9 @@ export default function ReservePage() {
                 </p>
               )}
 
-              {selectedDate && expeditionDates.includes(selectedDate) && (
+              {selectedIsCharterDate && (
                 <div style={{ background: 'var(--status-closed-bg)', border: '2px solid var(--border)', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', fontSize: '16px', fontWeight: 700, color: 'var(--fg-2)', textAlign: 'center' }}>
-                  ⚓ 遠征便のため予約不可です
+                  ⛵ チャーター予約のため予約不可です
                 </div>
               )}
 

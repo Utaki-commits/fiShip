@@ -12,6 +12,7 @@ type BinSetting = {
   end_month: number
   days_of_week: number[]
   departure_time: string
+  end_time: string
   fish_types: string[]
   max_capacity: number
   price: string
@@ -24,7 +25,7 @@ type BlockedDate = {
   date_from: string
   date_to: string
   bin_type: string | null
-  type: 'maintenance' | 'weather' | 'trouble' | 'expedition' | 'other'
+  type: 'maintenance' | 'weather' | 'trouble' | 'other'
   reason: string
   created_at: string
 }
@@ -36,6 +37,7 @@ type FormState = {
   end_month: number
   days_of_week: number[]
   departure_time: string
+  end_time: string
   fish_input: string
   fish_types: string[]
   max_capacity: string
@@ -49,7 +51,6 @@ const BLOCK_TYPES = [
   { key: 'maintenance', label: '🔧 メンテナンス' },
   { key: 'weather', label: '⛅ 天候・波による中止' },
   { key: 'trouble', label: '🚢 船のトラブル' },
-  { key: 'expedition', label: '⚓ 遠征便' },
   { key: 'other', label: '📅 その他' },
 ] as const
 
@@ -60,6 +61,7 @@ const defaultForm = (): FormState => ({
   end_month: 11,
   days_of_week: [0,1,2,3,4,5,6],
   departure_time: '06:00',
+  end_time: '',
   fish_input: '',
   fish_types: [],
   max_capacity: '',
@@ -83,7 +85,7 @@ export default function SchedulePage() {
   const [blockDateFrom, setBlockDateFrom] = useState('')
   const [blockDateTo, setBlockDateTo] = useState('')
   const [blockBinType, setBlockBinType] = useState<string>('')
-  const [blockType, setBlockType] = useState<'maintenance'|'weather'|'trouble'|'expedition'|'other'>('maintenance')
+  const [blockType, setBlockType] = useState<'maintenance'|'weather'|'trouble'|'other'>('maintenance')
   const [blockReason, setBlockReason] = useState('')
   const [blockSaving, setBlockSaving] = useState(false)
   const [blockDeleting, setBlockDeleting] = useState<string | null>(null)
@@ -130,6 +132,7 @@ export default function SchedulePage() {
       end_month: s.end_month,
       days_of_week: [...s.days_of_week],
       departure_time: s.departure_time,
+      end_time: s.end_time || '',
       fish_input: '',
       fish_types: [...s.fish_types],
       max_capacity: String(s.max_capacity),
@@ -180,6 +183,7 @@ export default function SchedulePage() {
         end_month: form.end_month,
         days_of_week: form.days_of_week,
         departure_time: form.departure_time,
+        end_time: form.end_time,
         fish_types: form.fish_types,
         max_capacity: cap,
         price: form.price,
@@ -420,6 +424,9 @@ export default function SchedulePage() {
                       <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>
                         {s.bin_type === 'day' ? '☀️' : '🌙'} {s.name}
                       </div>
+                      <div style={{ fontSize: '13px', color: 'var(--fg-3)', marginTop: '2px', fontWeight: 700 }}>
+                        {s.departure_time} 出発{s.end_time ? ` 〜 ${s.end_time} 終了予定` : ''}
+                      </div>
                     </div>
                     <span style={{ fontSize: '14px', fontWeight: 700, padding: '6px 12px', borderRadius: '99px', background: (s.enabled ?? true) ? 'var(--status-ok-bg)' : 'var(--status-closed-bg)', color: (s.enabled ?? true) ? 'var(--status-ok-fg)' : 'var(--fg-3)' }}>
                       {(s.enabled ?? true) ? '受付中' : '受付中止'}
@@ -576,6 +583,18 @@ export default function SchedulePage() {
             </div>
 
             <div style={cardStyle}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>
+                終了予定時刻 <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（任意）</span>
+              </div>
+              <input
+                type="time"
+                value={form.end_time}
+                onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))}
+                style={{ ...inputStyle, fontWeight: 700 }}
+              />
+            </div>
+
+            <div style={cardStyle}>
               <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>定員（最大人数）</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input type="number" value={form.max_capacity} onChange={e => setForm(f => ({ ...f, max_capacity: e.target.value }))} min={1} max={30} placeholder="例：8" style={{ ...inputStyle, flex: 1, fontSize: '24px', fontWeight: 700, textAlign: 'center' }} />
@@ -676,7 +695,7 @@ function PlanCard({
           </span>
         </div>
         <span style={{ fontSize: '14px', fontWeight: 700, color: setting.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
-          {setting.departure_time} 出発
+          {setting.departure_time} 出発{setting.end_time ? ` 〜 ${setting.end_time} 終了予定` : ''}
         </span>
       </div>
       <div style={{ padding: '12px 14px' }}>

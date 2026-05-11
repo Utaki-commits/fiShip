@@ -10,25 +10,27 @@ export async function POST(request: Request) {
     const { message, date, binType, count } = await request.json()
 
     const today = new Date().toLocaleDateString('ja-JP', {
-      year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
+      year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
     })
 
     const prompt = `以下のメッセージから予約情報を抽出してください。
 今日は${today}です。
 
 メッセージ：「${message}」
-${date ? `日付ヒント：${date}` : ''}
-${binType ? `便ヒント：${binType === 'day' ? '昼便' : '夜便'}` : ''}
+${date ? `開始日ヒント：${date}` : ''}
+${binType ? `便ヒント：${binType === 'day' ? '昼便' : binType === 'night' ? '夜便' : '昼夜便'}` : ''}
 ${count > 0 ? `人数ヒント：${count}名` : ''}
 
 以下のJSON形式のみで返してください：
 {
   "date": "YYYY-MM-DD形式 or null",
-  "bin_type": "day or night or null",
+  "date_to": "複数日チャーターの場合の終了日YYYY-MM-DD or null",
+  "bin_type": "day or night or relay or null",
   "name": "氏名 or null",
   "tel": "電話番号（数字のみ） or null",
   "count": 数字 or null,
-  "note": "その他メモ or null"
+  "note": "その他メモ or null",
+  "is_charter": "チャーター・貸切の文言があればtrue、なければfalse"
 }`
 
     const response = await client.messages.create({
@@ -43,12 +45,11 @@ ${count > 0 ? `人数ヒント：${count}名` : ''}
 
     const parsed = JSON.parse(text)
     return NextResponse.json(parsed)
-
   } catch (error) {
     console.error('analyze-booking error:', error)
     return NextResponse.json(
       { error: String(error) },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
