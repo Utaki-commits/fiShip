@@ -148,8 +148,8 @@ export default function NewBookingPage() {
         )}
 
         {!parsed && (
-          <>
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px' }}>
               <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>
                 メッセージ・メモ
               </div>
@@ -161,40 +161,41 @@ export default function NewBookingPage() {
               />
             </div>
 
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>
-                日付 <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（わかる場合）</span>
-              </div>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)}
-                style={{ width: '100%', padding: '14px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)', boxSizing: 'border-box' as const }} />
-            </div>
+            <details style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px' }}>
+              <summary style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-3)', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', userSelect: 'none' }}>
+                <span>補足情報を入力する（任意）</span>
+                <span>▼</span>
+              </summary>
 
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>
-                便 <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400 }}>（わかる場合）</span>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setBinType(v => v === 'day' ? '' : 'day')}
-                  style={{ flex: 1, padding: '16px', fontSize: '18px', fontWeight: 700, fontFamily: 'inherit', background: binType === 'day' ? 'var(--status-day-bg)' : 'var(--surface)', color: binType === 'day' ? 'var(--ocean)' : 'var(--fg-3)', border: binType === 'day' ? '3px solid var(--ocean-light)' : '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer' }}>
-                  ☀️ 昼便
-                </button>
-                <button onClick={() => setBinType(v => v === 'night' ? '' : 'night')}
-                  style={{ flex: 1, padding: '16px', fontSize: '18px', fontWeight: 700, fontFamily: 'inherit', background: binType === 'night' ? 'var(--status-night-bg)' : 'var(--surface)', color: binType === 'night' ? 'var(--status-night-fg)' : 'var(--fg-3)', border: binType === 'night' ? '3px solid var(--status-night-fg)' : '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer' }}>
-                  🌙 夜便
-                </button>
-              </div>
-            </div>
+              <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                  style={{ width: '100%', padding: '14px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)', boxSizing: 'border-box' as const }} />
 
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '20px' }}>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '10px' }}>人数</div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px' }}>
-                <button onClick={() => setCount(v => Math.max(0, v - 1))}
-                  style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '24px', fontWeight: 700, color: 'var(--fg-2)' }}>－</button>
-                <span style={{ fontSize: '32px', fontWeight: 700, color: count > 0 ? 'var(--ocean)' : 'var(--fg-3)', minWidth: '48px', textAlign: 'center' }}>{count > 0 ? count : '?'}</span>
-                <button onClick={() => setCount(v => v + 1)}
-                  style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '24px', fontWeight: 700, color: 'var(--fg-2)' }}>＋</button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => setBinType(v => v === 'day' ? '' : 'day')}
+                    style={{ flex: 1, padding: '14px', fontSize: '18px', fontWeight: 700, fontFamily: 'inherit', background: binType === 'day' ? 'var(--status-day-bg)' : 'var(--surface)', color: binType === 'day' ? 'var(--ocean)' : 'var(--fg-3)', border: binType === 'day' ? '3px solid var(--ocean-light)' : '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer' }}>
+                    ☀️ 昼便
+                  </button>
+                  <button onClick={() => setBinType(v => v === 'night' ? '' : 'night')}
+                    style={{ flex: 1, padding: '14px', fontSize: '18px', fontWeight: 700, fontFamily: 'inherit', background: binType === 'night' ? 'var(--status-night-bg)' : 'var(--surface)', color: binType === 'night' ? 'var(--status-night-fg)' : 'var(--fg-3)', border: binType === 'night' ? '3px solid var(--status-night-fg)' : '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer' }}>
+                    🌙 夜便
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', padding: '8px 0' }}>
+                  <button onClick={() => setCount(v => Math.max(0, v - 1))}
+                    style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '24px', fontWeight: 700, color: 'var(--fg-2)' }}>－</button>
+                  <div style={{ textAlign: 'center', minWidth: '80px' }}>
+                    <span style={{ fontSize: '32px', fontWeight: 700, color: count > 0 ? 'var(--ocean)' : 'var(--fg-3)' }}>
+                      {count > 0 ? count : '?'}
+                    </span>
+                    <span style={{ fontSize: '18px', color: 'var(--fg-3)', marginLeft: '4px' }}>名</span>
+                  </div>
+                  <button onClick={() => setCount(v => v + 1)}
+                    style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--border)', cursor: 'pointer', fontSize: '24px', fontWeight: 700, color: 'var(--fg-2)' }}>＋</button>
+                </div>
               </div>
-            </div>
+            </details>
 
             <button
               onClick={handleAnalyze}
@@ -203,7 +204,7 @@ export default function NewBookingPage() {
             >
               {analyzing ? 'AI解析中...' : '解析する'}
             </button>
-          </>
+          </div>
         )}
 
         {parsed && (
