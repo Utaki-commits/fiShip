@@ -233,78 +233,97 @@ export default function DashboardPage() {
   )
 
   const BookingCard = ({ b }: { b: Booking }) => (
-    <div key={b.id} style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-        <span style={{
-          fontSize: '14px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px',
-          background: b.bin_type === 'day' ? 'var(--status-day-bg)' : b.bin_type === 'relay' ? 'var(--ocean-pale)' : 'var(--status-night-bg)',
-          color: b.bin_type === 'day' ? 'var(--ocean)' : b.bin_type === 'relay' ? 'var(--ocean)' : 'var(--status-night-fg)',
-        }}>
+    <div key={b.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: b.status === 'confirmed' && !b.contacted ? '4px solid var(--status-pending-dot)' : '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '10px', boxShadow: 'var(--shadow-card)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+        <span style={{ fontSize: '13px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px', background: b.bin_type === 'day' ? 'var(--status-day-bg)' : b.bin_type === 'relay' ? 'var(--ocean-pale)' : 'var(--status-night-bg)', color: b.bin_type === 'day' ? 'var(--status-day-fg)' : b.bin_type === 'relay' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
           {b.bin_type === 'day' ? '昼便' : b.bin_type === 'relay' ? '昼夜便' : '夜便'}
         </span>
-        {getChannelBadge(b.channel)}
-        <span style={{
-          fontSize: '13px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', marginLeft: 'auto',
-          background: b.status === 'confirmed' ? 'var(--status-ok-bg)' : b.status === 'cancelled' ? 'var(--status-closed-bg)' : 'var(--status-pending-bg)',
-          color: b.status === 'confirmed' ? 'var(--status-ok-fg)' : b.status === 'cancelled' ? 'var(--fg-3)' : 'var(--status-pending-fg)',
-        }}>
+        <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 600 }}>{b.count}名</span>
+        <span style={{ fontSize: '12px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', marginLeft: 'auto', background: b.status === 'confirmed' ? 'var(--status-ok-bg)' : b.status === 'cancelled' ? 'var(--status-closed-bg)' : 'var(--status-pending-bg)', color: b.status === 'confirmed' ? 'var(--status-ok-fg)' : b.status === 'cancelled' ? 'var(--status-closed-fg)' : 'var(--status-pending-fg)' }}>
           {b.status === 'confirmed' ? '承認済み' : b.status === 'cancelled' ? 'キャンセル' : '承認待ち'}
         </span>
       </div>
 
-      <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>
-        {b.name}　{b.count}名
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
+        <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</span>
+        <span style={{ fontSize: '16px', color: 'var(--fg-2)', marginLeft: '6px' }}>様</span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          {b.status === 'confirmed' && b.tel && (
+      {b.status === 'confirmed' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: b.contacted ? 'var(--status-ok-fg)' : 'var(--status-pending-dot)', flexShrink: 0 }} />
+          <span style={{ fontSize: '14px', fontWeight: 700, color: b.contacted ? 'var(--status-ok-fg)' : 'var(--status-pending-dot)' }}>
+            {b.contacted ? '連絡済み' : '未連絡'}
+          </span>
+          {!b.contacted && <span style={{ fontSize: '14px', color: 'var(--fg-2)' }}>ご連絡をお願いいたします</span>}
+        </div>
+      )}
+
+      {b.status === 'pending' && (
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <button onClick={() => updateStatus(b.id, 'confirmed')}
+            style={{ flex: 1, padding: '12px', fontSize: '16px', fontWeight: 700, background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 'unset' }}>
+            承認する
+          </button>
+          <button onClick={() => updateStatus(b.id, 'rejected')}
+            style={{ flex: 1, padding: '12px', fontSize: '16px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 'unset' }}>
+            お断り
+          </button>
+        </div>
+      )}
+
+      {b.status === 'confirmed' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {b.tel ? (
             <button onClick={() => handleCall(b)}
-              style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-day-bg)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', borderRadius: '8px', cursor: 'pointer' }}>
-              TEL
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', fontSize: '17px', fontWeight: 700, background: 'var(--ocean)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 'unset' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+              </svg>
+              TELする
             </button>
+          ) : (
+            <span style={{ fontSize: '14px', color: 'var(--fg-3)' }}>電話番号なし</span>
           )}
-          {b.status === 'confirmed' && (
-            <button onClick={() => toggleContacted(b)}
-              style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: b.contacted ? 'var(--status-ok-bg)' : 'var(--surface)', color: b.contacted ? 'var(--status-ok-fg)' : 'var(--fg-3)', border: `2px solid ${b.contacted ? 'var(--status-ok-bd)' : 'var(--border)'}`, borderRadius: '8px', cursor: 'pointer' }}>
-              {b.contacted ? '連絡済' : '未連絡'}
-            </button>
-          )}
-          {b.status === 'pending' && (
-            <>
-              <button onClick={() => updateStatus(b.id, 'confirmed')}
-                style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '8px', cursor: 'pointer' }}>
-                承認
-              </button>
-              <button onClick={() => updateStatus(b.id, 'rejected')}
-                style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
-                お断り
-              </button>
-            </>
-          )}
-        </div>
 
-        <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
-          {b.status !== 'cancelled' && (
+          <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
             <button onClick={() => router.push('/dashboard/bookings')}
-              style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', borderRadius: '8px', cursor: 'pointer' }}>
-              編集
+              style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--fg-2)', minHeight: 'unset' }} title="編集">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
             </button>
-          )}
-          {b.status === 'confirmed' && (
             <button onClick={() => handleCancel(b)}
-              style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
-              取消
+              style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--status-full-fg)', minHeight: 'unset' }} title="取消">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                <path d="M10 11v6M14 11v6"/>
+                <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+              </svg>
             </button>
-          )}
-          {b.status === 'cancelled' && (
             <button onClick={() => setDeleteTarget(b)}
-              style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
-              削除
+              style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--fg-3)', minHeight: 'unset' }} title="その他">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+              </svg>
             </button>
-          )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {b.status === 'cancelled' && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button onClick={() => setDeleteTarget(b)}
+            style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--status-full-fg)', minHeight: 'unset' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   )
 

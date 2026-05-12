@@ -11,33 +11,33 @@
 }
 
 :root {
-  --ocean: #1E5F8E;
-  --ocean-deep: #0A3D62;
-  --ocean-light: #3FA0D9;
-  --ocean-pale: #E8F4FD;
+  --ocean: #2563EB;
+  --ocean-deep: #1E40AF;
+  --ocean-light: #3B82F6;
+  --ocean-pale: #EFF6FF;
   --gold: #D4AC0D;
 
-  --bg: #F8F9FA;
+  --bg: #F8FAFC;
   --surface: #FFFFFF;
   --border: #E5E7EB;
-  --fg-1: #111827;
+  --fg-1: #1F2937;
   --fg-2: #6B7280;
   --fg-3: #9CA3AF;
 
-  --status-day-bg: #E8F4FD;
-  --status-day-fg: #0A3D62;
-  --status-night-bg: #DDD6FE;
-  --status-night-fg: #4338CA;
+  --status-day-bg: #EFF6FF;
+  --status-day-fg: #1E40AF;
+  --status-night-bg: #F3F0FF;
+  --status-night-fg: #6366F1;
   --status-full-bg: #FEE2E2;
   --status-full-fg: #B91C1C;
   --status-full-bd: #FCA5A5;
-  --status-pending-bg: #FEF9C3;
-  --status-pending-fg: #854D0E;
-  --status-pending-dot: #D97706;
+  --status-pending-bg: #FFF7ED;
+  --status-pending-fg: #C2410C;
+  --status-pending-dot: #FF8A00;
   --status-closed-bg: #F1F5F9;
   --status-closed-fg: #6B7280;
-  --status-ok-bg: #D4EDDA;
-  --status-ok-fg: #1B6B3A;
+  --status-ok-bg: #DCFCE7;
+  --status-ok-fg: #1FB36B;
   --status-ok-bd: #86EFAC;
 
   --dow-sunday: #B91C1C;
@@ -81,6 +81,7 @@
   --r-pill: 99px;
 
   --shadow-knob: 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
   --tap-min: 56px;
   --tap-comfort: 64px;
 }
@@ -88,28 +89,31 @@
 /* ダークモード */
 [data-colormode="dark"] {
   --bg: #0F172A;
-  --surface: #1E293B;
-  --border: #334155;
-  --fg-1: #F1F5F9;
-  --fg-2: #94A3B8;
+  --surface: #111827;
+  --border: #1F2937;
+  --fg-1: #E2E8F0;
+  --fg-2: #94A3BB;
   --fg-3: #64748B;
-  --ocean: #2E86C1;
-  --ocean-pale: #1E3A5F;
+  --ocean: #3B82F6;
+  --ocean-deep: #1E40AF;
   --ocean-light: #60A5FA;
+  --ocean-pale: #0F172A;
   --gold: #F59E0B;
-  --status-day-bg: #1E3A5F;
-  --status-night-bg: #2D1B69;
-  --status-night-fg: #A78BFA;
-  --status-ok-bg: #14532D;
-  --status-ok-fg: #86EFAC;
+  --status-day-bg: #0F1F3D;
+  --status-day-fg: #60A5FA;
+  --status-night-bg: #1E1040;
+  --status-night-fg: #7C5CFF;
+  --status-ok-bg: #052E16;
+  --status-ok-fg: #22C55E;
   --status-ok-bd: #166534;
-  --status-full-bg: #450A0A;
+  --status-full-bg: #2D0A0A;
   --status-full-fg: #FCA5A5;
   --status-full-bd: #7F1D1D;
-  --status-pending-bg: #431407;
-  --status-pending-fg: #FED7AA;
-  --status-pending-dot: #F97316;
+  --status-pending-bg: #1C0A00;
+  --status-pending-fg: #FF8A00;
+  --status-pending-dot: #FF8A00;
   --status-closed-bg: #1E293B;
+  --status-closed-fg: #64748B;
 }
 
 /* 文字サイズ */
@@ -147,9 +151,9 @@ select {
 }
 
 button {
-  min-height: var(--tap-min) !important;
-  font-size: var(--t-xl) !important;
-  font-weight: var(--fw-semibold) !important;
+  min-height: var(--tap-min);
+  font-size: var(--t-xl);
+  font-weight: var(--fw-semibold);
 }
 
 input,
