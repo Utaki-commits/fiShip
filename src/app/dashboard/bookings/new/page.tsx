@@ -193,15 +193,24 @@ export default function NewBookingPage() {
 
   const handleRegister = async () => {
     if (!parsed || !vesselId) return
-    if (parsed.date) {
-      const bookingDate = new Date(parsed.date + 'T00:00:00')
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      if (bookingDate < today) {
-        setError('過去の日付には予約を登録できません。日付を確認してください。')
-        return
-      }
+
+    if (!parsed.date) {
+      setError('日付が不明です。補足情報から日付を入力してください。')
+      return
     }
+    if (!parsed.name) {
+      setError('氏名が不明です。入力し直してお名前を含めてください。')
+      return
+    }
+
+    const bookingDate = new Date(parsed.date + 'T00:00:00')
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (bookingDate < today) {
+      setError('過去の日付には予約を登録できません。')
+      return
+    }
+
     setRegistering(true)
     setError('')
     try {
@@ -223,10 +232,10 @@ export default function NewBookingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vessel_id: vesselId,
-          date: parsed.date || new Date().toISOString().split('T')[0],
+          date: parsed.date,
           date_to: parsed.date_to || dateTo || null,
           bin_type: parsed.bin_type || 'day',
-          name: parsed.name || '名前不明',
+          name: parsed.name,
           tel: parsed.tel || '',
           count: parsed.count || 1,
           message: parsed.note || '',
@@ -449,10 +458,22 @@ export default function NewBookingPage() {
 
             <button
               onClick={handleRegister}
-              disabled={registering}
-              style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700, background: registering ? 'var(--border)' : 'var(--status-ok-bg)', color: registering ? 'var(--fg-3)' : 'var(--status-ok-fg)', border: `2px solid ${registering ? 'var(--border)' : 'var(--status-ok-bd)'}`, borderRadius: '14px', cursor: registering ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+              disabled={registering || !parsed.date || !parsed.name}
+              style={{
+                width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700,
+                background: registering || !parsed.date || !parsed.name
+                  ? 'var(--border)'
+                  : 'var(--status-ok-bg)',
+                color: registering || !parsed.date || !parsed.name
+                  ? 'var(--fg-3)'
+                  : 'var(--status-ok-fg)',
+                border: `2px solid ${registering || !parsed.date || !parsed.name ? 'var(--border)' : 'var(--status-ok-bd)'}`,
+                borderRadius: '14px',
+                cursor: registering || !parsed.date || !parsed.name ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+              }}
             >
-              {registering ? '登録中...' : 'この内容で予約を登録する'}
+              {registering ? '登録中...' : !parsed.date || !parsed.name ? '日付・氏名を入力してください' : 'この内容で予約を登録する'}
             </button>
 
             <button
