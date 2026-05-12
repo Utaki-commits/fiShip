@@ -343,7 +343,7 @@ export default function DashboardBookingsPage() {
   }
 
   const getBinLabel = (binType: BinType) =>
-    binType === 'day' ? '☀️ 昼便' : binType === 'relay' ? '🌅 昼夜便' : '🌙 夜便'
+    binType === 'day' ? '昼便' : binType === 'relay' ? '昼夜便' : '夜便'
 
   const getBinName = (binType: BinType) =>
     binType === 'day' ? '昼便' : binType === 'relay' ? '昼夜便' : '夜便'
@@ -368,7 +368,7 @@ export default function DashboardBookingsPage() {
       line: { label: '💬 LINE', bg: '#E8F8EE', color: '#06C755' },
       line_official: { label: '💬 LINE公式', bg: '#E8F8EE', color: '#06C755' },
       instagram: { label: '📸 Instagram', bg: '#FDE8F4', color: '#C13584' },
-      phone: { label: '📞 電話', bg: 'var(--status-closed-bg)', color: 'var(--fg-2)' },
+      phone: { label: '電話', bg: 'var(--status-closed-bg)', color: 'var(--fg-2)' },
       other: { label: 'その他', bg: 'var(--status-closed-bg)', color: 'var(--fg-2)' },
     }
     const badge = map[channel] || map.other
@@ -523,7 +523,7 @@ export default function DashboardBookingsPage() {
           background: b.bin_type === 'day' ? 'var(--status-day-bg)' : b.bin_type === 'relay' ? 'var(--ocean-pale)' : 'var(--status-night-bg)',
           color: b.bin_type === 'day' ? 'var(--ocean)' : b.bin_type === 'relay' ? 'var(--ocean)' : 'var(--status-night-fg)',
         }}>
-          {b.bin_type === 'day' ? '☀️ 昼便' : b.bin_type === 'relay' ? '🌅 昼夜便' : '🌙 夜便'}
+          {b.bin_type === 'day' ? '昼便' : b.bin_type === 'relay' ? '昼夜便' : '夜便'}
         </span>
         {getChannelBadge(b.channel)}
         <span style={{
@@ -545,14 +545,14 @@ export default function DashboardBookingsPage() {
             <button onClick={() => handleCall(b)}
               disabled={actionLoading === b.id}
               style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--status-day-bg)', border: '2px solid var(--ocean-light)', color: 'var(--ocean)', fontSize: '16px', cursor: actionLoading === b.id ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              📞
+              TEL
             </button>
           )}
           {b.status === 'confirmed' && (
             <button onClick={() => updateBooking(b.id, { contacted: !b.contacted })}
               disabled={actionLoading === b.id}
               style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: b.contacted ? 'var(--status-ok-bg)' : 'var(--surface)', color: b.contacted ? 'var(--status-ok-fg)' : 'var(--fg-3)', border: `2px solid ${b.contacted ? 'var(--status-ok-bd)' : 'var(--border)'}`, borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer' }}>
-              {b.contacted ? '✅ 連絡済' : '未連絡'}
+              {b.contacted ? '連絡済' : '未連絡'}
             </button>
           )}
           {b.status === 'pending' && (
@@ -651,7 +651,7 @@ export default function DashboardBookingsPage() {
               <div key={c.id} style={{ background: 'var(--surface)', border: '2px solid var(--status-pending-dot)', borderRadius: '14px', padding: '16px', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                   <span style={{ fontSize: '14px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px', background: 'var(--status-pending-bg)', color: 'var(--status-pending-fg)' }}>
-                    {c.channel === 'line' ? '💬 LINE' : c.channel === 'line_official' ? '💬 LINE公式' : c.channel === 'instagram' ? '📸 Instagram' : c.channel === 'phone' ? '📞 電話' : 'その他'}
+                  {c.channel === 'line' ? 'LINE' : c.channel === 'line_official' ? 'LINE公式' : c.channel === 'instagram' ? 'Instagram' : c.channel === 'phone' ? '電話' : 'その他'}
                   </span>
                   <span style={{ fontSize: '14px', color: 'var(--fg-3)' }}>
                     {new Date(c.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -666,7 +666,7 @@ export default function DashboardBookingsPage() {
 
                 <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>
                   {c.parsed_date ? `${new Date(c.parsed_date + 'T00:00:00').getMonth()+1}月${new Date(c.parsed_date + 'T00:00:00').getDate()}日` : '日付不明'}
-                  　{c.parsed_bin_type === 'day' ? '☀️ 昼便' : c.parsed_bin_type === 'night' ? '🌙 夜便' : c.parsed_bin_type === 'relay' ? '🌅 昼夜便' : '便不明'}
+                  　{c.parsed_bin_type === 'day' ? '昼便' : c.parsed_bin_type === 'night' ? '夜便' : c.parsed_bin_type === 'relay' ? '昼夜便' : '便不明'}
                   　{c.parsed_count || '?'}名
                 </div>
                 {c.parsed_name && <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginBottom: '4px' }}>{c.parsed_name}</div>}
@@ -785,7 +785,7 @@ export default function DashboardBookingsPage() {
                       {dayBks.length > 0 && (
                         <div style={{ marginBottom: nightBks.length > 0 || relayBks.length > 0 ? '12px' : '0' }}>
                           <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '8px' }}>
-                            ☀️ 昼便　{dayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('day')}名
+                            昼便　{dayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('day')}名
                           </div>
                           {dayBks.map(b => (
                             <WeekBookingRow
@@ -802,7 +802,7 @@ export default function DashboardBookingsPage() {
                       {relayBks.length > 0 && (
                         <div style={{ marginBottom: nightBks.length > 0 ? '12px' : '0' }}>
                           <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--gold)', marginBottom: '8px' }}>
-                            🌅 昼夜便　{relayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('relay')}名
+                            昼夜便　{relayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('relay')}名
                           </div>
                           {relayBks.map(b => (
                             <WeekBookingRow
@@ -819,7 +819,7 @@ export default function DashboardBookingsPage() {
                       {nightBks.length > 0 && (
                         <div>
                           <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--status-night-fg)', marginBottom: '8px' }}>
-                            🌙 夜便　{nightBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('night')}名
+                            夜便　{nightBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('night')}名
                           </div>
                           {nightBks.map(b => (
                             <WeekBookingRow
@@ -885,9 +885,9 @@ export default function DashboardBookingsPage() {
               <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>便</label>
               <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                 {([
-                  { key: 'day', label: '☀️ 昼便' },
-                  { key: 'night', label: '🌙 夜便' },
-                  { key: 'relay', label: '🌅 昼夜便' },
+                  { key: 'day', label: '昼便' },
+                  { key: 'night', label: '夜便' },
+                  { key: 'relay', label: '昼夜便' },
                 ] as const).map(({ key, label }) => (
                   <button key={key}
                     onClick={() => setEditForm(f => ({ ...f, bin_type: key }))}
