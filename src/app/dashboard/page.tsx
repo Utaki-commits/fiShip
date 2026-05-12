@@ -17,7 +17,7 @@ type Vessel = {
 type Booking = {
   id: string
   date: string
-  bin_type: 'day' | 'night'
+  bin_type: 'day' | 'night' | 'relay'
   name: string
   tel: string
   count: number
@@ -31,7 +31,7 @@ type Booking = {
 type BinSetting = {
   id: string
   vessel_id: string
-  bin_type: 'day' | 'night'
+  bin_type: 'day' | 'night' | 'relay'
   max_capacity: number
   days_of_week: number[]
   start_month: number
@@ -233,53 +233,75 @@ export default function DashboardPage() {
   )
 
   const BookingCard = ({ b }: { b: Booking }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 0', borderBottom: '1px solid var(--border)' }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '15px', fontWeight: 700, color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
-            {b.bin_type === 'day' ? '☀️ 昼便' : '🌙 夜便'}
-          </span>
-          {getChannelBadge(b.channel)}
-        </div>
-        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
-        <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginTop: '2px' }}>{b.count}名　{b.status === 'confirmed' ? '承認済み' : b.status === 'cancelled' ? 'キャンセル済み' : '承認待ち'}</div>
+    <div key={b.id} style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+        <span style={{
+          fontSize: '14px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px',
+          background: b.bin_type === 'day' ? 'var(--status-day-bg)' : b.bin_type === 'relay' ? 'var(--ocean-pale)' : 'var(--status-night-bg)',
+          color: b.bin_type === 'day' ? 'var(--ocean)' : b.bin_type === 'relay' ? 'var(--ocean)' : 'var(--status-night-fg)',
+        }}>
+          {b.bin_type === 'day' ? '?? ??' : b.bin_type === 'relay' ? '?? ???' : '?? ??'}
+        </span>
+        {getChannelBadge(b.channel)}
+        <span style={{
+          fontSize: '13px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', marginLeft: 'auto',
+          background: b.status === 'confirmed' ? 'var(--status-ok-bg)' : b.status === 'cancelled' ? 'var(--status-closed-bg)' : 'var(--status-pending-bg)',
+          color: b.status === 'confirmed' ? 'var(--status-ok-fg)' : b.status === 'cancelled' ? 'var(--fg-3)' : 'var(--status-pending-fg)',
+        }}>
+          {b.status === 'confirmed' ? '????' : b.status === 'cancelled' ? '?????' : '????'}
+        </span>
       </div>
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        {b.contacted ? (
-          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--status-ok-fg)', background: 'var(--status-ok-bg)', padding: '6px 12px', borderRadius: '99px' }}>✅ 連絡済み</span>
-        ) : (
-          <button
-            onClick={() => toggleContacted(b)}
-            style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', background: 'var(--surface)', border: '2px solid var(--border)', padding: '6px 12px', borderRadius: '99px', cursor: 'pointer', fontFamily: 'inherit' }}
-          >未連絡</button>
-        )}
-        {b.tel && (
-          <button
-            onClick={() => handleCall(b)}
-            style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'var(--status-day-bg)', border: '2px solid var(--ocean-light)', color: 'var(--ocean)', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >📞</button>
-        )}
-        {b.status === 'confirmed' && (
-          <>
-            <button
-              onClick={() => handleCancel(b)}
-              style={{ padding: '8px 12px', fontSize: '14px', fontWeight: 700, background: 'var(--status-pending-bg)', color: 'var(--status-pending-fg)', border: '2px solid var(--status-pending-dot)', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              キャンセル
+
+      <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>
+        {b.name}?{b.count}?
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {b.status === 'confirmed' && b.tel && (
+            <button onClick={() => handleCall(b)}
+              style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--status-day-bg)', border: '2px solid var(--ocean-light)', color: 'var(--ocean)', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              ??
             </button>
-            <button
-              onClick={() => setDeleteTarget(b)}
-              style={{ padding: '8px 12px', fontSize: '14px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              削除
+          )}
+          {b.status === 'confirmed' && (
+            <button onClick={() => toggleContacted(b)}
+              style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: b.contacted ? 'var(--status-ok-bg)' : 'var(--surface)', color: b.contacted ? 'var(--status-ok-fg)' : 'var(--fg-3)', border: `2px solid ${b.contacted ? 'var(--status-ok-bd)' : 'var(--border)'}`, borderRadius: '8px', cursor: 'pointer' }}>
+              {b.contacted ? '? ???' : '???'}
             </button>
-          </>
-        )}
-        {b.status === 'cancelled' && (
-          <span style={{ fontSize: '13px', fontWeight: 700, padding: '6px 12px', borderRadius: '99px', background: 'var(--status-closed-bg)', color: 'var(--fg-3)' }}>
-            キャンセル済み
-          </span>
-        )}
+          )}
+          {b.status === 'pending' && (
+            <>
+              <button onClick={() => updateStatus(b.id, 'confirmed')}
+                style={{ padding: '8px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '8px', cursor: 'pointer' }}>
+                ??
+              </button>
+              <button onClick={() => updateStatus(b.id, 'rejected')}
+                style={{ padding: '8px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
+                ???
+              </button>
+            </>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto', flexWrap: 'wrap' }}>
+          {b.status !== 'cancelled' && (
+            <button onClick={() => router.push('/dashboard/bookings')}
+              style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', borderRadius: '8px', cursor: 'pointer' }}>
+              ??
+            </button>
+          )}
+          <button onClick={() => b.status === 'confirmed' ? handleCancel(b) : setDeleteTarget(b)}
+            style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
+            {b.status === 'confirmed' ? '??' : '??'}
+          </button>
+          {b.status === 'confirmed' && (
+            <button onClick={() => setDeleteTarget(b)}
+              style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
+              ??
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -292,16 +314,25 @@ export default function DashboardPage() {
       </div>
     )
     const dayBks = dateBookings.filter(b => b.bin_type === 'day')
+    const relayBks = dateBookings.filter(b => b.bin_type === 'relay')
     const nightBks = dateBookings.filter(b => b.bin_type === 'night')
     return (
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px', marginBottom: '12px' }}>
         <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>{label}</div>
         {dayBks.length > 0 && (
-          <div style={{ marginBottom: '12px' }}>
+          <div style={{ marginBottom: relayBks.length > 0 || nightBks.length > 0 ? '12px' : '0' }}>
             <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '4px' }}>
               ☀️ 昼便　{dayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('day')}名
             </div>
             {dayBks.map(b => <BookingCard key={b.id} b={b} />)}
+          </div>
+        )}
+        {relayBks.length > 0 && (
+          <div style={{ marginBottom: nightBks.length > 0 ? '12px' : '0' }}>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '4px' }}>
+              🌅 昼夜便　{relayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('relay')}名
+            </div>
+            {relayBks.map(b => <BookingCard key={b.id} b={b} />)}
           </div>
         )}
         {nightBks.length > 0 && (

@@ -515,80 +515,90 @@ export default function DashboardBookingsPage() {
     bookings.some(b => b.date === toDateStr(d) && b.status !== 'rejected')
   )
 
+  const renderBookingCard = (b: Booking) => (
+    <div key={b.id} style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+        <span style={{
+          fontSize: '14px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px',
+          background: b.bin_type === 'day' ? 'var(--status-day-bg)' : b.bin_type === 'relay' ? 'var(--ocean-pale)' : 'var(--status-night-bg)',
+          color: b.bin_type === 'day' ? 'var(--ocean)' : b.bin_type === 'relay' ? 'var(--ocean)' : 'var(--status-night-fg)',
+        }}>
+          {b.bin_type === 'day' ? '☀️ 昼便' : b.bin_type === 'relay' ? '🌅 昼夜便' : '🌙 夜便'}
+        </span>
+        {getChannelBadge(b.channel)}
+        <span style={{
+          fontSize: '13px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', marginLeft: 'auto',
+          background: b.status === 'confirmed' ? 'var(--status-ok-bg)' : b.status === 'cancelled' ? 'var(--status-closed-bg)' : 'var(--status-pending-bg)',
+          color: b.status === 'confirmed' ? 'var(--status-ok-fg)' : b.status === 'cancelled' ? 'var(--fg-3)' : 'var(--status-pending-fg)',
+        }}>
+          {b.status === 'confirmed' ? '承認済み' : b.status === 'cancelled' ? 'キャンセル' : '承認待ち'}
+        </span>
+      </div>
+
+      <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>
+        {b.name}　{b.count}名
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {b.status === 'confirmed' && b.tel && (
+            <button onClick={() => handleCall(b)}
+              disabled={actionLoading === b.id}
+              style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--status-day-bg)', border: '2px solid var(--ocean-light)', color: 'var(--ocean)', fontSize: '16px', cursor: actionLoading === b.id ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              📞
+            </button>
+          )}
+          {b.status === 'confirmed' && (
+            <button onClick={() => updateBooking(b.id, { contacted: !b.contacted })}
+              disabled={actionLoading === b.id}
+              style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: b.contacted ? 'var(--status-ok-bg)' : 'var(--surface)', color: b.contacted ? 'var(--status-ok-fg)' : 'var(--fg-3)', border: `2px solid ${b.contacted ? 'var(--status-ok-bd)' : 'var(--border)'}`, borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer' }}>
+              {b.contacted ? '✅ 連絡済' : '未連絡'}
+            </button>
+          )}
+          {b.status === 'pending' && (
+            <>
+              <button onClick={() => updateStatus(b.id, 'confirmed')}
+                disabled={actionLoading === b.id}
+                style={{ padding: '8px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer' }}>
+                承認
+              </button>
+              <button onClick={() => updateStatus(b.id, 'rejected')}
+                disabled={actionLoading === b.id}
+                style={{ padding: '8px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer' }}>
+                お断り
+              </button>
+            </>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto', flexWrap: 'wrap' }}>
+          {b.status !== 'cancelled' && (
+            <button onClick={() => startEditBooking(b)}
+              style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', borderRadius: '8px', cursor: 'pointer' }}>
+              編集
+            </button>
+          )}
+          <button onClick={() => b.status === 'confirmed' ? handleCancel(b) : setDeleteTarget(b)}
+            style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
+            {b.status === 'confirmed' ? '取消' : '削除'}
+          </button>
+          {b.status === 'confirmed' && (
+            <button onClick={() => setDeleteTarget(b)}
+              style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
+              削除
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
   const WeekBookingRow = ({ b, callBg, callBorder, callColor }: {
     b: Booking
     callBg: string
     callBorder: string
     callColor: string
-  }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '15px', fontWeight: 700, color: getBinColor(b.bin_type) }}>
-            {getBinLabel(b.bin_type)}
-          </span>
-          {getChannelBadge(b.channel)}
-        </div>
-        <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
-        <div style={{ fontSize: '15px', color: 'var(--fg-2)', marginTop: '2px' }}>
-          {b.count}名　
-          <span style={{ color: b.status === 'confirmed' ? 'var(--status-ok-fg)' : b.status === 'cancelled' ? 'var(--fg-3)' : 'var(--status-pending-fg)' }}>
-            {b.status === 'confirmed' ? '承認済み' : b.status === 'cancelled' ? 'キャンセル済み' : '承認待ち'}
-          </span>
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '6px' }}>
-        <button
-          onClick={() => startEditBooking(b)}
-          style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, background: 'var(--surface)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
-        >
-          編集
-        </button>
-        {b.status === 'pending' && (
-          <>
-            <button onClick={() => updateStatus(b.id, 'confirmed')}
-              disabled={actionLoading === b.id}
-              style={{ padding: '8px 14px', fontSize: '15px', fontWeight: 700, background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
-              承認
-            </button>
-            <button onClick={() => updateStatus(b.id, 'rejected')}
-              disabled={actionLoading === b.id}
-              style={{ padding: '8px 14px', fontSize: '15px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
-              お断り
-            </button>
-          </>
-        )}
-        {b.tel && b.status === 'confirmed' && (
-          <button onClick={() => handleCall(b)}
-            disabled={actionLoading === b.id}
-            style={{ width: '44px', height: '44px', borderRadius: '10px', background: callBg, border: `2px solid ${callBorder}`, color: callColor, fontSize: '20px', cursor: actionLoading === b.id ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            📞
-          </button>
-        )}
-        {b.status === 'confirmed' && (
-          <>
-            <button
-              onClick={() => handleCancel(b)}
-              style={{ padding: '8px 12px', fontSize: '14px', fontWeight: 700, background: 'var(--status-pending-bg)', color: 'var(--status-pending-fg)', border: '2px solid var(--status-pending-dot)', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              キャンセル
-            </button>
-            <button
-              onClick={() => setDeleteTarget(b)}
-              style={{ padding: '8px 12px', fontSize: '14px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              削除
-            </button>
-          </>
-        )}
-        {b.status === 'cancelled' && (
-          <span style={{ fontSize: '13px', fontWeight: 700, padding: '6px 12px', borderRadius: '99px', background: 'var(--status-closed-bg)', color: 'var(--fg-3)' }}>
-            キャンセル済み
-          </span>
-        )}
-      </div>
-    </div>
-  )
+  }) => renderBookingCard(b)
 
   if (loading) return (
     <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -857,112 +867,7 @@ export default function DashboardBookingsPage() {
                 予約はありません
               </div>
             ) : (
-              selectedBookings.map(b => (
-                <div key={b.id} style={{ padding: '18px', borderBottom: '1px solid var(--status-closed-bg)' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '12px' }}>
-                    <span style={{
-                      fontSize: '14px', fontWeight: 700, padding: '8px 12px', borderRadius: '99px', flexShrink: 0,
-                      background: getBinBg(b.bin_type),
-                      color: getBinColor(b.bin_type),
-                    }}>
-                      {getBinName(b.bin_type)}
-                    </span>
-                    {getChannelBadge(b.channel)}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)', lineHeight: 1.25 }}>{b.name}</div>
-                      <div style={{ fontSize: '18px', color: 'var(--fg-2)', marginTop: '6px', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                        {b.count}名{b.fishing_style ? `　${b.fishing_style}` : ''}
-                        {b.message ? `\n${b.message}` : ''}
-                      </div>
-                    </div>
-                    <span style={{
-                      fontSize: '14px', fontWeight: 700, padding: '8px 12px', borderRadius: '99px', flexShrink: 0,
-                      background: b.status === 'confirmed' ? 'var(--status-ok-bg)' : b.status === 'cancelled' ? 'var(--status-closed-bg)' : 'var(--status-pending-bg)',
-                      color: b.status === 'confirmed' ? 'var(--status-ok-fg)' : b.status === 'cancelled' ? 'var(--fg-3)' : 'var(--status-pending-fg)',
-                    }}>
-                      {b.status === 'confirmed' ? '承認済み' : b.status === 'cancelled' ? 'キャンセル済み' : '承認待ち'}
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    <button
-                      onClick={() => startEditBooking(b)}
-                      style={{ flex: '1 1 100px', padding: '14px', fontSize: '18px', fontWeight: 700, minHeight: '56px', background: 'var(--surface)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
-                    >
-                      編集
-                    </button>
-                    {b.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => updateBooking(b.id, { status: 'confirmed' })}
-                          disabled={actionLoading === b.id}
-                          style={{
-                            flex: '1 1 120px', padding: '14px', fontSize: '20px', fontWeight: 700, minHeight: '56px',
-                            background: actionLoading === b.id ? 'var(--border)' : 'var(--status-ok-bg)',
-                            color: actionLoading === b.id ? 'var(--fg-3)' : 'var(--status-ok-fg)',
-                            border: '2px solid var(--status-ok-bd)', borderRadius: '10px',
-                            cursor: actionLoading === b.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                          }}
-                        >{actionLoading === b.id ? '処理中...' : '承認する'}</button>
-                        <button
-                          onClick={() => updateBooking(b.id, { status: 'rejected' })}
-                          disabled={actionLoading === b.id}
-                          style={{
-                            flex: '1 1 120px', padding: '14px', fontSize: '20px', fontWeight: 700, minHeight: '56px',
-                            background: actionLoading === b.id ? 'var(--border)' : 'var(--status-full-bg)',
-                            color: actionLoading === b.id ? 'var(--fg-3)' : 'var(--status-full-fg)',
-                            border: '2px solid var(--status-full-bd)', borderRadius: '10px',
-                            cursor: actionLoading === b.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                          }}
-                        >お断り</button>
-                      </>
-                    )}
-                    {b.tel && (
-                      <button
-                        onClick={() => handleCall(b)}
-                        disabled={actionLoading === b.id}
-                        style={{
-                          flex: '1 1 80px', padding: '14px', fontSize: '22px', fontWeight: 700, minHeight: '56px',
-                          background: 'var(--status-day-bg)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)',
-                          borderRadius: '10px', cursor: actionLoading === b.id ? 'wait' : 'pointer', fontFamily: 'inherit',
-                        }}
-                      >📞</button>
-                    )}
-                    {b.status === 'confirmed' && (
-                      <>
-                        <button
-                          onClick={() => handleCancel(b)}
-                          style={{ flex: '1 1 120px', padding: '14px', fontSize: '18px', fontWeight: 700, minHeight: '56px', background: 'var(--status-pending-bg)', color: 'var(--status-pending-fg)', border: '2px solid var(--status-pending-dot)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
-                        >
-                          キャンセル
-                        </button>
-                        <button
-                          onClick={() => setDeleteTarget(b)}
-                          style={{ flex: '1 1 100px', padding: '14px', fontSize: '18px', fontWeight: 700, minHeight: '56px', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
-                        >
-                          削除
-                        </button>
-                      </>
-                    )}
-                    {b.status === 'cancelled' && (
-                      <span style={{ flex: '1 1 120px', textAlign: 'center', fontSize: '15px', fontWeight: 700, padding: '14px', borderRadius: '10px', background: 'var(--status-closed-bg)', color: 'var(--fg-3)' }}>
-                        キャンセル済み
-                      </span>
-                    )}
-                    <button
-                      onClick={() => updateBooking(b.id, { contacted: !b.contacted })}
-                      disabled={actionLoading === b.id}
-                      style={{
-                        flex: '1 1 120px', padding: '14px', fontSize: '18px', fontWeight: 700, minHeight: '56px',
-                        background: b.contacted ? 'var(--status-ok-bg)' : 'var(--surface)',
-                        color: b.contacted ? 'var(--status-ok-fg)' : 'var(--fg-2)',
-                        border: b.contacted ? '2px solid var(--status-ok-bd)' : '2px solid var(--border)',
-                        borderRadius: '10px', cursor: actionLoading === b.id ? 'wait' : 'pointer', fontFamily: 'inherit',
-                      }}
-                    >{b.contacted ? '連絡済み' : '未連絡'}</button>
-                  </div>
-                </div>
-              ))
+              selectedBookings.map(b => renderBookingCard(b))
             )}
           </section>
         )}
