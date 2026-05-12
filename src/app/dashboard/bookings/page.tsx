@@ -539,19 +539,19 @@ export default function DashboardBookingsPage() {
         {b.name}　{b.count}名
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           {b.status === 'confirmed' && b.tel && (
             <button onClick={() => handleCall(b)}
               disabled={actionLoading === b.id}
-              style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--status-day-bg)', border: '2px solid var(--ocean-light)', color: 'var(--ocean)', fontSize: '16px', cursor: actionLoading === b.id ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-day-bg)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer' }}>
               TEL
             </button>
           )}
           {b.status === 'confirmed' && (
             <button onClick={() => updateBooking(b.id, { contacted: !b.contacted })}
               disabled={actionLoading === b.id}
-              style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: b.contacted ? 'var(--status-ok-bg)' : 'var(--surface)', color: b.contacted ? 'var(--status-ok-fg)' : 'var(--fg-3)', border: `2px solid ${b.contacted ? 'var(--status-ok-bd)' : 'var(--border)'}`, borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer' }}>
+              style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: b.contacted ? 'var(--status-ok-bg)' : 'var(--surface)', color: b.contacted ? 'var(--status-ok-fg)' : 'var(--fg-3)', border: `2px solid ${b.contacted ? 'var(--status-ok-bd)' : 'var(--border)'}`, borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer' }}>
               {b.contacted ? '連絡済' : '未連絡'}
             </button>
           )}
@@ -559,32 +559,34 @@ export default function DashboardBookingsPage() {
             <>
               <button onClick={() => updateStatus(b.id, 'confirmed')}
                 disabled={actionLoading === b.id}
-                style={{ padding: '8px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer' }}>
+                style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer' }}>
                 承認
               </button>
               <button onClick={() => updateStatus(b.id, 'rejected')}
                 disabled={actionLoading === b.id}
-                style={{ padding: '8px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer' }}>
+                style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: actionLoading === b.id ? 'wait' : 'pointer' }}>
                 お断り
               </button>
             </>
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
           {b.status !== 'cancelled' && (
             <button onClick={() => startEditBooking(b)}
-              style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', borderRadius: '8px', cursor: 'pointer' }}>
+              style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--surface)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)', borderRadius: '8px', cursor: 'pointer' }}>
               編集
             </button>
           )}
-          <button onClick={() => b.status === 'confirmed' ? handleCancel(b) : setDeleteTarget(b)}
-            style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
-            {b.status === 'confirmed' ? '取消' : '削除'}
-          </button>
           {b.status === 'confirmed' && (
+            <button onClick={() => handleCancel(b)}
+              style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
+              取消
+            </button>
+          )}
+          {b.status === 'cancelled' && (
             <button onClick={() => setDeleteTarget(b)}
-              style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
+              style={{ padding: '8px 14px', fontSize: '14px', fontWeight: 700, fontFamily: 'inherit', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer' }}>
               削除
             </button>
           )}
