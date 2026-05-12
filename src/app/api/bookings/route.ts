@@ -181,7 +181,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'contactedはbooleanで指定してください' }, { status: 400 })
     }
 
-    const allowedStatuses = ['confirmed', 'rejected', 'pending']
+    const allowedStatuses = ['confirmed', 'rejected', 'pending', 'cancelled']
     if (status != null && !allowedStatuses.includes(status)) {
       return NextResponse.json(
         { error: '無効なstatusです' },
@@ -200,8 +200,73 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    if (status === 'cancelled' && data.tel) {
+      const { data: vessel } = await supabase
+        .from('vessels')
+        .select('id')
+        .eq('id', data.vessel_id)
+        .single()
+
+      if (vessel) {
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('id, note')
+          .eq('vessel_id', vessel.id)
+          .eq('tel', data.tel)
+          .single()
+
+        const cancelNote = `${data.date} キャンセル`
+
+        if (customer) {
+          await supabase
+            .from('customers')
+            .update({
+              note: customer.note
+                ? `${customer.note}\n${cancelNote}`
+                : cancelNote,
+            })
+            .eq('id', customer.id)
+        } else {
+          await supabase
+            .from('customers')
+            .insert([{
+              vessel_id: vessel.id,
+              name: data.name,
+              tel: data.tel,
+              note: cancelNote,
+            }])
+        }
+      }
+    }
+
     return NextResponse.json({ booking: data })
 
+  } catch {
+    return NextResponse.json(
+      { error: 'サーバーエラーが発生しました' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE: 船長都合で予約を即時削除する
+export async function DELETE(req: NextRequest) {
+  try {
+    const { id } = await req.json()
+    if (!id) {
+      return NextResponse.json({ error: 'idが必要です' }, { status: 400 })
+    }
+
+    const { error } = await supabase
+      .from('bookings')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json(
       { error: 'サーバーエラーが発生しました' },

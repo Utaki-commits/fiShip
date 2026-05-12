@@ -23,7 +23,7 @@ type Booking = {
   count: number
   fishing_style: string
   message: string
-  status: 'pending' | 'confirmed' | 'rejected'
+  status: 'pending' | 'confirmed' | 'rejected' | 'cancelled'
   channel: string
   contacted: boolean
 }
@@ -48,6 +48,8 @@ export default function DashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [binSettings, setBinSettings] = useState<BinSetting[]>([])
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Booking | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const router = useRouter()
 
   const todayStr = toDateStr(new Date())
@@ -117,6 +119,46 @@ export default function DashboardPage() {
     })
     if (res.ok) {
       setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, contacted: next } : b))
+    }
+  }
+
+  const handleCancel = async (booking: Booking) => {
+    const res = await fetch('/api/bookings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: booking.id, status: 'cancelled' }),
+    })
+    if (res.ok) {
+      setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: 'cancelled' } : b))
+    }
+  }
+
+  const handleDelete = async (booking: Booking, addBlockedDate: boolean) => {
+    if (!vessel?.id) return
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: booking.id }),
+      })
+      if (!res.ok) return
+
+      setBookings(prev => prev.filter(b => b.id !== booking.id))
+
+      if (addBlockedDate) {
+        await supabase.from('blocked_dates').insert([{
+          vessel_id: vessel.id,
+          date_from: booking.date,
+          date_to: booking.date,
+          bin_type: null,
+          type: 'other',
+          reason: '出船中止',
+        }])
+      }
+    } finally {
+      setDeleting(false)
+      setDeleteTarget(null)
     }
   }
 
@@ -200,7 +242,7 @@ export default function DashboardPage() {
           {getChannelBadge(b.channel)}
         </div>
         <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
-        <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginTop: '2px' }}>{b.count}名　{b.status === 'confirmed' ? '承認済み' : '承認待ち'}</div>
+        <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginTop: '2px' }}>{b.count}名　{b.status === 'confirmed' ? '承認済み' : b.status === 'cancelled' ? 'キャンセル済み' : '承認待ち'}</div>
       </div>
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         {b.contacted ? (
@@ -216,6 +258,27 @@ export default function DashboardPage() {
             onClick={() => handleCall(b)}
             style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'var(--status-day-bg)', border: '2px solid var(--ocean-light)', color: 'var(--ocean)', fontSize: '22px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >📞</button>
+        )}
+        {b.status === 'confirmed' && (
+          <>
+            <button
+              onClick={() => handleCancel(b)}
+              style={{ padding: '8px 12px', fontSize: '14px', fontWeight: 700, background: 'var(--status-pending-bg)', color: 'var(--status-pending-fg)', border: '2px solid var(--status-pending-dot)', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              キャンセル
+            </button>
+            <button
+              onClick={() => setDeleteTarget(b)}
+              style={{ padding: '8px 12px', fontSize: '14px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              削除
+            </button>
+          </>
+        )}
+        {b.status === 'cancelled' && (
+          <span style={{ fontSize: '13px', fontWeight: 700, padding: '6px 12px', borderRadius: '99px', background: 'var(--status-closed-bg)', color: 'var(--fg-3)' }}>
+            キャンセル済み
+          </span>
         )}
       </div>
     </div>
@@ -348,6 +411,46 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
+
+      {deleteTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '440px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '8px' }}>
+              予約を削除しますか？
+            </div>
+            <div style={{ fontSize: '15px', color: 'var(--fg-2)', marginBottom: '20px', lineHeight: 1.7 }}>
+              {deleteTarget.name}さん　{new Date(deleteTarget.date + 'T00:00:00').getMonth()+1}月{new Date(deleteTarget.date + 'T00:00:00').getDate()}日　{deleteTarget.bin_type === 'day' ? '昼便' : '夜便'}
+            </div>
+
+            <div style={{ background: 'var(--status-pending-bg)', border: '2px solid var(--status-pending-dot)', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '14px', color: 'var(--status-pending-fg)', lineHeight: 1.7 }}>
+              ⚠️ この日の出船を中止する場合は、新たな予約が入らないよう休船日に設定することをお勧めします。
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                onClick={() => handleDelete(deleteTarget, true)}
+                disabled={deleting}
+                style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700, background: 'var(--status-full-fg)', color: '#fff', border: 'none', borderRadius: '12px', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+              >
+                削除する＋この日を休船日に設定する
+              </button>
+              <button
+                onClick={() => handleDelete(deleteTarget, false)}
+                disabled={deleting}
+                style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '12px', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+              >
+                削除のみ
+              </button>
+              <button
+                onClick={() => setDeleteTarget(null)}
+                style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: 700, background: 'transparent', color: 'var(--fg-2)', border: '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
