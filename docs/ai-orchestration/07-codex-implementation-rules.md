@@ -9,6 +9,8 @@
 - 変更範囲を限定する。
 - ユーザーが明示しない限り、既存の未関係変更を戻さない。
 - 実装後は差分、ビルドまたは必要な検証、commit、push、GitHub main、Vercelデプロイ状況を確認する。
+- 実装後は `docs/ai-reports/latest-implementation-report.md` を更新する。
+- レポートは `docs/ai-reports/templates/implementation-report-template.md` の項目を満たす。
 
 ## ファイル構造ルール
 

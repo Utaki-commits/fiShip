@@ -71,6 +71,8 @@
 - 全AI共通:
   - `AI_ORCHESTRATION.md`
   - `CLAUDE.md`
+  - `PROJECT_DNA.md`
+  - `AI_IMPLEMENTATION_GUIDE.md`
   - `docs/ai-orchestration/00-master-context.md`
   - `docs/ai-orchestration/01-product-brief.md`
   - `docs/ai-orchestration/02-ux-rules.md`
@@ -85,6 +87,10 @@
   - `docs/ai-orchestration/04-copy-rules.md`
   - `docs/ai-orchestration/05-component-rules.md`
   - `docs/ai-orchestration/06-v0-generation-rules.md`
+  - `docs/design-system/tokens/README.md`
+  - `docs/design-system/typography/README.md`
+  - `docs/design-system/spacing/README.md`
+  - `docs/design-system/components/README.md`
 - 実装AI:
   - `src/app/globals.css`
   - `src/lib/supabase.ts`
@@ -100,6 +106,9 @@
 - レビューAI:
   - `docs/ai-orchestration/08-test-rules.md`
   - `docs/ai-orchestration/09-review-checklist.md`
+  - `docs/ai-reports/latest-implementation-report.md`
+  - `docs/ai-reports/templates/review-report-template.md`
+  - `.github/pull_request_template.md`
   - 変更対象ファイル一式。
 
 ## 禁止事項

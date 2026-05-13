@@ -2,6 +2,10 @@
 
 ## Playwrightテスト基準
 
+- Playwright configは `playwright.config.ts`。
+- テスト置き場は `tests/playwright/`。
+- テスト一覧確認は `npm run test:e2e:list`。
+- E2E実行は `npm run test:e2e`。
 - スマホ幅で確認する。
 - 基準ビューポート:
   - 幅 `390px`
