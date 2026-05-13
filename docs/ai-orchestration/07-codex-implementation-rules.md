@@ -3,6 +3,7 @@
 ## 実装時の必須確認事項
 
 - 変更前に対象ファイルを読む。
+- `AI_ORCHESTRATION.md` を読む。
 - `CLAUDE.md` と該当する `docs/ai-orchestration/*.md` を確認する。
 - 既存UIの文言、色、余白、ボタン構造を優先する。
 - 変更範囲を限定する。

@@ -69,6 +69,7 @@
 ## AIが読むべきファイル
 
 - 全AI共通:
+  - `AI_ORCHESTRATION.md`
   - `CLAUDE.md`
   - `docs/ai-orchestration/00-master-context.md`
   - `docs/ai-orchestration/01-product-brief.md`
