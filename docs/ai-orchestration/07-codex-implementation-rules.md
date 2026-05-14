@@ -11,6 +11,14 @@
 - 実装後は差分、ビルドまたは必要な検証、commit、push、GitHub main、Vercelデプロイ状況を確認する。
 - 実装後は `docs/ai-reports/latest-implementation-report.md` を更新する。
 - レポートは `docs/ai-reports/templates/implementation-report-template.md` の項目を満たす。
+- PR完了時、Codexは `docs/ai-reports/latest-implementation-report.md` に次を必ず書く。
+  - 実装目的
+  - 変更内容
+  - UI影響
+  - 確認すべき画面
+  - 未確認事項
+  - テスト結果
+  - Claude/ChatGPTに見てほしい観点
 
 ## ファイル構造ルール
 

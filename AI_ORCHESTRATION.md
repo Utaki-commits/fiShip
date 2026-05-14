@@ -15,6 +15,8 @@ The goal is:
 This repository is NOT conversation-driven.
 GitHub markdown files are the primary source of truth.
 
+Future AI collaboration must happen through GitHub PRs, implementation reports, test results, and Preview URLs, not through conversation history.
+
 ---
 
 # Core Principles
@@ -162,6 +164,16 @@ Codex MUST generate:
 * UI impact
 * test result summary
 
+Codex MUST write the following into `docs/ai-reports/latest-implementation-report.md` before handoff:
+
+* implementation purpose
+* changed content
+* UI impact
+* screens that must be checked
+* unverified items
+* test results
+* review points for Claude / ChatGPT
+
 ---
 
 ### Playwright (QA)
@@ -232,6 +244,18 @@ concept-ui
 7. ChatGPT reviews PR + screenshots + reports.
 
 8. Human only checks preview build.
+
+## AI Communication Channels
+
+AI agents must coordinate through:
+
+* GitHub PR descriptions
+* `docs/ai-reports/latest-implementation-report.md`
+* CI and Playwright test results
+* Vercel Preview URLs
+* screenshots uploaded as workflow artifacts
+
+AI agents must not require humans to relay implementation summaries between tools.
 
 ---
 

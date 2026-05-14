@@ -1,48 +1,66 @@
-# PR Summary
+# 実装概要
 
-## What Changed
+- 目的:
+- 背景:
+- 対象ユーザー:
 
-- 
+## 変更ファイル
 
-## Why
+- `path/to/file` — 変更内容
 
-- 
+## UI変更点
 
-## AI Orchestration Checklist
+- 変更画面:
+- 追加/変更した文言:
+- ライトモード影響:
+- ダークモード影響:
+- スマホ表示影響:
 
-- [ ] Read `AI_ORCHESTRATION.md`
-- [ ] Read relevant `docs/ai-orchestration/*`
-- [ ] Updated `docs/ai-reports/latest-implementation-report.md`
-- [ ] Added or updated implementation report details
-- [ ] Did not rely on chat history as source of truth
+## 確認URL
 
-## UI Impact
+- Preview URL:
+- 確認した画面:
+  -
 
-- Screens changed:
-- User-visible copy changed:
-- Mobile impact:
-- Light/dark mode impact:
+## テスト結果
 
-## Data / API Impact
-
-- Supabase tables:
-- API routes:
-- Migrations:
-- Environment variables:
-
-## Validation
-
-- [ ] `git diff --check`
+- [ ] `npm install`
+- [ ] `npm run lint`
 - [ ] `npm run build`
+- [ ] `npm test` が存在する場合は実行
 - [ ] `npm run test:e2e:list`
-- [ ] Playwright validation, if UI flow changed
-- [ ] GitHub main verified after merge/push
-- [ ] Vercel deployment verified after merge/push
+- [ ] Playwright
 
-## Screenshots
+### テスト詳細
 
-- Add mobile screenshots for UI changes.
+- 実行コマンド:
+- 結果:
+- 既知のwarning:
 
-## Risks / Follow-ups
+## AIレビュー観点
 
-- 
+- Claudeに見てほしい観点:
+  - UX構造:
+  - 仕様解釈:
+  - 既存ルールとのズレ:
+- ChatGPTに見てほしい観点:
+  - PR要約:
+  - ユーザー説明:
+  - 追加タスク化:
+- Codexに再確認してほしい観点:
+  - 実装漏れ:
+  - 型/ビルド:
+  - デプロイ:
+
+## AIオーケストレーション確認
+
+- [ ] `AI_ORCHESTRATION.md` を読んだ
+- [ ] `docs/ai-orchestration/*` を読んだ
+- [ ] `docs/ai-reports/latest-implementation-report.md` を更新した
+- [ ] 会話履歴ではなくGitHub上のdocs/PR/レポートに情報を残した
+
+## リスク・未確認事項
+
+- 未確認事項:
+- リスク:
+- 次に確認すべき画面:
