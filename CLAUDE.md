@@ -33,7 +33,6 @@
 5. GitHubへPullして実装
    - レビューOK後にmainブランチへマージ
    - Vercelが自動デプロイ
-git add . && git commit -m "Update CLAUDE.md workflow" && git push origin mainを実行してください。
 
 ## 開発ルール
 - 仕様と異なる実装をする場合は必ず事前に確認する。勝手に仕様変更しない。
