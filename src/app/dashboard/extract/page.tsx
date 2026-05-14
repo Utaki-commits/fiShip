@@ -1,9 +1,7 @@
-'use client'
+﻿'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-
-// ---- 型定義 ----
 
 type SnsMessage = {
   id: string
@@ -42,13 +40,11 @@ type Tab = 'line' | 'instagram' | 'tel'
 
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土']
 
-// 日付を「MM月DD日（曜）」形式にフォーマット
 const formatDate = (dateStr: string) => {
   const d = new Date(dateStr + 'T00:00:00')
   return `${d.getMonth() + 1}月${d.getDate()}日（${DAY_NAMES[d.getDay()]}）`
 }
 
-// 受信日時を「X分前」「X時間前」などの相対表示にフォーマット
 const formatRelativeTime = (dateStr: string) => {
   const diff = Date.now() - new Date(dateStr).getTime()
   const min = Math.floor(diff / 60000)
@@ -61,9 +57,9 @@ const formatRelativeTime = (dateStr: string) => {
 }
 
 const AVAILABILITY_STYLE = {
-  open: { bg: '#E8F4FD', color: '#0A3D62', label: '空きあり' },
-  full: { bg: '#FEE2E2', color: '#B91C1C', label: '満員' },
-  charter: { bg: '#FEF9C3', color: '#854D0E', label: '貸切' },
+  open: { bg: 'var(--status-day-bg)', color: 'var(--ocean)', label: '空きあり' },
+  full: { bg: 'var(--status-full-bg)', color: 'var(--status-full-fg)', label: '満員' },
+  charter: { bg: 'var(--status-pending-bg)', color: 'var(--status-pending-fg)', label: '貸切' },
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -72,23 +68,17 @@ const FIELD_LABELS: Record<string, string> = {
   count: '人数',
 }
 
-// ---- メインコンポーネント ----
-
 export default function ExtractPage() {
   const [vesselId, setVesselId] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('line')
 
-  // LINE/Instagram タブ用
   const [snsMessages, setSnsMessages] = useState<SnsMessage[]>([])
   const [snsLoading, setSnsLoading] = useState(false)
-  // 展開中のメッセージID（編集・登録フォーム表示）
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  // 編集フィールド
   const [editedFields, setEditedFields] = useState({ name: '', date: '', count: '' })
   const [registering, setRegistering] = useState<string | null>(null)
   const [batchRegistering, setBatchRegistering] = useState(false)
 
-  // 電話メモ タブ用
   const [telMessage, setTelMessage] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [telResult, setTelResult] = useState<ExtractResult | null>(null)
@@ -99,20 +89,22 @@ export default function ExtractPage() {
 
   const router = useRouter()
 
-  // ログイン確認と vessel_id 取得
   useEffect(() => {
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/login'); return }
+      const res = await fetch('/api/auth/profile')
+      if (!res.ok) { router.push('/login'); return }
+
+      const user = await res.json()
+      if (!user?.sub) { router.push('/login'); return }
+
       const { data: vessel } = await supabase
-        .from('vessels').select('id').eq('user_id', session.user.id).single()
+        .from('vessels').select('id').eq('user_id', user.sub).single()
       if (!vessel) { router.push('/register'); return }
       setVesselId(vessel.id)
     }
     init()
   }, [router])
 
-  // SNSメッセージを取得する（vessel_id が確定してから）
   const fetchSnsMessages = useCallback(async (channel: 'line' | 'instagram') => {
     if (!vesselId) return
     setSnsLoading(true)
@@ -127,7 +119,6 @@ export default function ExtractPage() {
     setSnsLoading(false)
   }, [vesselId])
 
-  // タブ切り替え
   const handleTabChange = (newTab: Tab) => {
     setTab(newTab)
     setExpandedId(null)
@@ -137,14 +128,12 @@ export default function ExtractPage() {
     setTelMessage('')
   }
 
-  // vessel_id 取得後、または LINE/Instagramタブに切り替えたときにメッセージを取得
   useEffect(() => {
     if (vesselId && (tab === 'line' || tab === 'instagram')) {
       fetchSnsMessages(tab)
     }
   }, [vesselId, tab, fetchSnsMessages])
 
-  // メッセージカードの「取り込む」をタップ → 編集フォームを展開
   const handleExpand = (msg: SnsMessage) => {
     if (expandedId === msg.id) {
       setExpandedId(null)
@@ -158,12 +147,10 @@ export default function ExtractPage() {
     })
   }
 
-  // 1件を承認待ちに登録する
   const handleRegister = async (msg: SnsMessage) => {
     if (!vesselId || !editedFields.date) return
     setRegistering(msg.id)
     try {
-      // 予約を作成する
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -183,8 +170,6 @@ export default function ExtractPage() {
         alert(data.error || '登録に失敗しました')
         return
       }
-
-      // sns_messagesのstatusを'registered'に更新する
       await supabase.from('sns_messages').update({ status: 'registered' }).eq('id', msg.id)
       setSnsMessages(prev => prev.filter(m => m.id !== msg.id))
       setExpandedId(null)
@@ -195,14 +180,12 @@ export default function ExtractPage() {
     }
   }
 
-  // 1件を無視する
   const handleIgnore = async (msgId: string) => {
     await supabase.from('sns_messages').update({ status: 'ignored' }).eq('id', msgId)
     setSnsMessages(prev => prev.filter(m => m.id !== msgId))
     if (expandedId === msgId) setExpandedId(null)
   }
 
-  // まとめて取り込む（予約情報が揃っているメッセージを一括登録）
   const handleBatchRegister = async () => {
     if (!vesselId) return
     const targets = snsMessages.filter(m => m.ai_result?.is_booking && m.ai_result?.date && m.ai_result?.count)
@@ -242,7 +225,6 @@ export default function ExtractPage() {
     setBatchRegistering(false)
   }
 
-  // 電話メモ：AI解析
   const handleTelAnalyze = async () => {
     if (!telMessage.trim() || !vesselId) return
     setAnalyzing(true)
@@ -270,7 +252,6 @@ export default function ExtractPage() {
     }
   }
 
-  // 電話メモ：予約登録
   const handleTelSave = async () => {
     if (!telResult || !vesselId || !telEditedFields.date) return
     setTelSaving(true)
@@ -298,27 +279,25 @@ export default function ExtractPage() {
 
   const unprocessedWithBooking = snsMessages.filter(m => m.ai_result?.is_booking)
 
-  // ---- 描画 ----
-
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F8F9FA', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
 
       {/* ヘッダー */}
-      <div style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', minHeight: '80px', overflow: 'hidden' }}>
         <button
           onClick={() => router.push('/dashboard')}
-          style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.3)', color: 'var(--surface)', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>予約を取り込む</div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>LINEやInstagramから届いた予約を確認して登録します</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>予約を取り込む</div>
+          <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5 }}>LINEやInstagramから届いた予約を確認して登録します</div>
         </div>
       </div>
 
-      <div style={{ padding: '12px' }}>
+      <div style={{ padding: '16px' }}>
 
-        {/* 3タブ：LINE / Instagram / 電話メモ */}
-        <div style={{ display: 'flex', gap: '4px', background: '#E5E7EB', borderRadius: '10px', padding: '3px', marginBottom: '12px' }}>
+        {/* 3タブ */}
+        <div style={{ display: 'flex', gap: '4px', background: 'var(--border)', borderRadius: '10px', padding: '3px', marginBottom: '12px' }}>
           {([
             { key: 'line' as const, label: 'LINE', icon: '💬' },
             { key: 'instagram' as const, label: 'Instagram', icon: '📸' },
@@ -328,15 +307,15 @@ export default function ExtractPage() {
               key={t.key}
               onClick={() => handleTabChange(t.key)}
               style={{
-                flex: 1, padding: '10px 4px', fontSize: '12px', fontWeight: 700,
-                background: tab === t.key ? '#fff' : 'transparent',
-                color: tab === t.key ? '#0A3D62' : '#9CA3AF',
+                flex: 1, padding: '14px 8px', fontSize: '14px', fontWeight: 700,
+                background: tab === t.key ? 'var(--surface)' : 'transparent',
+                color: tab === t.key ? 'var(--ocean)' : 'var(--fg-3)',
                 border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
                 boxShadow: tab === t.key ? '0 1px 3px rgba(0,0,0,.1)' : 'none',
                 transition: 'all .15s',
               }}
             >
-              <div style={{ fontSize: '16px', marginBottom: '2px' }}>{t.icon}</div>
+              <div style={{ fontSize: '18px', marginBottom: '2px' }}>{t.icon}</div>
               {t.label}
             </button>
           ))}
@@ -345,15 +324,14 @@ export default function ExtractPage() {
         {/* ===== LINE / Instagram タブ ===== */}
         {(tab === 'line' || tab === 'instagram') && (
           <>
-            {/* まとめて取り込むボタン */}
             {unprocessedWithBooking.length >= 2 && (
               <button
                 onClick={handleBatchRegister}
                 disabled={batchRegistering}
                 style={{
-                  width: '100%', padding: '14px', marginBottom: '12px', fontSize: '14px', fontWeight: 700,
-                  background: batchRegistering ? '#E5E7EB' : '#D4AC0D',
-                  color: batchRegistering ? '#9CA3AF' : '#0A3D62',
+                  width: '100%', padding: '14px', marginBottom: '12px', fontSize: '18px', fontWeight: 700,
+                  background: batchRegistering ? 'var(--border)' : 'var(--gold)',
+                  color: batchRegistering ? 'var(--fg-3)' : 'var(--ocean)',
                   border: 'none', borderRadius: '10px', cursor: batchRegistering ? 'not-allowed' : 'pointer',
                   fontFamily: 'inherit',
                 }}
@@ -362,18 +340,17 @@ export default function ExtractPage() {
               </button>
             )}
 
-            {/* メッセージ一覧 */}
             {snsLoading ? (
-              <div style={{ padding: '40px 0', textAlign: 'center', color: '#9CA3AF', fontSize: '13px' }}>
+              <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--fg-3)', fontSize: '14px' }}>
                 読み込み中...
               </div>
             ) : snsMessages.length === 0 ? (
-              <div style={{ background: '#fff', border: '2px dashed #E5E7EB', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
+              <div style={{ background: 'var(--surface)', border: '2px dashed var(--border)', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
                 <div style={{ fontSize: '36px', marginBottom: '12px' }}>{tab === 'line' ? '💬' : '📸'}</div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '6px' }}>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>
                   新しいメッセージはありません
                 </div>
-                <div style={{ fontSize: '13px', color: '#9CA3AF', lineHeight: 1.6 }}>
+                <div style={{ fontSize: '14px', color: 'var(--fg-3)', lineHeight: 1.6 }}>
                   {tab === 'line' ? 'LINE' : 'Instagram'}から予約メッセージが届くと<br />ここに表示されます
                 </div>
               </div>
@@ -386,34 +363,29 @@ export default function ExtractPage() {
                   return (
                     <div
                       key={msg.id}
-                      style={{
-                        background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden',
-                      }}
+                      style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}
                     >
-                      {/* カードヘッダー */}
-                      <div style={{ background: '#F8F9FA', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E5E7EB' }}>
+                      <div style={{ background: 'var(--bg)', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '16px' }}>{tab === 'line' ? '💬' : '📸'}</span>
-                          <span style={{ fontSize: '12px', color: '#6B7280' }}>{formatRelativeTime(msg.received_at)}</span>
+                          <span style={{ fontSize: '18px' }}>{tab === 'line' ? '💬' : '📸'}</span>
+                          <span style={{ fontSize: '14px', color: 'var(--fg-2)' }}>{formatRelativeTime(msg.received_at)}</span>
                         </div>
                         {ai?.is_booking ? (
-                          <span style={{ fontSize: '11px', fontWeight: 700, background: '#E8F4FD', color: '#0A3D62', padding: '3px 8px', borderRadius: '99px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 700, background: 'var(--status-day-bg)', color: 'var(--ocean)', padding: '3px 8px', borderRadius: '99px' }}>
                             予約あり
                           </span>
                         ) : (
-                          <span style={{ fontSize: '11px', fontWeight: 700, background: '#F3F4F6', color: '#9CA3AF', padding: '3px 8px', borderRadius: '99px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 700, background: 'var(--status-closed-bg)', color: 'var(--fg-3)', padding: '3px 8px', borderRadius: '99px' }}>
                             予約外
                           </span>
                         )}
                       </div>
 
                       <div style={{ padding: '12px 14px' }}>
-                        {/* 元メッセージ */}
-                        <div style={{ fontSize: '13px', color: '#374151', background: '#F8F9FA', borderRadius: '8px', padding: '10px', marginBottom: '10px', lineHeight: 1.6 }}>
+                        <div style={{ fontSize: '18px', color: 'var(--fg-1)', background: 'var(--bg)', borderRadius: '8px', padding: '14px', marginBottom: '10px', lineHeight: 1.6 }}>
                           {msg.message_text}
                         </div>
 
-                        {/* AI解析結果 */}
                         {ai && (
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '12px' }}>
                             {[
@@ -422,18 +394,17 @@ export default function ExtractPage() {
                               { label: '人数', value: ai.count ? `${ai.count}名` : '不明' },
                               { label: '釣り物', value: ai.fishing_style || '未指定' },
                             ].map(({ label, value }) => (
-                              <div key={label} style={{ background: '#F8F9FA', borderRadius: '6px', padding: '8px 10px' }}>
-                                <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, marginBottom: '2px' }}>{label}</div>
-                                <div style={{ fontSize: '13px', fontWeight: 700, color: ai.is_booking ? '#111827' : '#9CA3AF' }}>{value}</div>
+                              <div key={label} style={{ background: 'var(--bg)', borderRadius: '6px', padding: '8px 10px' }}>
+                                <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700, marginBottom: '2px' }}>{label}</div>
+                                <div style={{ fontSize: '18px', fontWeight: 700, color: ai.is_booking ? 'var(--fg-1)' : 'var(--fg-3)' }}>{value}</div>
                               </div>
                             ))}
                           </div>
                         )}
 
-                        {/* 展開フォーム（取り込む押したとき） */}
                         {isExpanded && (
-                          <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '10px', padding: '12px', marginBottom: '12px' }}>
-                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#1E40AF', marginBottom: '10px' }}>
+                          <div style={{ background: 'var(--status-day-bg)', border: '1px solid var(--ocean-light)', borderRadius: '10px', padding: '16px', marginBottom: '12px' }}>
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '10px' }}>
                               内容を確認・修正してから登録してください
                             </div>
                             {[
@@ -445,7 +416,7 @@ export default function ExtractPage() {
                                     value={editedFields.name}
                                     onChange={e => setEditedFields(p => ({ ...p, name: e.target.value }))}
                                     placeholder="未確認"
-                                    style={{ width: '100%', padding: '10px', fontSize: '15px', border: '2px solid #BFDBFE', borderRadius: '6px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                                    style={{ width: '100%', padding: '14px', fontSize: '18px', border: '2px solid var(--ocean-light)', borderRadius: '6px', fontFamily: 'inherit', boxSizing: 'border-box' }}
                                   />
                                 ),
                               },
@@ -456,7 +427,7 @@ export default function ExtractPage() {
                                     type="date"
                                     value={editedFields.date}
                                     onChange={e => setEditedFields(p => ({ ...p, date: e.target.value }))}
-                                    style={{ width: '100%', padding: '10px', fontSize: '15px', border: '2px solid #BFDBFE', borderRadius: '6px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+                                    style={{ width: '100%', padding: '14px', fontSize: '18px', border: '2px solid var(--ocean-light)', borderRadius: '6px', fontFamily: 'inherit', boxSizing: 'border-box' }}
                                   />
                                 ),
                               },
@@ -470,15 +441,15 @@ export default function ExtractPage() {
                                       value={editedFields.count}
                                       onChange={e => setEditedFields(p => ({ ...p, count: e.target.value }))}
                                       placeholder="1"
-                                      style={{ width: '80px', padding: '10px', fontSize: '15px', border: '2px solid #BFDBFE', borderRadius: '6px', fontFamily: 'inherit', textAlign: 'center' }}
+                                      style={{ width: '80px', padding: '14px', fontSize: '18px', border: '2px solid var(--ocean-light)', borderRadius: '6px', fontFamily: 'inherit', textAlign: 'center' }}
                                     />
-                                    <span style={{ fontSize: '14px', color: '#374151' }}>名</span>
+                                    <span style={{ fontSize: '18px', color: 'var(--fg-1)' }}>名</span>
                                   </div>
                                 ),
                               },
                             ].map(({ label, input }) => (
                               <div key={label} style={{ marginBottom: '10px' }}>
-                                <div style={{ fontSize: '12px', fontWeight: 700, color: '#1E40AF', marginBottom: '4px' }}>{label}</div>
+                                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '4px' }}>{label}</div>
                                 {input}
                               </div>
                             ))}
@@ -486,9 +457,9 @@ export default function ExtractPage() {
                               onClick={() => handleRegister(msg)}
                               disabled={registering === msg.id || !editedFields.date}
                               style={{
-                                width: '100%', padding: '14px', fontSize: '14px', fontWeight: 700,
-                                background: registering === msg.id || !editedFields.date ? '#E5E7EB' : '#0A3D62',
-                                color: registering === msg.id || !editedFields.date ? '#9CA3AF' : '#fff',
+                                width: '100%', padding: '14px', fontSize: '18px', fontWeight: 700,
+                                background: registering === msg.id || !editedFields.date ? 'var(--border)' : 'var(--ocean)',
+                                color: registering === msg.id || !editedFields.date ? 'var(--fg-3)' : 'var(--surface)',
                                 border: 'none', borderRadius: '8px',
                                 cursor: registering === msg.id || !editedFields.date ? 'not-allowed' : 'pointer',
                                 fontFamily: 'inherit',
@@ -499,14 +470,13 @@ export default function ExtractPage() {
                           </div>
                         )}
 
-                        {/* アクションボタン */}
                         {!isExpanded && (
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button
                               onClick={() => handleExpand(msg)}
                               style={{
-                                flex: 1, padding: '12px', fontSize: '14px', fontWeight: 700,
-                                background: '#2E86C1', color: '#fff', border: 'none', borderRadius: '8px',
+                                flex: 1, padding: '16px', fontSize: '18px', fontWeight: 700,
+                                background: 'var(--ocean-light)', color: 'var(--surface)', border: 'none', borderRadius: '8px',
                                 cursor: 'pointer', fontFamily: 'inherit',
                               }}
                             >
@@ -515,8 +485,8 @@ export default function ExtractPage() {
                             <button
                               onClick={() => handleIgnore(msg.id)}
                               style={{
-                                flex: 1, padding: '12px', fontSize: '14px', fontWeight: 700,
-                                background: '#F3F4F6', color: '#6B7280', border: 'none', borderRadius: '8px',
+                                flex: 1, padding: '16px', fontSize: '18px', fontWeight: 700,
+                                background: 'var(--status-closed-bg)', color: 'var(--fg-2)', border: 'none', borderRadius: '8px',
                                 cursor: 'pointer', fontFamily: 'inherit',
                               }}
                             >
@@ -528,9 +498,9 @@ export default function ExtractPage() {
                           <button
                             onClick={() => setExpandedId(null)}
                             style={{
-                              width: '100%', padding: '12px', fontSize: '13px', fontWeight: 700,
-                              background: 'transparent', color: '#6B7280',
-                              border: '2px solid #E5E7EB', borderRadius: '8px',
+                              width: '100%', padding: '16px', fontSize: '18px', fontWeight: 700,
+                              background: 'transparent', color: 'var(--fg-2)',
+                              border: '2px solid var(--border)', borderRadius: '8px',
                               cursor: 'pointer', fontFamily: 'inherit',
                             }}
                           >
@@ -549,8 +519,8 @@ export default function ExtractPage() {
         {/* ===== 電話メモ タブ ===== */}
         {tab === 'tel' && (
           <>
-            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151', marginBottom: '8px' }}>
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '8px' }}>
                 電話でメモした内容を入力してください
               </div>
               <textarea
@@ -558,14 +528,14 @@ export default function ExtractPage() {
                 onChange={e => { setTelMessage(e.target.value); setTelResult(null); setTelSaved(false) }}
                 placeholder={'電話でメモした内容を入力してください\n\n例：山田さん、5/3、2名、泳がせ希望'}
                 style={{
-                  width: '100%', padding: '12px', fontSize: '14px', lineHeight: 1.6,
-                  border: '2px solid #E5E7EB', borderRadius: '8px', outline: 'none',
+                  width: '100%', padding: '16px', fontSize: '18px', lineHeight: 1.6,
+                  border: '2px solid var(--border)', borderRadius: '8px', outline: 'none',
                   fontFamily: 'inherit', resize: 'none', height: '130px', boxSizing: 'border-box',
                 }}
               />
 
               {telError && (
-                <p style={{ fontSize: '13px', fontWeight: 700, color: '#B91C1C', margin: '8px 0 0', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--status-full-fg)', margin: '8px 0 0', lineHeight: 1.5 }}>
                   ⚠ {telError}
                 </p>
               )}
@@ -574,9 +544,9 @@ export default function ExtractPage() {
                 onClick={handleTelAnalyze}
                 disabled={analyzing || !telMessage.trim()}
                 style={{
-                  width: '100%', padding: '16px', marginTop: '10px', fontSize: '15px', fontWeight: 700,
-                  background: analyzing || !telMessage.trim() ? '#E5E7EB' : '#0A3D62',
-                  color: analyzing || !telMessage.trim() ? '#9CA3AF' : '#fff',
+                  width: '100%', padding: '16px', marginTop: '10px', fontSize: '18px', fontWeight: 700,
+                  background: analyzing || !telMessage.trim() ? 'var(--border)' : 'var(--ocean)',
+                  color: analyzing || !telMessage.trim() ? 'var(--fg-3)' : 'var(--surface)',
                   border: 'none', borderRadius: '10px',
                   cursor: analyzing || !telMessage.trim() ? 'not-allowed' : 'pointer',
                   fontFamily: 'inherit',
@@ -586,11 +556,10 @@ export default function ExtractPage() {
               </button>
             </div>
 
-            {/* 解析結果 */}
             {telResult && (
-              <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
-                <div style={{ background: '#0A3D62', padding: '12px 16px' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#fff' }}>読み取り結果</div>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
+                <div style={{ background: 'var(--ocean)', padding: '12px 16px' }}>
+                  <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>読み取り結果</div>
                 </div>
 
                 <div style={{ padding: '6px 14px' }}>
@@ -601,7 +570,7 @@ export default function ExtractPage() {
                         <input type="text" value={telEditedFields.name}
                           onChange={e => setTelEditedFields(p => ({ ...p, name: e.target.value }))}
                           placeholder="未確認"
-                          style={{ fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB', borderRadius: '6px', padding: '6px 10px', width: '160px', fontFamily: 'inherit' }}
+                          style={{ fontSize: '18px', fontWeight: 700, border: '1px solid var(--border)', borderRadius: '6px', padding: '6px 10px', width: '160px', fontFamily: 'inherit' }}
                         />
                       ),
                     },
@@ -610,7 +579,7 @@ export default function ExtractPage() {
                       input: (
                         <input type="date" value={telEditedFields.date}
                           onChange={e => setTelEditedFields(p => ({ ...p, date: e.target.value }))}
-                          style={{ fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB', borderRadius: '6px', padding: '6px 10px', fontFamily: 'inherit' }}
+                          style={{ fontSize: '18px', fontWeight: 700, border: '1px solid var(--border)', borderRadius: '6px', padding: '6px 10px', fontFamily: 'inherit' }}
                         />
                       ),
                     },
@@ -621,15 +590,15 @@ export default function ExtractPage() {
                           <input type="number" min={1} max={20} value={telEditedFields.count}
                             onChange={e => setTelEditedFields(p => ({ ...p, count: e.target.value }))}
                             placeholder="1"
-                            style={{ fontSize: '14px', fontWeight: 700, border: '1px solid #E5E7EB', borderRadius: '6px', padding: '6px 8px', width: '60px', fontFamily: 'inherit', textAlign: 'center' }}
+                            style={{ fontSize: '18px', fontWeight: 700, border: '1px solid var(--border)', borderRadius: '6px', padding: '6px 8px', width: '60px', fontFamily: 'inherit', textAlign: 'center' }}
                           />
-                          <span style={{ fontSize: '13px', color: '#374151' }}>名</span>
+                          <span style={{ fontSize: '18px', color: 'var(--fg-1)' }}>名</span>
                         </div>
                       ),
                     },
                   ].map(({ label, input }) => (
-                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F3F4F6' }}>
-                      <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>{label}</span>
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--status-closed-bg)' }}>
+                      <span style={{ fontSize: '18px', color: 'var(--fg-2)', fontWeight: 700 }}>{label}</span>
                       {input}
                     </div>
                   ))}
@@ -639,16 +608,16 @@ export default function ExtractPage() {
                     { label: '便', value: telResult.extracted.bin_preference },
                     { label: '貸切', value: telResult.extracted.is_charter ? 'はい' : 'いいえ' },
                   ].map(({ label, value }) => (
-                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F3F4F6' }}>
-                      <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>{label}</span>
-                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{value ?? '未指定'}</span>
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--status-closed-bg)' }}>
+                      <span style={{ fontSize: '18px', color: 'var(--fg-2)', fontWeight: 700 }}>{label}</span>
+                      <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{value ?? '未指定'}</span>
                     </div>
                   ))}
 
                   {telResult.extracted.date && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F3F4F6' }}>
-                      <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>空き状況</span>
-                      <span style={{ fontSize: '13px', fontWeight: 700, padding: '4px 12px', borderRadius: '99px', background: AVAILABILITY_STYLE[telResult.availability].bg, color: AVAILABILITY_STYLE[telResult.availability].color }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--status-closed-bg)' }}>
+                      <span style={{ fontSize: '18px', color: 'var(--fg-2)', fontWeight: 700 }}>空き状況</span>
+                      <span style={{ fontSize: '18px', fontWeight: 700, padding: '4px 12px', borderRadius: '99px', background: AVAILABILITY_STYLE[telResult.availability].bg, color: AVAILABILITY_STYLE[telResult.availability].color }}>
                         {AVAILABILITY_STYLE[telResult.availability].label}
                       </span>
                     </div>
@@ -656,28 +625,28 @@ export default function ExtractPage() {
                 </div>
 
                 {telResult.extracted.missing_fields.length > 0 && (
-                  <div style={{ padding: '12px 14px', background: '#FEF9C3', borderTop: '1px solid #FDE68A' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#854D0E', marginBottom: '4px' }}>以下は確認が必要です</div>
-                    <div style={{ fontSize: '13px', color: '#854D0E' }}>
+                  <div style={{ padding: '12px 14px', background: 'var(--status-pending-bg)', borderTop: '1px solid var(--status-pending-dot)' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--status-pending-fg)', marginBottom: '4px' }}>以下は確認が必要です</div>
+                    <div style={{ fontSize: '18px', color: 'var(--status-pending-fg)' }}>
                       {telResult.extracted.missing_fields.map(f => FIELD_LABELS[f] || f).join('、')}
                     </div>
                   </div>
                 )}
 
                 {telSaved ? (
-                  <div style={{ padding: '16px', background: '#D4EDDA', textAlign: 'center', borderTop: '1px solid #86EFAC' }}>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: '#1B6B3A' }}>承認待ちに登録しました ✓</div>
-                    <div style={{ fontSize: '12px', color: '#1B6B3A', marginTop: '4px' }}>ダッシュボードから承認・お断りできます</div>
+                  <div style={{ padding: '16px', background: 'var(--status-ok-bg)', textAlign: 'center', borderTop: '1px solid var(--status-ok-bd)' }}>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--status-ok-fg)' }}>承認待ちに登録しました ✓</div>
+                    <div style={{ fontSize: '14px', color: 'var(--status-ok-fg)', marginTop: '4px' }}>ダッシュボードから承認・お断りできます</div>
                   </div>
                 ) : (
-                  <div style={{ padding: '14px', borderTop: '1px solid #E5E7EB' }}>
+                  <div style={{ padding: '14px', borderTop: '1px solid var(--border)' }}>
                     <button
                       onClick={handleTelSave}
                       disabled={telSaving || !telEditedFields.date}
                       style={{
-                        width: '100%', padding: '16px', fontSize: '15px', fontWeight: 700,
-                        background: telSaving || !telEditedFields.date ? '#E5E7EB' : '#D4AC0D',
-                        color: telSaving || !telEditedFields.date ? '#9CA3AF' : '#0A3D62',
+                        width: '100%', padding: '16px', fontSize: '18px', fontWeight: 700,
+                        background: telSaving || !telEditedFields.date ? 'var(--border)' : 'var(--gold)',
+                        color: telSaving || !telEditedFields.date ? 'var(--fg-3)' : 'var(--ocean)',
                         border: 'none', borderRadius: '10px',
                         cursor: telSaving || !telEditedFields.date ? 'not-allowed' : 'pointer',
                         fontFamily: 'inherit',
@@ -686,7 +655,7 @@ export default function ExtractPage() {
                       {telSaving ? '登録中...' : '承認待ちに登録する　→'}
                     </button>
                     {!telEditedFields.date && (
-                      <div style={{ fontSize: '12px', color: '#B91C1C', textAlign: 'center', marginTop: '8px', lineHeight: 1.5 }}>
+                      <div style={{ fontSize: '14px', color: 'var(--status-full-fg)', textAlign: 'center', marginTop: '8px', lineHeight: 1.5 }}>
                         日付が不明のため登録できません。内容を確認してから再度入力してください
                       </div>
                     )}
@@ -701,3 +670,6 @@ export default function ExtractPage() {
     </div>
   )
 }
+
+
+

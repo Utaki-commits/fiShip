@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -88,11 +88,14 @@ export default function LogsPage() {
 
   useEffect(() => {
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/login'); return }
+      const res = await fetch('/api/auth/profile')
+      if (!res.ok) { router.push('/login'); return }
+
+      const user = await res.json()
+      if (!user?.sub) { router.push('/login'); return }
 
       const { data: vessel } = await supabase
-        .from('vessels').select('id').eq('user_id', session.user.id).single()
+        .from('vessels').select('id').eq('user_id', user.sub).single()
       if (!vessel) { router.push('/register'); return }
       setVesselId(vessel.id)
 
@@ -233,52 +236,52 @@ export default function LogsPage() {
   const displayDays = tab === 'upcoming' ? upcomingDisplay : pastDisplay
 
   if (loading) return (
-    <main style={{ minHeight: '100vh', background: '#0A3D62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#fff', fontSize: '16px' }}>読み込み中...</div>
+    <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
     </main>
   )
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F8F9FA', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
 
       {/* 印刷用スタイル */}
       <style>{`
         @media print {
           .no-print { display: none !important; }
           .print-title { display: block !important; }
-          body { background: #fff !important; margin: 0; padding: 16px; }
+          body { background: var(--surface) !important; margin: 0; padding: 16px; }
           * { font-family: sans-serif; }
         }
         .print-title { display: none; }
       `}</style>
 
       {/* ヘッダー */}
-      <div className="no-print" style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
+      <div className="no-print" style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, zIndex: 20, minHeight: '80px', overflow: 'hidden' }}>
         <button
           onClick={() => selectedDay ? setSelectedDay(null) : router.push('/dashboard')}
-          style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.3)', color: 'var(--surface)', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>
             {selectedDay ? formatDateShort(selectedDay.date) + ' の乗船名簿' : '乗船名簿'}
           </div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
+          <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5 }}>
             {selectedDay
               ? `乗船人数 ${selectedDay.bookings.reduce((s, b) => s + b.count, 0)}名`
               : '出船日ごとの乗船者記録'}
           </div>
         </div>
         {selectedDay && forms.every(f => f.saved) && forms.length > 0 && (
-          <span style={{ background: '#D4EDDA', color: '#1B6B3A', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px' }}>記録完了</span>
+          <span style={{ background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', fontSize: '14px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px' }}>記録完了</span>
         )}
       </div>
 
       {/* ===== 日付一覧ビュー ===== */}
       {!selectedDay && (
-        <div style={{ padding: '12px' }}>
+        <div style={{ padding: '16px' }}>
 
           {/* 今後/過去 タブ */}
-          <div style={{ display: 'flex', gap: '4px', background: '#E5E7EB', borderRadius: '10px', padding: '3px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', gap: '4px', background: 'var(--border)', borderRadius: '10px', padding: '3px', marginBottom: '12px' }}>
             {([
               { key: 'upcoming' as const, label: `今後の出船（直近1件）` },
               { key: 'past' as const, label: `過去の出船（${past.length}件）` },
@@ -287,9 +290,9 @@ export default function LogsPage() {
                 key={t.key}
                 onClick={() => setTab(t.key)}
                 style={{
-                  flex: 1, padding: '10px', fontSize: '13px', fontWeight: 700,
-                  background: tab === t.key ? '#fff' : 'transparent',
-                  color: tab === t.key ? '#0A3D62' : '#9CA3AF',
+                  flex: 1, padding: '14px', fontSize: '14px', fontWeight: 700,
+                  background: tab === t.key ? 'var(--surface)' : 'transparent',
+                  color: tab === t.key ? 'var(--ocean)' : 'var(--fg-3)',
                   border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
                   boxShadow: tab === t.key ? '0 1px 3px rgba(0,0,0,.1)' : 'none',
                 }}
@@ -298,16 +301,16 @@ export default function LogsPage() {
           </div>
 
           {days.length === 0 ? (
-            <div style={{ background: '#fff', border: '2px dashed #E5E7EB', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
+            <div style={{ background: 'var(--surface)', border: '2px dashed var(--border)', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
               <div style={{ fontSize: '36px', marginBottom: '12px' }}>📋</div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '6px' }}>まだ出船記録がありません</div>
-              <div style={{ fontSize: '13px', color: '#9CA3AF', lineHeight: 1.6 }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>まだ出船記録がありません</div>
+              <div style={{ fontSize: '14px', color: 'var(--fg-3)', lineHeight: 1.6 }}>
                 予約が承認されると<br />ここに出船日が表示されます
               </div>
             </div>
           ) : displayDays.length === 0 ? (
             <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: '13px', color: '#9CA3AF' }}>
+              <div style={{ fontSize: '14px', color: 'var(--fg-3)' }}>
                 {tab === 'upcoming' ? '今後の出船予定はありません' : '過去の出船記録はありません'}
               </div>
             </div>
@@ -322,7 +325,7 @@ export default function LogsPage() {
                     key={day.date}
                     onClick={() => openDay(day)}
                     style={{
-                      background: '#fff', border: isToday ? '2px solid #D4AC0D' : '1px solid #E5E7EB',
+                      background: 'var(--surface)', border: isToday ? '2px solid var(--gold)' : '1px solid var(--border)',
                       borderRadius: '12px', padding: '14px 16px',
                       display: 'flex', alignItems: 'center', gap: '12px',
                       cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', width: '100%',
@@ -330,18 +333,18 @@ export default function LogsPage() {
                   >
                     {/* 日付アイコン */}
                     <div style={{
-                      width: '48px', height: '48px', borderRadius: '10px', flexShrink: 0,
-                      background: isToday ? '#D4AC0D' : day.isCompleted ? '#D4EDDA' : '#F8F9FA',
+                      width: '56px', height: '56px', borderRadius: '10px', flexShrink: 0,
+                      background: isToday ? 'var(--gold)' : day.isCompleted ? 'var(--status-ok-bg)' : 'var(--bg)',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      border: isToday ? 'none' : '1px solid #E5E7EB',
+                      border: isToday ? 'none' : '1px solid var(--border)',
                     }}>
-                      <div style={{ fontSize: '11px', fontWeight: 700, color: isToday ? '#fff' : '#9CA3AF' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: isToday ? 'var(--surface)' : 'var(--fg-3)' }}>
                         {new Date(day.date + 'T00:00:00').getMonth() + 1}月
                       </div>
-                      <div style={{ fontSize: '18px', fontWeight: 700, color: isToday ? '#fff' : '#111827', lineHeight: 1 }}>
+                      <div style={{ fontSize: '18px', fontWeight: 700, color: isToday ? 'var(--surface)' : 'var(--fg-1)', lineHeight: 1 }}>
                         {new Date(day.date + 'T00:00:00').getDate()}
                       </div>
-                      <div style={{ fontSize: '10px', fontWeight: 700, color: isToday ? '#fff' : '#9CA3AF' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: isToday ? 'var(--surface)' : 'var(--fg-3)' }}>
                         {DAY_NAMES[new Date(day.date + 'T00:00:00').getDay()]}
                       </div>
                     </div>
@@ -350,17 +353,17 @@ export default function LogsPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                         {isToday && (
-                          <span style={{ fontSize: '11px', fontWeight: 700, background: '#D4AC0D', color: '#0A3D62', padding: '2px 6px', borderRadius: '4px' }}>今日</span>
+                          <span style={{ fontSize: '14px', fontWeight: 700, background: 'var(--gold)', color: 'var(--ocean)', padding: '2px 6px', borderRadius: '4px' }}>今日</span>
                         )}
-                        <span style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>
+                        <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>
                           乗船 {totalCount}名
                         </span>
                       </div>
                       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                         {day.bookings.map(b => (
                           <span key={b.id} style={{
-                            fontSize: '12px', color: '#6B7280',
-                            background: '#F3F4F6', padding: '2px 8px', borderRadius: '99px',
+                            fontSize: '14px', color: 'var(--fg-2)',
+                            background: 'var(--status-closed-bg)', padding: '2px 8px', borderRadius: '99px',
                           }}>
                             {b.name} {b.count}名
                           </span>
@@ -373,12 +376,12 @@ export default function LogsPage() {
                       {day.isCompleted ? (
                         <>
                           <div style={{ fontSize: '18px' }}>✅</div>
-                          <div style={{ fontSize: '10px', color: '#1B6B3A', fontWeight: 700 }}>記録済</div>
+                          <div style={{ fontSize: '14px', color: 'var(--status-ok-fg)', fontWeight: 700 }}>記録済</div>
                         </>
                       ) : (
                         <>
                           <div style={{ fontSize: '18px' }}>📋</div>
-                          <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700 }}>未記録</div>
+                          <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700 }}>未記録</div>
                         </>
                       )}
                     </div>
@@ -393,24 +396,24 @@ export default function LogsPage() {
                     onClick={() => setPastPage(p => Math.max(0, p - 1))}
                     disabled={pastPage === 0}
                     style={{
-                      padding: '10px 20px', fontSize: '14px', fontWeight: 700,
-                      background: pastPage === 0 ? '#F3F4F6' : '#fff',
-                      color: pastPage === 0 ? '#9CA3AF' : '#0A3D62',
-                      border: '2px solid #E5E7EB', borderRadius: '8px',
+                      padding: '14px 20px', fontSize: '14px', fontWeight: 700,
+                      background: pastPage === 0 ? 'var(--status-closed-bg)' : 'var(--surface)',
+                      color: pastPage === 0 ? 'var(--fg-3)' : 'var(--ocean)',
+                      border: '2px solid var(--border)', borderRadius: '8px',
                       cursor: pastPage === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                     }}
                   >← 前へ</button>
-                  <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>
+                  <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 700 }}>
                     {pastPage + 1} / {pastTotalPages}ページ
                   </span>
                   <button
                     onClick={() => setPastPage(p => Math.min(pastTotalPages - 1, p + 1))}
                     disabled={pastPage >= pastTotalPages - 1}
                     style={{
-                      padding: '10px 20px', fontSize: '14px', fontWeight: 700,
-                      background: pastPage >= pastTotalPages - 1 ? '#F3F4F6' : '#fff',
-                      color: pastPage >= pastTotalPages - 1 ? '#9CA3AF' : '#0A3D62',
-                      border: '2px solid #E5E7EB', borderRadius: '8px',
+                      padding: '14px 20px', fontSize: '14px', fontWeight: 700,
+                      background: pastPage >= pastTotalPages - 1 ? 'var(--status-closed-bg)' : 'var(--surface)',
+                      color: pastPage >= pastTotalPages - 1 ? 'var(--fg-3)' : 'var(--ocean)',
+                      border: '2px solid var(--border)', borderRadius: '8px',
                       cursor: pastPage >= pastTotalPages - 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                     }}
                   >次へ →</button>
@@ -423,20 +426,20 @@ export default function LogsPage() {
 
       {/* ===== 名簿記入ビュー ===== */}
       {selectedDay && (
-        <div style={{ padding: '12px' }}>
+        <div style={{ padding: '16px' }}>
 
           {/* 印刷用タイトル */}
-          <div className="print-title" style={{ marginBottom: '16px', borderBottom: '2px solid #000', paddingBottom: '8px' }}>
+          <div className="print-title" style={{ marginBottom: '16px', borderBottom: '2px solid var(--fg-1)', paddingBottom: '8px' }}>
             <div style={{ fontSize: '18px', fontWeight: 700 }}>乗船名簿</div>
             <div style={{ fontSize: '14px', marginTop: '4px' }}>{formatDate(selectedDay.date)}</div>
           </div>
 
           {/* 日付ヘッダー */}
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ fontSize: '24px' }}>📋</div>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>{formatDate(selectedDay.date)}</div>
-              <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{formatDate(selectedDay.date)}</div>
+              <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>
                 合計 {selectedDay.bookings.reduce((s, b) => s + b.count, 0)}名が乗船予定
               </div>
             </div>
@@ -449,7 +452,7 @@ export default function LogsPage() {
             const total = selectedDay.bookings.reduce((s, b) => s + b.count, 0)
             if (bin && total > bin.max_capacity) {
               return (
-                <div style={{ background: '#FEF9C3', border: '1px solid #FCD34D', borderRadius: '10px', padding: '12px 14px', marginBottom: '12px', fontSize: '13px', color: '#854D0E', fontWeight: 700 }}>
+                <div style={{ background: 'var(--status-pending-bg)', border: '1px solid var(--status-pending-dot)', borderRadius: '10px', padding: '12px 14px', marginBottom: '12px', fontSize: '14px', color: 'var(--status-pending-fg)', fontWeight: 700 }}>
                   ⚠ 定員（{bin.max_capacity}名）を超えて登録されています（合計{total}名）
                 </div>
               )
@@ -463,65 +466,65 @@ export default function LogsPage() {
               <div
                 key={form.formKey}
                 style={{
-                  background: '#fff',
-                  border: form.saved ? '2px solid #86EFAC' : form.isCompanion ? '1px dashed #D1D5DB' : '1px solid #E5E7EB',
+                  background: 'var(--surface)',
+                  border: form.saved ? '2px solid var(--status-ok-bd)' : form.isCompanion ? '1px dashed var(--fg-3)' : '1px solid var(--border)',
                   borderRadius: '12px', overflow: 'hidden', marginBottom: '12px',
                 }}
               >
                 {/* 乗客ヘッダー */}
                 <div style={{
-                  background: form.saved ? '#D4EDDA' : form.isCompanion ? '#F8F9FA' : (form.bin_type === 'day' ? '#E8F4FD' : '#EEF2FF'),
+                  background: form.saved ? 'var(--status-ok-bg)' : form.isCompanion ? 'var(--bg)' : (form.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)'),
                   padding: '10px 14px',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{
-                      fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px',
-                      background: form.bin_type === 'day' ? '#0A3D62' : '#4338CA', color: '#fff',
+                      fontSize: '14px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px',
+                      background: form.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)', color: 'var(--surface)',
                     }}>
                       {form.bin_type === 'day' ? '昼便' : '夜便'}
                     </span>
                     {form.isCompanion && (
-                      <span style={{ fontSize: '11px', fontWeight: 700, background: '#E5E7EB', color: '#6B7280', padding: '2px 8px', borderRadius: '99px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 700, background: 'var(--border)', color: 'var(--fg-2)', padding: '2px 8px', borderRadius: '99px' }}>
                         同伴者
                       </span>
                     )}
-                    <span style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>
+                    <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>
                       {form.isCompanion ? `（代表：${form.representativeName}様のご同行）` : form.name}
                     </span>
                   </div>
-                  {form.saved && <span style={{ fontSize: '12px', fontWeight: 700, color: '#1B6B3A' }}>保存済 ✓</span>}
+                  {form.saved && <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--status-ok-fg)' }}>保存済 ✓</span>}
                 </div>
 
                 <div style={{ padding: '14px' }}>
                   {/* 電話番号（代表者のみ表示） */}
                   {!form.isCompanion && form.tel && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', padding: '10px 12px', background: '#F8F9FA', borderRadius: '8px' }}>
-                      <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700, flexShrink: 0 }}>電話番号</span>
-                      <a href={`tel:${form.tel}`} style={{ fontSize: '14px', color: '#0A3D62', fontWeight: 700, textDecoration: 'none' }}>{form.tel}</a>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', padding: '10px 12px', background: 'var(--bg)', borderRadius: '8px' }}>
+                      <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 700, flexShrink: 0 }}>電話番号</span>
+                      <a href={`tel:${form.tel}`} style={{ fontSize: '14px', color: 'var(--ocean)', fontWeight: 700, textDecoration: 'none' }}>{form.tel}</a>
                     </div>
                   )}
 
                   {/* 住所 */}
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
                     住所
-                    <span style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 400, marginLeft: '6px' }}>乗船名簿に必要な情報です</span>
+                    <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400, marginLeft: '6px' }}>乗船名簿に必要な情報です</span>
                   </label>
                   <input
                     value={form.address}
                     onChange={e => updateForm(form.formKey, 'address', e.target.value)}
                     placeholder="例：福岡県福岡市博多区〇〇1-2-3"
                     style={{
-                      width: '100%', padding: '12px', fontSize: '15px',
-                      border: '2px solid #E5E7EB', borderRadius: '8px',
+                      width: '100%', padding: '16px', fontSize: '18px',
+                      border: '2px solid var(--border)', borderRadius: '8px',
                       fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box',
                     }}
                   />
 
                   {/* 緊急連絡先 */}
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
                     緊急連絡先
-                    <span style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 400, marginLeft: '6px' }}>（任意）</span>
+                    <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400, marginLeft: '6px' }}>（任意）</span>
                   </label>
                   <input
                     value={form.emergency_contact}
@@ -529,8 +532,8 @@ export default function LogsPage() {
                     placeholder="例：妻・090-0000-0000"
                     type="tel"
                     style={{
-                      width: '100%', padding: '12px', fontSize: '15px',
-                      border: '2px solid #E5E7EB', borderRadius: '8px',
+                      width: '100%', padding: '16px', fontSize: '18px',
+                      border: '2px solid var(--border)', borderRadius: '8px',
                       fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box',
                     }}
                   />
@@ -541,11 +544,11 @@ export default function LogsPage() {
                     disabled={form.saving || !form.address.trim()}
                     style={{
                       width: '100%', padding: '13px', fontSize: '14px', fontWeight: 700,
-                      background: form.saving || !form.address.trim() ? '#E5E7EB'
-                        : form.saved ? '#D4EDDA' : '#0A3D62',
-                      color: form.saving || !form.address.trim() ? '#9CA3AF'
-                        : form.saved ? '#1B6B3A' : '#fff',
-                      border: form.saved ? '2px solid #86EFAC' : 'none',
+                      background: form.saving || !form.address.trim() ? 'var(--border)'
+                        : form.saved ? 'var(--status-ok-bg)' : 'var(--ocean)',
+                      color: form.saving || !form.address.trim() ? 'var(--fg-3)'
+                        : form.saved ? 'var(--status-ok-fg)' : 'var(--surface)',
+                      border: form.saved ? '2px solid var(--status-ok-bd)' : 'none',
                       borderRadius: '8px', cursor: form.saving || !form.address.trim() ? 'not-allowed' : 'pointer',
                       fontFamily: 'inherit',
                     }}
@@ -559,10 +562,10 @@ export default function LogsPage() {
 
           {/* 全員分保存済みのメッセージ */}
           {forms.length > 0 && forms.every(f => f.saved) && (
-            <div style={{ background: '#D4EDDA', border: '2px solid #86EFAC', borderRadius: '12px', padding: '16px', textAlign: 'center', marginBottom: '12px' }}>
+            <div style={{ background: 'var(--status-ok-bg)', border: '2px solid var(--status-ok-bd)', borderRadius: '12px', padding: '16px', textAlign: 'center', marginBottom: '12px' }}>
               <div style={{ fontSize: '24px', marginBottom: '6px' }}>✅</div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: '#1B6B3A' }}>この日の乗船名簿は記録完了です</div>
-              <div style={{ fontSize: '12px', color: '#1B6B3A', marginTop: '4px' }}>全員分の情報が保存されました</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--status-ok-fg)' }}>この日の乗船名簿は記録完了です</div>
+              <div style={{ fontSize: '14px', color: 'var(--status-ok-fg)', marginTop: '4px' }}>全員分の情報が保存されました</div>
             </div>
           )}
 
@@ -572,7 +575,7 @@ export default function LogsPage() {
             onClick={() => window.print()}
             style={{
               width: '100%', padding: '14px', fontSize: '14px', fontWeight: 700,
-              background: '#0A3D62', color: '#fff', border: 'none',
+              background: 'var(--ocean)', color: 'var(--surface)', border: 'none',
               borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', marginBottom: '8px',
             }}
           >
@@ -584,7 +587,7 @@ export default function LogsPage() {
             onClick={() => setSelectedDay(null)}
             style={{
               width: '100%', padding: '14px', fontSize: '14px', fontWeight: 700,
-              background: '#fff', color: '#6B7280', border: '2px solid #E5E7EB',
+              background: 'var(--surface)', color: 'var(--fg-2)', border: '2px solid var(--border)',
               borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
@@ -595,3 +598,6 @@ export default function LogsPage() {
     </div>
   )
 }
+
+
+

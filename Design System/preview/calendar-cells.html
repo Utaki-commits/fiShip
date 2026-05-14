@@ -1,0 +1,61 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=720">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:32px;background:#F8F9FA;font-family:'Noto Sans JP',sans-serif}
+.card{background:#fff;border:1px solid #E5E7EB;border-radius:16px;padding:22px}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.title{font-size:28px;font-weight:700;color:#111827}
+.nav{width:56px;height:56px;border-radius:14px;background:#F8F9FA;border:2px solid #E5E7EB;display:flex;align-items:center;justify-content:center;font-size:22px;color:#0A3D62;cursor:pointer;font-weight:700}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+.d{font-size:16px;font-weight:700;text-align:center;color:#6B7280;padding:10px 0}
+.d.sun{color:#B91C1C}.d.sat{color:#2E86C1}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cell{border-radius:10px;overflow:hidden;border:3px solid transparent;min-height:88px;display:flex;flex-direction:column;cursor:pointer}
+.cell.today{border-color:#D4AC0D}
+.cell.sel{border-color:#1E5F8E;background:#E8F4FD}
+.num{padding:8px 10px 6px;display:flex;justify-content:space-between;align-items:center;font-size:20px;font-weight:700;color:#111827;line-height:1}
+.num.sun{color:#B91C1C}.num.sat{color:#2E86C1}
+.body{flex:1;background:#FAFBFC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px}
+.body.day{background:#E8F4FD}
+.body.pend{background:#FEF3C7}
+.body.full{background:#FEE2E2}
+.bin{font-size:14px;font-weight:700;color:#0A3D62;line-height:1}
+.cnt{font-size:18px;font-weight:700;color:#0A3D62;line-height:1}
+.bin.p,.cnt.p{color:#854D0E}
+.bin.f,.cnt.f{color:#B91C1C}
+.dot{width:10px;height:10px;border-radius:50%;background:#D97706}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:18px;padding-top:18px;border-top:1px solid #F1F5F9}
+.lg{display:flex;align-items:center;gap:8px;font-size:16px;color:#374151;font-weight:600}
+.sw{width:20px;height:20px;border-radius:6px}
+</style></head><body>
+<div class="card">
+  <div class="head">
+    <div class="nav">◀</div>
+    <div class="title">2026年 4月</div>
+    <div class="nav">▶</div>
+  </div>
+  <div class="dow"><div class="d sun">日</div><div class="d">月</div><div class="d">火</div><div class="d">水</div><div class="d">木</div><div class="d">金</div><div class="d sat">土</div></div>
+  <div class="grid">
+    <div></div><div></div><div></div>
+    <div class="cell"><div class="num">1</div><div class="body day"><span class="bin">昼便</span><span class="cnt">4名</span></div></div>
+    <div class="cell"><div class="num">2</div><div class="body"></div></div>
+    <div class="cell"><div class="num">3</div><div class="body day"><span class="bin">昼便</span><span class="cnt">2名</span></div></div>
+    <div class="cell"><div class="num sat">4</div><div class="body full"><span class="bin f">昼便</span><span class="cnt f">満員</span></div></div>
+    <div class="cell"><div class="num sun">5</div><div class="body"></div></div>
+    <div class="cell today"><div class="num">6<span class="dot"></span></div><div class="body pend"><span class="bin p">昼便</span><span class="cnt p">承認待</span></div></div>
+    <div class="cell sel"><div class="num">7</div><div class="body day"><span class="bin">昼便</span><span class="cnt">3名</span></div></div>
+    <div class="cell"><div class="num">8</div><div class="body"></div></div>
+    <div class="cell"><div class="num">9</div><div class="body"></div></div>
+    <div class="cell"><div class="num">10</div><div class="body day"><span class="bin">昼便</span><span class="cnt">6名</span></div></div>
+    <div class="cell"><div class="num sat">11</div><div class="body"></div></div>
+  </div>
+  <div class="legend">
+    <div class="lg"><span class="sw" style="background:#E8F4FD"></span>空きあり</div>
+    <div class="lg"><span class="sw" style="background:#FEF3C7"></span>承認待ち</div>
+    <div class="lg"><span class="sw" style="background:#FEE2E2"></span>満員</div>
+    <div class="lg"><span class="sw" style="background:#fff;border:3px solid #D4AC0D"></span>本日</div>
+    <div class="lg"><span class="sw" style="background:#E8F4FD;border:3px solid #1E5F8E"></span>選択中</div>
+  </div>
+</div>
+</body></html>

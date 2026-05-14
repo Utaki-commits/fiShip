@@ -7,13 +7,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const {
       vessel_id,
+      name,
       bin_type,
       start_month,
       end_month,
       days_of_week,
       departure_time,
+      end_time,
       fish_types,
       max_capacity,
+      price,
     } = body
 
     // 必須項目のバリデーション
@@ -22,33 +25,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '必須項目が不足しています' }, { status: 400 })
     }
 
-    // 同じ vessel_id・bin_type の設定がすでに存在するか確認
-    const { data: existing } = await supabase
-      .from('bin_settings')
-      .select('id')
-      .eq('vessel_id', vessel_id)
-      .eq('bin_type', bin_type)
-      .single()
+    // 同じ便名称の設定がすでに存在するか確認
+    const checkName = (name || '').trim()
+    if (checkName) {
+      const { data: existing } = await supabase
+        .from('bin_settings')
+        .select('id')
+        .eq('vessel_id', vessel_id)
+        .eq('name', checkName)
+        .maybeSingle()
 
-    if (existing) {
-      const label = bin_type === 'day' ? '昼便' : '夜便'
-      return NextResponse.json(
-        { error: `${label}はすでに設定されています` },
-        { status: 409 }
-      )
+      if (existing) {
+        return NextResponse.json(
+          { error: `「${checkName}」という名前の便はすでに設定されています` },
+          { status: 409 }
+        )
+      }
     }
 
     const { data, error } = await supabase
       .from('bin_settings')
       .insert([{
         vessel_id,
+        name: checkName || null,
         bin_type,
         start_month: Number(start_month),
         end_month: Number(end_month),
         days_of_week,
         departure_time,
+        end_time: end_time || null,
         fish_types: fish_types || [],
         max_capacity: Number(max_capacity),
+        price: price || '',
       }])
       .select()
       .single()
@@ -66,27 +74,57 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json()
     const {
       id,
+      name,
       bin_type,
       start_month,
       end_month,
       days_of_week,
       departure_time,
+      end_time,
       fish_types,
       max_capacity,
+      price,
     } = body
 
     if (!id) return NextResponse.json({ error: 'idが必要です' }, { status: 400 })
 
+    // 同じ便名称が他の設定に存在しないか確認（自分自身は除く）
+    const patchName = (name || '').trim()
+    if (patchName) {
+      let existingQuery = supabase
+        .from('bin_settings')
+        .select('id, vessel_id')
+        .eq('name', patchName)
+        .neq('id', id)
+
+      if (body.vessel_id) {
+        existingQuery = existingQuery.eq('vessel_id', body.vessel_id)
+      }
+
+      const { data: existing } = await existingQuery
+        .maybeSingle()
+
+      if (existing) {
+        return NextResponse.json(
+          { error: `「${patchName}」という名前の便はすでに設定されています` },
+          { status: 409 }
+        )
+      }
+    }
+
     const { data, error } = await supabase
       .from('bin_settings')
       .update({
+        name: patchName || null,
         bin_type,
         start_month: Number(start_month),
         end_month: Number(end_month),
         days_of_week,
         departure_time,
+        end_time: end_time || null,
         fish_types: fish_types || [],
         max_capacity: Number(max_capacity),
+        price: price || '',
       })
       .eq('id', id)
       .select()

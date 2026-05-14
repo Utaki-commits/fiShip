@@ -1,13 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-// POST: 予約を新規作成する
+// POST: 莠育ｴ・ｒ譁ｰ隕丈ｽ懈・縺吶ｋ
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const {
       vessel_id,
       date,
+      date_to,
       bin_type,
       name,
       tel,
@@ -15,9 +16,10 @@ export async function POST(req: NextRequest) {
       fishing_style,
       message,
       channel = 'page',
+      status: requestedStatus,
+      is_charter,
     } = body
 
-    // 必須項目のバリデーション（tel はwebhook経由で空になる場合があるため任意）
     if (!vessel_id || !date || !bin_type || !name || !count) {
       return NextResponse.json(
         { error: '必須項目が不足しています' },
@@ -25,14 +27,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // bin_settingsからその日・その便のmax_capacityを確認
+    const { data: vesselData } = await supabase
+      .from('vessels')
+      .select('max_bookings_per_customer, auto_confirm')
+      .eq('id', vessel_id)
+      .single()
+
     const { data: binSettingsData } = await supabase
       .from('bin_settings')
       .select('max_capacity, start_month, end_month, days_of_week')
       .eq('vessel_id', vessel_id)
       .eq('bin_type', bin_type)
 
-    // 指定日に対応する便設定を特定する
     const d = new Date(date)
     const month = d.getMonth()
     const dow = d.getDay()
@@ -43,7 +49,7 @@ export async function POST(req: NextRequest) {
       return inPeriod && (bin.days_of_week as number[]).includes(dow)
     })
 
-    // 便設定が見つかった場合は定員チェックを行う
+    let confirmedCount = 0
     if (matchingBin) {
       const { data: existingBookings } = await supabase
         .from('bookings')
@@ -51,10 +57,10 @@ export async function POST(req: NextRequest) {
         .eq('vessel_id', vessel_id)
         .eq('date', date)
         .eq('bin_type', bin_type)
-        .in('status', ['confirmed', 'pending'])
+        .eq('status', 'confirmed')
 
-      const usedCount = (existingBookings || []).reduce((s, b) => s + (b.count as number), 0)
-      if (usedCount + Number(count) > matchingBin.max_capacity) {
+      confirmedCount = (existingBookings || []).reduce((s, b) => s + (b.count as number), 0)
+      if (confirmedCount + Number(count) > matchingBin.max_capacity) {
         return NextResponse.json(
           { error: '満員のため予約できません', code: 'FULL' },
           { status: 409 }
@@ -62,26 +68,34 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 同じ日・同じ便の承認待ち件数を確認
-    const { data: pendingBookings } = await supabase
-      .from('bookings')
-      .select('id')
-      .eq('vessel_id', vessel_id)
-      .eq('date', date)
-      .eq('bin_type', bin_type)
-      .eq('status', 'pending')
+    if (tel) {
+      const maxPerCustomer = vesselData?.max_bookings_per_customer ?? 5
+      const { count: customerCount } = await supabase
+        .from('bookings')
+        .select('id', { count: 'exact', head: true })
+        .eq('vessel_id', vessel_id)
+        .eq('tel', tel)
+        .in('status', ['confirmed', 'pending'])
+      if ((customerCount ?? 0) >= maxPerCustomer) {
+        return NextResponse.json(
+          { error: 'この電話番号での予約上限に達しています。船長へお問い合わせください', code: 'LIMIT_EXCEEDED' },
+          { status: 409 }
+        )
+      }
+    }
 
-    const pendingCount = pendingBookings?.length ?? 0
-
-    // チャーターは常に承認待ち、承認待ち0件かつ非チャーターなら即時成立
-    const isCharter = channel === 'charter'
-    const status = isCharter || pendingCount > 0 ? 'pending' : 'confirmed'
+    const isCharter = Boolean(is_charter) || channel === 'charter'
+    const isImmediate = !isCharter && (vesselData?.auto_confirm ?? true) && confirmedCount === 0
+    const allowedStatuses = ['confirmed', 'rejected', 'pending']
+    const status = allowedStatuses.includes(requestedStatus) ? requestedStatus : isImmediate ? 'confirmed' : 'pending'
+    const resolvedDateTo = date_to || (isCharter ? date : null)
 
     const { data, error } = await supabase
       .from('bookings')
       .insert([{
         vessel_id,
         date,
+        date_to: resolvedDateTo,
         bin_type,
         name,
         tel,
@@ -90,6 +104,7 @@ export async function POST(req: NextRequest) {
         message: message || null,
         status,
         channel,
+        is_charter: isCharter,
       }])
       .select()
       .single()
@@ -98,11 +113,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({
-      booking: data,
-      isImmediate: status === 'confirmed',
-    })
-
+    return NextResponse.json({ booking: data, isImmediate }, { status: 201 })
   } catch {
     return NextResponse.json(
       { error: 'サーバーエラーが発生しました' },
@@ -110,8 +121,7 @@ export async function POST(req: NextRequest) {
     )
   }
 }
-
-// GET: 予約一覧を取得する（vessel_id必須、dateは任意）
+// GET: 予約一覧を取得する
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const vessel_id = searchParams.get('vessel_id')
@@ -127,7 +137,7 @@ export async function GET(req: NextRequest) {
     .eq('vessel_id', vessel_id)
     .order('date', { ascending: true })
 
-  // 日付が指定されていれば絞り込む
+  // dateが指定されていれば絞り込む
   if (date) {
     query = query.eq('date', date)
   }
@@ -141,22 +151,38 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ bookings: data })
 }
 
-// PATCH: 予約の承認またはお断りをする
+// PATCH: 予約の承認、却下、連絡済みを更新する
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json()
-    const { id, status } = body
+    const { id, status, contacted, date, date_to, bin_type, name, tel, count, fishing_style, message, is_charter } = body
 
-    if (!id || !status) {
+    const updatePayload: Record<string, unknown> = {}
+    if (status != null) updatePayload.status = status
+    if (contacted != null) updatePayload.contacted = contacted
+    if (date != null) updatePayload.date = date
+    if (date_to !== undefined) updatePayload.date_to = date_to || null
+    if (bin_type != null) updatePayload.bin_type = bin_type
+    if (name != null) updatePayload.name = name
+    if (tel != null) updatePayload.tel = tel
+    if (count != null) updatePayload.count = Number(count)
+    if (fishing_style != null) updatePayload.fishing_style = fishing_style || null
+    if (message != null) updatePayload.message = message || null
+    if (is_charter != null) updatePayload.is_charter = Boolean(is_charter)
+
+    if (!id || Object.keys(updatePayload).length === 0) {
       return NextResponse.json(
-        { error: 'idとstatusが必要です' },
+        { error: 'idと更新内容が必要です' },
         { status: 400 }
       )
     }
 
-    // 許可するステータス値のみ受け付ける
-    const allowedStatuses = ['confirmed', 'rejected', 'pending']
-    if (!allowedStatuses.includes(status)) {
+    if (contacted != null && typeof contacted !== 'boolean') {
+      return NextResponse.json({ error: 'contactedはbooleanで指定してください' }, { status: 400 })
+    }
+
+    const allowedStatuses = ['confirmed', 'rejected', 'pending', 'cancelled']
+    if (status != null && !allowedStatuses.includes(status)) {
       return NextResponse.json(
         { error: '無効なstatusです' },
         { status: 400 }
@@ -165,13 +191,52 @@ export async function PATCH(req: NextRequest) {
 
     const { data, error } = await supabase
       .from('bookings')
-      .update({ status })
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single()
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (status === 'cancelled' && data.tel) {
+      const { data: vessel } = await supabase
+        .from('vessels')
+        .select('id')
+        .eq('id', data.vessel_id)
+        .single()
+
+      if (vessel) {
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('id, note')
+          .eq('vessel_id', vessel.id)
+          .eq('tel', data.tel)
+          .single()
+
+        const cancelNote = `${data.date} キャンセル`
+
+        if (customer) {
+          await supabase
+            .from('customers')
+            .update({
+              note: customer.note
+                ? `${customer.note}\n${cancelNote}`
+                : cancelNote,
+            })
+            .eq('id', customer.id)
+        } else {
+          await supabase
+            .from('customers')
+            .insert([{
+              vessel_id: vessel.id,
+              name: data.name,
+              tel: data.tel,
+              note: cancelNote,
+            }])
+        }
+      }
     }
 
     return NextResponse.json({ booking: data })
@@ -183,3 +248,30 @@ export async function PATCH(req: NextRequest) {
     )
   }
 }
+
+// DELETE: 船長都合で予約を即時削除する
+export async function DELETE(req: NextRequest) {
+  try {
+    const { id } = await req.json()
+    if (!id) {
+      return NextResponse.json({ error: 'idが必要です' }, { status: 400 })
+    }
+
+    const { error } = await supabase
+      .from('bookings')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch {
+    return NextResponse.json(
+      { error: 'サーバーエラーが発生しました' },
+      { status: 500 }
+    )
+  }
+}
+

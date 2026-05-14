@@ -11,6 +11,7 @@ create table if not exists bin_settings (
   departure_time text        not null,
   fish_types     text[]      not null default '{}',
   max_capacity   int         not null,
+  price          text        not null default '',
   created_at     timestamptz not null default now()
 );
 

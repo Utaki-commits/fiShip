@@ -18,7 +18,15 @@ create table if not exists vessels (
   charter_accepted boolean not null default true,
   beginner_accepted boolean not null default true,
   price            text not null default '',
+  logo_url         text not null default '',
+  banner_url       text not null default '',
+  map_embed_url    text not null default '',
+  notify_enabled   boolean not null default true,
   notify_hours     text not null default '6:00〜21:00',
+  font_size        text not null default 'medium',
+  color_mode       text not null default 'light',
+  auto_confirm     boolean not null default true,
+  subscribed_at    timestamptz not null default now(),
   created_at       timestamptz not null default now()
 );
 
@@ -47,6 +55,7 @@ create table if not exists bookings (
   message        text,
   status         text not null default 'pending'
                    check (status in ('pending', 'confirmed', 'rejected')),
+  contacted      boolean not null default false,
   channel        text not null default 'page',
   created_at     timestamptz not null default now()
 );
@@ -90,6 +99,8 @@ create table if not exists bin_settings (
   departure_time text not null default '06:00',
   fish_types     text[] not null default '{}',
   max_capacity   int  not null default 4,
+  price          text not null default '',
+  enabled        boolean not null default true,
   created_at     timestamptz not null default now()
 );
 
@@ -110,6 +121,26 @@ create policy "captain full access" on bin_settings
 create policy "public read" on bin_settings
   for select
   using (true);
+
+
+-- =============================================
+-- blocked_dates: 休船日・受付停止日
+-- =============================================
+create table if not exists blocked_dates (
+  id         uuid primary key default gen_random_uuid(),
+  vessel_id  uuid not null references vessels(id) on delete cascade,
+  date_from  date not null,
+  date_to    date not null,
+  bin_type   text check (bin_type in ('day', 'night')),
+  type       text not null default 'maintenance' check (type in ('maintenance', 'weather', 'trouble', 'other')),
+  reason     text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists blocked_dates_vessel_idx on blocked_dates(vessel_id);
+create index if not exists blocked_dates_date_idx on blocked_dates(date_from, date_to);
+
+alter table blocked_dates disable row level security;
 
 
 -- =============================================
@@ -178,3 +209,16 @@ create policy "captain full access" on passenger_logs
   with check (
     exists (select 1 from vessels where vessels.id = passenger_logs.vessel_id and vessels.user_id = auth.uid())
   );
+
+-- =============================================
+-- contacts: お問い合わせ
+-- =============================================
+create table if not exists contacts (
+  id uuid primary key default gen_random_uuid(),
+  vessel_id uuid references vessels(id) on delete set null,
+  name text not null default '',
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table contacts disable row level security;

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -47,11 +47,14 @@ export default function CustomersPage() {
 
   useEffect(() => {
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { router.push('/login'); return }
+      const res = await fetch('/api/auth/profile')
+      if (!res.ok) { router.push('/login'); return }
+
+      const user = await res.json()
+      if (!user?.sub) { router.push('/login'); return }
 
       const { data: vessel } = await supabase
-        .from('vessels').select('id').eq('user_id', session.user.id).single()
+        .from('vessels').select('id').eq('user_id', user.sub).single()
       if (!vessel) { router.push('/register'); return }
 
       // confirmed の予約のみ顧客名簿に表示（お断り・承認待ちは除外）
@@ -110,25 +113,25 @@ export default function CustomersPage() {
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   if (loading) return (
-    <main style={{ minHeight: '100vh', background: '#0A3D62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#fff', fontSize: '16px' }}>読み込み中...</div>
+    <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
     </main>
   )
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F8F9FA', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
 
       {/* ヘッダー */}
-      <div style={{ background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
+      <div style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, zIndex: 20, minHeight: '80px', overflow: 'hidden' }}>
         <button
           onClick={() => selectedCustomer ? setSelectedCustomer(null) : router.push('/dashboard')}
-          style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
+          style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.3)', color: 'var(--surface)', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}
         >←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>
             {selectedCustomer ? selectedCustomer.name : '顧客名簿'}
           </div>
-          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)' }}>
+          <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5 }}>
             {selectedCustomer
               ? `来船 ${selectedCustomer.totalVisits}回 / 合計 ${selectedCustomer.totalPeople}名`
               : `承認済み ${customers.length}名のお客さん`}
@@ -138,17 +141,17 @@ export default function CustomersPage() {
 
       {/* ===== 顧客詳細ビュー ===== */}
       {selectedCustomer && (
-        <div style={{ padding: '12px' }}>
+        <div style={{ padding: '16px' }}>
 
           {/* プロフィールカード */}
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
-              <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#0A3D62', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>
                 👤
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>{selectedCustomer.name}</div>
-                <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>{selectedCustomer.tel}</div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{selectedCustomer.name}</div>
+                <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>{selectedCustomer.tel}</div>
               </div>
             </div>
 
@@ -159,9 +162,9 @@ export default function CustomersPage() {
                 { label: '合計人数', value: `${selectedCustomer.totalPeople}名` },
                 { label: '最終来船', value: formatDateShort(selectedCustomer.lastDate) },
               ].map(({ label, value }) => (
-                <div key={label} style={{ background: '#F8F9FA', borderRadius: '8px', padding: '10px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, marginBottom: '4px' }}>{label}</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>{value}</div>
+                <div key={label} style={{ background: 'var(--bg)', borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700, marginBottom: '4px' }}>{label}</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-1)' }}>{value}</div>
                 </div>
               ))}
             </div>
@@ -169,10 +172,10 @@ export default function CustomersPage() {
             {/* よく使う釣り方 */}
             {selectedCustomer.fishingStyles.length > 0 && (
               <div style={{ marginBottom: '14px' }}>
-                <div style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 700, marginBottom: '6px' }}>よく使う釣り方</div>
+                <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700, marginBottom: '6px' }}>よく使う釣り方</div>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {selectedCustomer.fishingStyles.map(s => (
-                    <span key={s} style={{ fontSize: '13px', background: '#E8F4FD', color: '#0A3D62', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>{s}</span>
+                    <span key={s} style={{ fontSize: '14px', background: 'var(--status-day-bg)', color: 'var(--ocean)', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>{s}</span>
                   ))}
                 </div>
               </div>
@@ -184,8 +187,8 @@ export default function CustomersPage() {
                 href={`tel:${selectedCustomer.tel}`}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  width: '100%', padding: '14px', fontSize: '15px', fontWeight: 700,
-                  background: '#E8F4FD', color: '#0A3D62', border: '2px solid #2E86C1',
+                  width: '100%', padding: '14px', fontSize: '18px', fontWeight: 700,
+                  background: 'var(--status-day-bg)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)',
                   borderRadius: '10px', textDecoration: 'none', boxSizing: 'border-box',
                 }}
               >
@@ -195,25 +198,25 @@ export default function CustomersPage() {
           </div>
 
           {/* 予約履歴 */}
-          <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', overflow: 'hidden' }}>
-            <div style={{ background: '#F8F9FA', padding: '10px 16px', borderBottom: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#374151' }}>来船履歴</div>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--bg)', padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-1)' }}>来船履歴</div>
             </div>
             {selectedCustomer.bookings
               .sort((a, b) => b.date.localeCompare(a.date))
               .map(b => (
-                <div key={b.id} style={{ padding: '12px 16px', borderBottom: '1px solid #F3F4F6', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div key={b.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--status-closed-bg)', display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {/* 昼/夜バッジ */}
                   <span style={{
-                    fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', flexShrink: 0,
-                    background: b.bin_type === 'day' ? '#E8F4FD' : '#EEF2FF',
-                    color: b.bin_type === 'day' ? '#0A3D62' : '#4338CA',
+                    fontSize: '14px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', flexShrink: 0,
+                    background: b.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)',
+                    color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)',
                   }}>
                     {b.bin_type === 'day' ? '昼' : '夜'}
                   </span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>{formatDate(b.date)}</div>
-                    <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-1)' }}>{formatDate(b.date)}</div>
+                    <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>
                       {b.count}名{b.fishing_style ? `　${b.fishing_style}` : ''}
                     </div>
                   </div>
@@ -225,11 +228,11 @@ export default function CustomersPage() {
 
       {/* ===== 顧客一覧ビュー ===== */}
       {!selectedCustomer && (
-        <div style={{ padding: '12px' }}>
+        <div style={{ padding: '16px' }}>
 
           {/* 検索バー */}
           <div style={{ position: 'relative', marginBottom: '12px' }}>
-            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', color: '#9CA3AF' }}>🔍</span>
+            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', color: 'var(--fg-3)' }}>🔍</span>
             <input
               type="search"
               value={search}
@@ -237,24 +240,24 @@ export default function CustomersPage() {
               placeholder="名前・電話番号で検索"
               style={{
                 width: '100%', padding: '12px 12px 12px 38px',
-                fontSize: '15px', border: '2px solid #E5E7EB', borderRadius: '10px',
-                outline: 'none', fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box',
+                fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px',
+                outline: 'none', fontFamily: 'inherit', background: 'var(--surface)', boxSizing: 'border-box',
               }}
             />
           </div>
 
           {/* 顧客リスト */}
           {customers.length === 0 ? (
-            <div style={{ background: '#fff', border: '2px dashed #E5E7EB', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
+            <div style={{ background: 'var(--surface)', border: '2px dashed var(--border)', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
               <div style={{ fontSize: '36px', marginBottom: '12px' }}>👥</div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: '#374151', marginBottom: '6px' }}>まだ顧客データがありません</div>
-              <div style={{ fontSize: '13px', color: '#9CA3AF', lineHeight: 1.6 }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>まだ顧客データがありません</div>
+              <div style={{ fontSize: '14px', color: 'var(--fg-3)', lineHeight: 1.6 }}>
                 予約が承認されると<br />ここに顧客情報が表示されます
               </div>
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: '13px', color: '#9CA3AF' }}>「{search}」に一致するお客さんが見つかりません</div>
+              <div style={{ fontSize: '14px', color: 'var(--fg-3)' }}>「{search}」に一致するお客さんが見つかりません</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -263,22 +266,22 @@ export default function CustomersPage() {
                   key={`${c.name}__${c.tel}`}
                   onClick={() => setSelectedCustomer(c)}
                   style={{
-                    background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px',
+                    background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px',
                     padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px',
                     cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', width: '100%',
                   }}
                 >
                   {/* アバター */}
-                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#E8F4FD', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--status-day-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
                     👤
                   </div>
 
                   {/* 情報 */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827', marginBottom: '3px' }}>{c.name}</div>
-                    <div style={{ fontSize: '12px', color: '#6B7280' }}>{c.tel}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '3px' }}>{c.name}</div>
+                    <div style={{ fontSize: '14px', color: 'var(--fg-2)' }}>{c.tel}</div>
                     {c.fishingStyles.length > 0 && (
-                      <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {c.fishingStyles.join('・')}
                       </div>
                     )}
@@ -286,9 +289,9 @@ export default function CustomersPage() {
 
                   {/* 来船回数バッジ */}
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#0A3D62' }}>{c.totalVisits}</div>
-                    <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700 }}>回</div>
-                    <div style={{ fontSize: '10px', color: '#9CA3AF', marginTop: '2px' }}>{formatDateShort(c.lastDate)}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ocean)' }}>{c.totalVisits}</div>
+                    <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700 }}>回</div>
+                    <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '2px' }}>{formatDateShort(c.lastDate)}</div>
                   </div>
                 </button>
               ))}
@@ -302,24 +305,24 @@ export default function CustomersPage() {
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
                 style={{
-                  padding: '10px 20px', fontSize: '14px', fontWeight: 700,
-                  background: page === 0 ? '#F3F4F6' : '#fff',
-                  color: page === 0 ? '#9CA3AF' : '#0A3D62',
-                  border: '2px solid #E5E7EB', borderRadius: '8px',
+                  padding: '14px 20px', fontSize: '14px', fontWeight: 700,
+                  background: page === 0 ? 'var(--status-closed-bg)' : 'var(--surface)',
+                  color: page === 0 ? 'var(--fg-3)' : 'var(--ocean)',
+                  border: '2px solid var(--border)', borderRadius: '8px',
                   cursor: page === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                 }}
               >← 前へ</button>
-              <span style={{ fontSize: '13px', color: '#6B7280', fontWeight: 700 }}>
+              <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 700 }}>
                 {page + 1} / {totalPages}ページ
               </span>
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
                 style={{
-                  padding: '10px 20px', fontSize: '14px', fontWeight: 700,
-                  background: page >= totalPages - 1 ? '#F3F4F6' : '#fff',
-                  color: page >= totalPages - 1 ? '#9CA3AF' : '#0A3D62',
-                  border: '2px solid #E5E7EB', borderRadius: '8px',
+                  padding: '14px 20px', fontSize: '14px', fontWeight: 700,
+                  background: page >= totalPages - 1 ? 'var(--status-closed-bg)' : 'var(--surface)',
+                  color: page >= totalPages - 1 ? 'var(--fg-3)' : 'var(--ocean)',
+                  border: '2px solid var(--border)', borderRadius: '8px',
                   cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                 }}
               >次へ →</button>
@@ -330,3 +333,6 @@ export default function CustomersPage() {
     </div>
   )
 }
+
+
+

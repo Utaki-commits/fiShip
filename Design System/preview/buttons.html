@@ -1,0 +1,108 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=720">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+body{margin:0;padding:36px;background:#F8F9FA;font-family:'Noto Sans JP',sans-serif}
+.section{margin-bottom:36px}
+.lbl{font-size:14px;font-weight:700;color:#9CA3AF;letter-spacing:.06em;margin:0 0 14px;text-transform:uppercase}
+.row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.s{display:flex;flex-direction:column;align-items:stretch;gap:8px;flex:1;min-width:240px}
+.cap{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:#6B7280;text-align:center;font-weight:600}
+
+button.btn{
+  font-family:inherit;font-weight:600;
+  font-size:24px;            /* v2: was 16 */
+  padding:20px 28px;          /* v2: was 16 */
+  min-height:64px;            /* v2: was 44 */
+  border-radius:14px;border:none;cursor:pointer;
+  user-select:none;-webkit-tap-highlight-color:transparent;
+  transition:transform .08s ease, box-shadow .12s ease, background .12s ease, filter .12s ease;
+  position:relative;
+}
+button.btn:focus-visible{outline:4px solid rgba(63,160,217,.45);outline-offset:3px}
+
+button.primary{
+  background:linear-gradient(180deg,#1E5F8E 0%,#164B73 100%);color:#fff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 0 rgba(0,0,0,.18),0 6px 14px rgba(15,69,112,.30);
+}
+button.primary:hover{filter:brightness(1.06)}
+button.primary:active,button.primary.is-pressed{
+  background:linear-gradient(180deg,#164B73 0%,#0F4570 100%);transform:translateY(3px);
+  box-shadow:inset 0 3px 6px rgba(0,0,0,.30),0 1px 2px rgba(15,69,112,.20);
+}
+button.accent{
+  background:linear-gradient(180deg,#E6BD17 0%,#C9A20D 100%);color:#0A2540;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 3px 0 rgba(133,77,14,.45),0 6px 14px rgba(212,172,13,.32);
+}
+button.accent:hover{filter:brightness(1.04)}
+button.accent:active,button.accent.is-pressed{
+  background:linear-gradient(180deg,#C9A20D 0%,#A6850A 100%);transform:translateY(3px);
+  box-shadow:inset 0 3px 6px rgba(133,77,14,.45),0 1px 2px rgba(212,172,13,.20);
+}
+button.ghost{
+  background:#fff;color:#1E5F8E;border:2px solid #1E5F8E;
+  box-shadow:0 1px 0 rgba(17,24,39,.04);
+}
+button.ghost:hover{background:#E8F4FD}
+button.ghost:active,button.ghost.is-pressed{
+  background:#D6E9F7;border-color:#0F4570;color:#0F4570;
+  transform:translateY(2px);box-shadow:inset 0 3px 6px rgba(17,24,39,.10);
+}
+button.disabled{background:#E5E7EB;color:#9CA3AF;cursor:not-allowed;box-shadow:none}
+button.disabled:active{transform:none}
+
+button.btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);
+  pointer-events:none;transform:scale(0);animation:rip .55s ease-out forwards}
+button.accent .ripple{background:rgba(10,37,64,.25)}
+button.ghost .ripple{background:rgba(30,95,142,.18)}
+@keyframes rip{to{transform:scale(2.6);opacity:0}}
+
+.states{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.states>div{display:flex;flex-direction:column;gap:8px}
+.spec{font-size:16px;color:#374151;line-height:1.6;margin-top:8px}
+</style></head><body>
+
+<div class="section">
+  <div class="lbl">AT REST · 通常状態</div>
+  <div class="row">
+    <div class="s"><button class="btn primary">ログインする</button><div class="cap">primary · 24px / 64h</div></div>
+    <div class="s"><button class="btn accent">登録する　✓</button><div class="cap">accent · 24px / 64h</div></div>
+    <div class="s"><button class="btn ghost">← 戻る</button><div class="cap">ghost · 2px ocean border</div></div>
+    <div class="s"><button class="btn disabled" disabled>登録中…</button><div class="cap">disabled · loading</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="lbl">PRESSED · 押下フィードバック（3px沈み込み + 影反転）</div>
+  <div class="states">
+    <div><button class="btn primary is-pressed">ログインする</button><div class="cap">押下：濃グラデ + 内側影</div></div>
+    <div><button class="btn accent is-pressed">登録する　✓</button><div class="cap">押下：濃ゴールド + 内側影</div></div>
+    <div><button class="btn ghost is-pressed">← 戻る</button><div class="cap">押下：水色塗り + 濃枠</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="lbl">TRY IT · タップして押下感を確認</div>
+  <div class="row">
+    <button class="btn primary" id="t1">タップしてみてください</button>
+    <button class="btn accent" id="t2">タップしてみてください</button>
+  </div>
+  <div class="spec">最小ヒット領域 64×64px・ラベル 24px / 600。指先でも誤タップしにくい寸法。</div>
+</div>
+
+<script>
+document.querySelectorAll('button.btn:not(.disabled):not(.is-pressed)').forEach(b=>{
+  b.addEventListener('pointerdown',e=>{
+    const r=b.getBoundingClientRect();
+    const d=Math.max(r.width,r.height);
+    const span=document.createElement('span');
+    span.className='ripple';
+    span.style.width=span.style.height=d+'px';
+    span.style.left=(e.clientX-r.left-d/2)+'px';
+    span.style.top=(e.clientY-r.top-d/2)+'px';
+    b.appendChild(span);setTimeout(()=>span.remove(),600);
+  });
+});
+</script>
+</body></html>
