@@ -461,26 +461,45 @@ const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 ### レイアウト定数
 
 ```ts
-const SHELL = { maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F8F9FA', fontFamily: 'sans-serif' }
-const HEADER = { background: '#0A3D62', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky' as const, top: 0, zIndex: 20 }
+const SHELL = {
+  maxWidth: '480px', margin: '0 auto',
+  minHeight: '100vh', background: '#F7F2EF',
+  fontFamily: 'sans-serif'
+}
+const HEADER = {
+  background: '#7F1D1D', padding: '12px 16px',
+  display: 'flex', alignItems: 'center', gap: '10px',
+  position: 'sticky' as const, top: 0, zIndex: 20
+}
 const BODY = { padding: '12px' }
-const CARD = { background: '#fff', border: '1px solid #E5E7EB', borderRadius: '14px', padding: '16px', marginBottom: '12px' }
+const CARD = {
+  background: '#fff', border: '0.5px solid #E8DDD8',
+  borderRadius: '12px', padding: '16px', marginBottom: '12px'
+}
 ```
 
 ### ボタン（コピー用）
 
 ```ts
-// 保存・登録（紺・白文字）
-{ padding: '15px', fontSize: '15px', fontWeight: 700, background: '#0A3D62', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', width: '100%' }
+// 保存・登録（朱赤）
+{ padding: '14px', fontSize: '15px', fontWeight: 500,
+  background: '#B91C1C', color: '#fff', border: 'none',
+  borderRadius: '9px', cursor: 'pointer', width: '100%' }
 
-// 編集（白・青アウトライン）
-{ padding: '10px 16px', fontSize: '14px', fontWeight: 700, background: '#fff', color: '#2E86C1', border: '2px solid #2E86C1', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }
+// 編集
+{ padding: '10px 16px', fontSize: '14px', fontWeight: 500,
+  background: '#FEF2F2', color: '#B91C1C',
+  border: '0.5px solid #FCA5A5', borderRadius: '9px', cursor: 'pointer' }
 
-// 削除（白・赤アウトライン）
-{ padding: '10px 16px', fontSize: '14px', fontWeight: 700, background: '#fff', color: '#B91C1C', border: '2px solid #B91C1C', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }
+// 削除
+{ padding: '10px 16px', fontSize: '14px', fontWeight: 500,
+  background: 'transparent', color: '#B91C1C',
+  border: '0.5px solid #FCA5A5', borderRadius: '9px', cursor: 'pointer' }
 
-// キャンセル（白・グレー）
-{ padding: '15px', fontSize: '15px', fontWeight: 700, background: '#fff', color: '#6B7280', border: '2px solid #E5E7EB', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }
+// キャンセル
+{ padding: '14px', fontSize: '15px', fontWeight: 500,
+  background: 'transparent', color: '#57534E',
+  border: '0.5px solid #E8DDD8', borderRadius: '9px', cursor: 'pointer' }
 
 // 無効状態
 { background: '#9CA3AF', color: '#fff', cursor: 'not-allowed' }
