@@ -1,66 +1,28 @@
-# 実装概要
+---
+## 実装概要
+<!-- 何を実装したか1行で -->
 
-- 目的:
-- 背景:
-- 対象ユーザー:
+## 参照したルールファイル
+- [ ] PROJECT_DNA.md を読んだ
+- [ ] AI_IMPLEMENTATION_GUIDE.md の「よくあるミス」を確認した
+- [ ] docs/design-system/concept.md の禁止事項を確認した
 
-## 変更ファイル
+## 変更ファイルと理由
+| ファイル | 変更内容 |
+|---|---|
+| | |
 
-- `path/to/file` — 変更内容
+## Vercel Preview URL
+<!-- 必須。なければマージ不可 -->
+Preview URL:
 
-## UI変更点
+## デザインルール自己チェック
+- [ ] font-weight は 400・500 のみ（600・700 使っていない）
+- [ ] border は 0.5px（2px 使っていない）
+- [ ] 画面背景は washi-50（#F7F2EF）を使っている
+- [ ] トークン外の色を使っていない
+- [ ] グラデーション・シャドウ・blur を使っていない
 
-- 変更画面:
-- 追加/変更した文言:
-- ライトモード影響:
-- ダークモード影響:
-- スマホ表示影響:
-
-## 確認URL
-
-- Preview URL:
-- 確認した画面:
-  -
-
-## テスト結果
-
-- [ ] `npm install`
-- [ ] `npm run lint`
-- [ ] `npm run build`
-- [ ] `npm test` が存在する場合は実行
-- [ ] `npm run test:e2e:list`
-- [ ] Playwright
-
-### テスト詳細
-
-- 実行コマンド:
-- 結果:
-- 既知のwarning:
-
-## AIレビュー観点
-
-- Claudeに見てほしい観点:
-  - UX構造:
-  - 仕様解釈:
-  - 既存ルールとのズレ:
-- ChatGPTに見てほしい観点:
-  - PR要約:
-  - ユーザー説明:
-  - 追加タスク化:
-- Codexに再確認してほしい観点:
-  - 実装漏れ:
-  - 型/ビルド:
-  - デプロイ:
-
-## AIオーケストレーション確認
-
-- [ ] `AI_ORCHESTRATION.md` を読んだ
-- [ ] `docs/ai-orchestration/*` を読んだ
-- [ ] `docs/ai-reports/latest-implementation-report.md` を更新した
-- [ ] 会話履歴ではなくGitHub上のdocs/PR/レポートに情報を残した
-
-## リスク・未確認事項
-
-- 未確認事項:
-- リスク:
-- 次に確認すべき画面:
+## Claude向け補足
+<!-- Claudeが判断に迷う可能性がある点。なければ「なし」 -->
+---
