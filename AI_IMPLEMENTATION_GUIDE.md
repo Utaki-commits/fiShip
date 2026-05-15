@@ -72,7 +72,7 @@ export default function MyNewPage() {
 
   // ---- ローディング画面 ----
   if (loading) return (
-    <main style={{ minHeight: '100vh', background: '#0A3D62', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <main style={{ minHeight: '100vh', background: '#7F1D1D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: '#fff', fontSize: '16px' }}>読み込み中...</div>
     </main>
   )
