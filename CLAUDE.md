@@ -42,7 +42,8 @@
 ターゲット：30〜65歳男性船長（ITリテラシー低め）
 
 ## 技術スタック
-- Next.js 14 (App Router) / TypeScript / Tailwind CSS
+- Next.js 14 (App Router) / TypeScript / スタイリング: 既存画面=インラインスタイル / 新規画面=Tailwind CSS + shadcn/ui
+  ※デザイン刷新（旭波コンセプト）により移行中
 - Supabase (PostgreSQL・認証)
 - Vercel (ホスティング)
 
@@ -82,10 +83,12 @@
 - 代替日提案はSNS・電話経由のみ
 
 ## ボタンの色統一ルール（全画面で必ず守る）
-- 編集ボタン：アウトライン形式・青色(#2E86C1)・文字のみ（background: #fff, color: #2E86C1, border: 2px solid #2E86C1）
-- 削除ボタン：アウトライン形式・赤色(#B91C1C)・文字のみ（background: #fff, color: #B91C1C, border: 2px solid #B91C1C）
-- 保存・登録ボタン：紺色背景(#0A3D62)・白文字
-- キャンセルボタン：白背景・グレー文字・グレーborder
+- 保存・登録ボタン：bg #B91C1C・白文字・border-radius 9px
+- 編集ボタン：bg #FEF2F2・text #B91C1C・border 0.5px #FCA5A5・border-radius 9px
+- 削除ボタン：bg transparent・text #B91C1C・border 0.5px #FCA5A5・border-radius 9px
+- キャンセルボタン：bg transparent・text #57534E・border 0.5px #E8DDD8
+- border幅は全て0.5px（2px禁止）
+※詳細は docs/design-system/concept.md を参照。
 
 ## 設備・サービス表示ルール
 - 以下のカテゴリ順で表示・編集する：釣り道具・船内設備・魚の処理・販売品・支払方法・こだわり設備
@@ -108,3 +111,10 @@
 ## 開発
 - npm run dev — ローカル起動
 - git push origin main — Vercel自動デプロイ
+
+## 関連ドキュメント（優先読み込み順）
+1. CODEX_HANDOFF.md
+2. PROJECT_DNA.md
+3. docs/design-system/concept.md
+4. AI_IMPLEMENTATION_GUIDE.md
+5. docs/ai-orchestration/claude-skill.md
