@@ -1,7 +1,9 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+
+import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 const DEFAULT_ICON = 'https://whnpkellpiauxovxtpnz.supabase.co/storage/v1/object/public/vessel-images/Fiship_icon.png'
 
@@ -9,9 +11,8 @@ type Vessel = {
   id: string
   name: string
   captain_name: string
-  capacity: number
-  logo_url: string
-  banner_url: string
+  logo_url: string | null
+  banner_url: string | null
 }
 
 type Booking = {
@@ -21,28 +22,76 @@ type Booking = {
   name: string
   tel: string
   count: number
-  fishing_style: string
-  message: string
+  fishing_style: string | null
+  message: string | null
   status: 'pending' | 'confirmed' | 'rejected' | 'cancelled'
-  channel: string
-  contacted: boolean
+  channel: string | null
+  contacted: boolean | null
 }
 
 type BinSetting = {
   id: string
-  vessel_id: string
   bin_type: 'day' | 'night' | 'relay'
   max_capacity: number
-  days_of_week: number[]
-  start_month: number
-  end_month: number
 }
 
-const DAY_NAMES = ['日','月','火','水','木','金','土']
-const toDateStr = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土']
+
+const toDateStr = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+
+const formatDate = (dateStr: string) => {
+  const date = new Date(`${dateStr}T00:00:00`)
+  return `${date.getMonth() + 1}月${date.getDate()}日（${DAY_NAMES[date.getDay()]}）`
+}
+
+const binLabel = (binType: Booking['bin_type']) => {
+  if (binType === 'day') return '昼便'
+  if (binType === 'relay') return '昼夜便'
+  return '夜便'
+}
+
+const binBadgeClass = (binType: Booking['bin_type']) => {
+  if (binType === 'day') return 'bg-[#DBEAFE] text-[#1E3A8A]'
+  if (binType === 'relay') return 'bg-[#FEF2F2] text-[#B91C1C]'
+  return 'bg-[#EDE9FE] text-[#5B21B6]'
+}
+
+const statusLabel = (status: Booking['status']) => {
+  if (status === 'confirmed') return '確定'
+  if (status === 'cancelled') return '取消済み'
+  if (status === 'rejected') return 'お断り'
+  return '承認待ち'
+}
+
+const statusClass = (status: Booking['status']) => {
+  if (status === 'confirmed') return 'text-[#059669] bg-[#ECFDF5]'
+  if (status === 'pending') return 'text-[#D97706] bg-[#FFFBEB]'
+  return 'text-[#57534E] bg-[#F5F5F4]'
+}
+
+const channelLabel = (channel: string | null) => {
+  const labels: Record<string, string> = {
+    page: '予約ページ',
+    line: 'LINE',
+    line_official: 'LINE公式',
+    instagram: 'Instagram',
+    phone: '電話',
+    other: 'その他',
+  }
+  return labels[channel || 'other'] || labels.other
+}
+
+function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <section className={`rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white ${className}`}>
+      {children}
+    </section>
+  )
+}
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [vessel, setVessel] = useState<Vessel | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -50,35 +99,57 @@ export default function DashboardPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Booking | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const router = useRouter()
 
-  const todayStr = toDateStr(new Date())
-  const tomorrowStr = toDateStr(new Date(Date.now() + 86400000))
+  const today = useMemo(() => new Date(), [])
+  const tomorrow = useMemo(() => new Date(Date.now() + 86400000), [])
+  const todayStr = toDateStr(today)
+  const tomorrowStr = toDateStr(tomorrow)
 
   useEffect(() => {
     const init = async () => {
       const res = await fetch('/api/auth/profile')
-      if (!res.ok) { router.push('/login'); return }
+      if (!res.ok) {
+        router.push('/login')
+        return
+      }
 
       const user = await res.json()
-      if (!user?.sub) { router.push('/login'); return }
+      if (!user?.sub) {
+        router.push('/login')
+        return
+      }
 
-      const { data: v } = await supabase
-        .from('vessels').select('*').eq('user_id', user.sub).single()
-      if (!v) { router.push('/register'); return }
-      setVessel(v)
+      const { data: vesselData } = await supabase
+        .from('vessels')
+        .select('*')
+        .eq('user_id', user.sub)
+        .single()
 
-      const [{ data: bk }, { data: bs }] = await Promise.all([
-        supabase.from('bookings').select('*')
-          .eq('vessel_id', v.id)
+      if (!vesselData) {
+        router.push('/register')
+        return
+      }
+
+      setVessel(vesselData)
+
+      const [{ data: bookingRows }, { data: settingRows }] = await Promise.all([
+        supabase
+          .from('bookings')
+          .select('*')
+          .eq('vessel_id', vesselData.id)
           .gte('date', todayStr)
           .order('date', { ascending: true }),
-        supabase.from('bin_settings').select('*').eq('vessel_id', v.id),
+        supabase
+          .from('bin_settings')
+          .select('id, bin_type, max_capacity')
+          .eq('vessel_id', vesselData.id),
       ])
-      setBookings(bk || [])
-      setBinSettings(bs || [])
+
+      setBookings(bookingRows || [])
+      setBinSettings(settingRows || [])
       setLoading(false)
     }
+
     init()
   }, [router, todayStr])
 
@@ -91,7 +162,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ id, status }),
       })
       if (res.ok) {
-        setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b))
+        setBookings(prev => prev.map(booking => booking.id === id ? { ...booking, status } : booking))
       }
     } finally {
       setActionLoading(null)
@@ -106,19 +177,19 @@ export default function DashboardPage() {
       body: JSON.stringify({ id: booking.id, contacted: true }),
     })
     if (res.ok) {
-      setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, contacted: true } : b))
+      setBookings(prev => prev.map(item => item.id === booking.id ? { ...item, contacted: true } : item))
     }
   }
 
   const toggleContacted = async (booking: Booking) => {
-    const next = !booking.contacted
+    const contacted = !booking.contacted
     const res = await fetch('/api/bookings', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: booking.id, contacted: next }),
+      body: JSON.stringify({ id: booking.id, contacted }),
     })
     if (res.ok) {
-      setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, contacted: next } : b))
+      setBookings(prev => prev.map(item => item.id === booking.id ? { ...item, contacted } : item))
     }
   }
 
@@ -129,7 +200,7 @@ export default function DashboardPage() {
       body: JSON.stringify({ id: booking.id, status: 'cancelled' }),
     })
     if (res.ok) {
-      setBookings(prev => prev.map(b => b.id === booking.id ? { ...b, status: 'cancelled' } : b))
+      setBookings(prev => prev.map(item => item.id === booking.id ? { ...item, status: 'cancelled' } : item))
     }
   }
 
@@ -144,7 +215,7 @@ export default function DashboardPage() {
       })
       if (!res.ok) return
 
-      setBookings(prev => prev.filter(b => b.id !== booking.id))
+      setBookings(prev => prev.filter(item => item.id !== booking.id))
 
       if (addBlockedDate) {
         await supabase.from('blocked_dates').insert([{
@@ -162,345 +233,266 @@ export default function DashboardPage() {
     }
   }
 
-  const pendingBookings = bookings.filter(b => b.status === 'pending')
-  const getPendingCount = () => pendingBookings.length
-  const todayBookings = bookings.filter(b => b.date === todayStr && b.status !== 'rejected')
-  const tomorrowBookings = bookings.filter(b => b.date === tomorrowStr && b.status !== 'rejected')
-  const tomorrowUncontacted = tomorrowBookings.filter(b => b.status === 'confirmed' && !b.contacted)
+  const pendingBookings = bookings.filter(booking => booking.status === 'pending')
+  const todayBookings = bookings.filter(booking => booking.date === todayStr && booking.status !== 'rejected')
+  const tomorrowBookings = bookings.filter(booking => booking.date === tomorrowStr && booking.status !== 'rejected')
+  const tomorrowUncontacted = tomorrowBookings.filter(booking => booking.status === 'confirmed' && !booking.contacted)
 
-  const getMaxCap = (binType: string) => {
-    const bin = binSettings.find(b => b.bin_type === binType)
-    return bin?.max_capacity ?? 0
-  }
+  const getMaxCapacity = (binType: Booking['bin_type']) =>
+    binSettings.find(setting => setting.bin_type === binType)?.max_capacity || 0
 
-  const getChannelBadge = (channel: string) => {
-    const map: Record<string, { label: string; bg: string; color: string }> = {
-      page: { label: '📱 予約ページ', bg: 'var(--status-day-bg)', color: 'var(--ocean)' },
-      line: { label: '💬 LINE', bg: '#E8F8EE', color: '#06C755' },
-      line_official: { label: '💬 LINE公式', bg: '#E8F8EE', color: '#06C755' },
-      instagram: { label: '📸 Instagram', bg: '#FDE8F4', color: '#C13584' },
-      phone: { label: '電話', bg: 'var(--status-closed-bg)', color: 'var(--fg-2)' },
-      other: { label: 'その他', bg: 'var(--status-closed-bg)', color: 'var(--fg-2)' },
-    }
-    const badge = map[channel] || map.other
-    return (
-      <span style={{ fontSize: '13px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', background: badge.bg, color: badge.color }}>
-        {badge.label}
-      </span>
-    )
-  }
+  const quickActions = [
+    { label: '予約一覧', path: '/dashboard/bookings' },
+    { label: '顧客名簿', path: '/dashboard/customers' },
+    { label: '乗船名簿', path: '/dashboard/logs' },
+    { label: 'スケジュール', path: '/dashboard/schedule' },
+  ]
 
-  const oceanGradient =
-    'radial-gradient(120% 200% at 88% 110%, rgba(46,134,193,.45) 0%, transparent 55%),' +
-    'radial-gradient(80% 120% at 12% -20%, rgba(212,172,13,.18) 0%, transparent 60%),' +
-    'linear-gradient(180deg, var(--ocean) 0%, #0F4570 55%, #04192B 100%)'
-
-  if (loading) return (
-    <main style={{ minHeight: '100vh', background: oceanGradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
-    </main>
-  )
-
-  const PendingCard = ({ b }: { b: Booking }) => (
-    <div style={{ background: 'var(--surface)', border: '2px solid var(--status-pending-dot)', borderRadius: '14px', padding: '18px', marginBottom: '10px' }}>
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', alignItems: 'flex-start' }}>
-        <span style={{ fontSize: '14px', fontWeight: 700, padding: '6px 12px', borderRadius: '99px', flexShrink: 0, background: b.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)', color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
-          {b.bin_type === 'day' ? '昼便' : '夜便'}
+  const BookingCard = ({ booking }: { booking: Booking }) => (
+    <Card className={`p-4 ${booking.status === 'confirmed' && !booking.contacted ? 'bg-[#FFF7ED]' : ''}`}>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className={`rounded-[20px] px-3 py-1 text-[13px] font-medium ${binBadgeClass(booking.bin_type)}`}>
+          {binLabel(booking.bin_type)}
         </span>
-        {getChannelBadge(b.channel)}
-        <div>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
-          <div style={{ fontSize: '18px', color: 'var(--fg-2)', marginTop: '4px' }}>
-            {b.count}名　{new Date(b.date + 'T00:00:00').getMonth()+1}月{new Date(b.date + 'T00:00:00').getDate()}日（{DAY_NAMES[new Date(b.date + 'T00:00:00').getDay()]}）
-          </div>
-          {b.fishing_style && <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginTop: '2px' }}>{b.fishing_style}</div>}
-          {b.message && <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginTop: '2px' }}>{b.message}</div>}
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button
-          onClick={() => updateStatus(b.id, 'confirmed')}
-          disabled={actionLoading === b.id}
-          style={{ flex: 1, padding: '16px', fontSize: '20px', fontWeight: 700, minHeight: '56px', background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
-        >{actionLoading === b.id ? '処理中...' : '承認する'}</button>
-        <button
-          onClick={() => updateStatus(b.id, 'rejected')}
-          disabled={actionLoading === b.id}
-          style={{ flex: 1, padding: '16px', fontSize: '20px', fontWeight: 700, minHeight: '56px', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
-        >お断り</button>
-      </div>
-    </div>
-  )
-
-  const BookingCard = ({ b }: { b: Booking }) => (
-    <div key={b.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: b.status === 'confirmed' && !b.contacted ? '4px solid var(--status-pending-dot)' : '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '10px', boxShadow: 'var(--shadow-card)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-        <span style={{ fontSize: '13px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px', background: b.bin_type === 'day' ? 'var(--status-day-bg)' : b.bin_type === 'relay' ? 'var(--ocean-pale)' : 'var(--status-night-bg)', color: b.bin_type === 'day' ? 'var(--status-day-fg)' : b.bin_type === 'relay' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
-          {b.bin_type === 'day' ? '昼便' : b.bin_type === 'relay' ? '昼夜便' : '夜便'}
+        <span className="rounded-[20px] bg-[#F5F5F4] px-3 py-1 text-[13px] font-normal text-[#57534E]">
+          {channelLabel(booking.channel)}
         </span>
-        <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 600 }}>{b.count}名</span>
-        <span style={{ fontSize: '12px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', marginLeft: 'auto', background: b.status === 'confirmed' ? 'var(--status-ok-bg)' : b.status === 'cancelled' ? 'var(--status-closed-bg)' : 'var(--status-pending-bg)', color: b.status === 'confirmed' ? 'var(--status-ok-fg)' : b.status === 'cancelled' ? 'var(--status-closed-fg)' : 'var(--status-pending-fg)' }}>
-          {b.status === 'confirmed' ? '承認済み' : b.status === 'cancelled' ? 'キャンセル' : '承認待ち'}
+        <span className={`ml-auto rounded-[20px] px-3 py-1 text-[13px] font-medium ${statusClass(booking.status)}`}>
+          {statusLabel(booking.status)}
         </span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
-        <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</span>
-        <span style={{ fontSize: '16px', color: 'var(--fg-2)', marginLeft: '6px' }}>様</span>
+      <div className="mb-2 text-[22px] font-medium leading-tight text-[#1C1917]">
+        {booking.name}<span className="ml-1 text-[15px] font-normal text-[#57534E]">様</span>
+      </div>
+      <div className="mb-3 text-[15px] font-normal text-[#57534E]">
+        {booking.count}名
+        {booking.fishing_style ? `・${booking.fishing_style}` : ''}
+        {booking.message ? `・${booking.message}` : ''}
       </div>
 
-      {b.status === 'confirmed' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: b.contacted ? 'var(--status-ok-fg)' : 'var(--status-pending-dot)', flexShrink: 0 }} />
-          <span style={{ fontSize: '14px', fontWeight: 700, color: b.contacted ? 'var(--status-ok-fg)' : 'var(--status-pending-dot)' }}>
-            {b.contacted ? '連絡済み' : '未連絡'}
+      {booking.status === 'confirmed' && (
+        <div className="mb-3 flex items-center gap-2 text-[14px] font-medium">
+          <span className={`h-2 w-2 rounded-full ${booking.contacted ? 'bg-[#059669]' : 'bg-[#D97706]'}`} />
+          <span className={booking.contacted ? 'text-[#059669]' : 'text-[#D97706]'}>
+            {booking.contacted ? '連絡済み' : '未連絡'}
           </span>
-          {!b.contacted && <span style={{ fontSize: '14px', color: 'var(--fg-2)' }}>ご連絡をお願いいたします</span>}
+          {!booking.contacted && <span className="font-normal text-[#57534E]">電話確認をお願いします</span>}
         </div>
       )}
 
-      {b.status === 'pending' && (
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-          <button onClick={() => updateStatus(b.id, 'confirmed')}
-            style={{ flex: 1, padding: '12px', fontSize: '16px', fontWeight: 700, background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 'unset' }}>
-            承認する
+      {booking.status === 'pending' && (
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <button
+            onClick={() => updateStatus(booking.id, 'confirmed')}
+            disabled={actionLoading === booking.id}
+            className="min-h-0 rounded-[9px] border-[0.5px] border-[#A7F3D0] bg-[#ECFDF5] px-3 py-3 text-[15px] font-medium text-[#059669] disabled:opacity-60"
+          >
+            {actionLoading === booking.id ? '処理中' : '承認する'}
           </button>
-          <button onClick={() => updateStatus(b.id, 'rejected')}
-            style={{ flex: 1, padding: '12px', fontSize: '16px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 'unset' }}>
+          <button
+            onClick={() => updateStatus(booking.id, 'rejected')}
+            disabled={actionLoading === booking.id}
+            className="min-h-0 rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-[#FEF2F2] px-3 py-3 text-[15px] font-medium text-[#B91C1C] disabled:opacity-60"
+          >
             お断り
           </button>
         </div>
       )}
 
-      {b.status === 'confirmed' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {b.tel ? (
-            <button onClick={() => handleCall(b)}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', fontSize: '17px', fontWeight: 700, background: 'var(--ocean)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 'unset' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
-              </svg>
-              TELする
+      <div className="flex items-center gap-2">
+        {booking.status === 'confirmed' && booking.tel && (
+          <button
+            onClick={() => handleCall(booking)}
+            className="min-h-0 rounded-[9px] bg-[#B91C1C] px-5 py-3 text-[15px] font-medium text-white"
+          >
+            TELする
+          </button>
+        )}
+        {booking.status === 'confirmed' && (
+          <button
+            onClick={() => toggleContacted(booking)}
+            className="min-h-0 rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-white px-4 py-3 text-[14px] font-medium text-[#57534E]"
+          >
+            {booking.contacted ? '未連絡に戻す' : '連絡済みにする'}
+          </button>
+        )}
+        <div className="ml-auto flex gap-2">
+          {booking.status !== 'cancelled' && (
+            <button
+              onClick={() => router.push('/dashboard/bookings')}
+              className="min-h-0 rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-[14px] font-medium text-[#B91C1C]"
+            >
+              編集
             </button>
-          ) : (
-            <span style={{ fontSize: '14px', color: 'var(--fg-3)' }}>電話番号なし</span>
           )}
-
-          <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
-            <button onClick={() => router.push('/dashboard/bookings')}
-              style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--fg-2)', minHeight: 'unset' }} title="編集">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
+          {booking.status === 'confirmed' && (
+            <button
+              onClick={() => handleCancel(booking)}
+              className="min-h-0 rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-white px-4 py-3 text-[14px] font-medium text-[#B91C1C]"
+            >
+              取消
             </button>
-            <button onClick={() => handleCancel(b)}
-              style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--status-full-fg)', minHeight: 'unset' }} title="取消">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                <path d="M10 11v6M14 11v6"/>
-                <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-              </svg>
-            </button>
-            <button onClick={() => setDeleteTarget(b)}
-              style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--fg-3)', minHeight: 'unset' }} title="その他">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {b.status === 'cancelled' && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={() => setDeleteTarget(b)}
-            style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--status-full-fg)', minHeight: 'unset' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-            </svg>
+          )}
+          <button
+            onClick={() => setDeleteTarget(booking)}
+            className="min-h-0 rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-white px-4 py-3 text-[14px] font-medium text-[#B91C1C]"
+          >
+            削除
           </button>
         </div>
-      )}
-    </div>
+      </div>
+    </Card>
   )
 
-  const DaySection = ({ label, dateBookings }: { label: string, dateBookings: Booking[] }) => {
-    if (dateBookings.length === 0) return (
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px', marginBottom: '12px' }}>
-        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '8px' }}>{label}</div>
-        <div style={{ fontSize: '16px', color: 'var(--fg-3)' }}>予約はありません</div>
-      </div>
-    )
-    const dayBks = dateBookings.filter(b => b.bin_type === 'day')
-    const relayBks = dateBookings.filter(b => b.bin_type === 'relay')
-    const nightBks = dateBookings.filter(b => b.bin_type === 'night')
+  const DaySection = ({ label, dateBookings }: { label: string; dateBookings: Booking[] }) => {
+    const byBin = (binType: Booking['bin_type']) => dateBookings.filter(booking => booking.bin_type === binType)
+    const groups = [
+      { binType: 'day' as const, items: byBin('day') },
+      { binType: 'relay' as const, items: byBin('relay') },
+      { binType: 'night' as const, items: byBin('night') },
+    ].filter(group => group.items.length > 0)
+
     return (
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px', marginBottom: '12px' }}>
-        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>{label}</div>
-        {dayBks.length > 0 && (
-          <div style={{ marginBottom: relayBks.length > 0 || nightBks.length > 0 ? '12px' : '0' }}>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '4px' }}>
-              昼便　{dayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('day')}名
-            </div>
-            {dayBks.map(b => <BookingCard key={b.id} b={b} />)}
+      <Card className="mb-3 p-4">
+        <div className="mb-3 text-[20px] font-medium text-[#1C1917]">{label}</div>
+        {dateBookings.length === 0 ? (
+          <div className="rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-[#F7F2EF] p-4 text-[15px] font-normal text-[#57534E]">
+            予約はありません
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {groups.map(group => (
+              <div key={group.binType}>
+                <div className="mb-2 flex items-center gap-2 text-[15px] font-medium text-[#1C1917]">
+                  <span className={`rounded-[20px] px-3 py-1 text-[13px] ${binBadgeClass(group.binType)}`}>
+                    {binLabel(group.binType)}
+                  </span>
+                  <span className="font-normal text-[#57534E]">
+                    {group.items.reduce((sum, booking) => sum + booking.count, 0)}名 / {getMaxCapacity(group.binType)}名
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {group.items.map(booking => <BookingCard key={booking.id} booking={booking} />)}
+                </div>
+              </div>
+            ))}
           </div>
         )}
-        {relayBks.length > 0 && (
-          <div style={{ marginBottom: nightBks.length > 0 ? '12px' : '0' }}>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '4px' }}>
-              昼夜便　{relayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('relay')}名
-            </div>
-            {relayBks.map(b => <BookingCard key={b.id} b={b} />)}
-          </div>
-        )}
-        {nightBks.length > 0 && (
-          <div>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--status-night-fg)', marginBottom: '4px' }}>
-              夜便　{nightBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('night')}名
-            </div>
-            {nightBks.map(b => <BookingCard key={b.id} b={b} />)}
-          </div>
-        )}
-      </div>
+      </Card>
+    )
+  }
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#7F1D1D] text-[16px] font-normal text-white">
+        読み込み中...
+      </main>
     )
   }
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
-      <div style={{
-        background: vessel?.banner_url
-          ? `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${vessel.banner_url})`
-          : oceanGradient,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        padding: '18px 20px',
-        display: 'flex', alignItems: 'center', gap: '16px',
-        position: 'sticky', top: 0, zIndex: 20, minHeight: '80px',
-        overflow: 'hidden', isolation: 'isolate'
-      }}>
-        <div style={{
-          width: '56px', height: '56px', borderRadius: '12px',
-          overflow: 'hidden', flexShrink: 0,
-        }}>
-          <img src={vessel?.logo_url || DEFAULT_ICON} alt={`${vessel?.name || 'fiShip'} ロゴ`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    <div className="mx-auto min-h-screen max-w-[480px] bg-[#F7F2EF] font-sans">
+      <header className="sticky top-0 z-20 overflow-hidden bg-[#7F1D1D] px-5 py-5 text-white">
+        <div className="asahi-rays" aria-hidden="true">
+          {Array.from({ length: 12 }).map((_, index) => <span key={index} />)}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>{vessel?.name}</div>
-          <div style={{ fontSize: '18px', color: '#ffffff', marginTop: '4px', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>{vessel?.captain_name}</div>
-        </div>
-        {getPendingCount() > 0 && (
-          <div style={{
-            background: 'rgba(212,172,13,.18)', color: 'var(--gold)',
-            fontSize: '14px', fontWeight: 700, padding: '10px 14px',
-            border: '2px solid rgba(242,199,68,.55)', borderRadius: '99px',
-            whiteSpace: 'nowrap', minHeight: '44px', display: 'flex', alignItems: 'center',
-            position: 'relative', zIndex: 3,
-          }}>
-            承認待ち {getPendingCount()}件
+        <div className="relative flex items-center gap-4">
+          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[12px] border-[0.5px] border-white/30 bg-white">
+            <img
+              src={vessel?.logo_url || DEFAULT_ICON}
+              alt={`${vessel?.name || 'fiShip'} ロゴ`}
+              className="h-full w-full object-cover"
+            />
           </div>
-        )}
-        <button
-          onClick={() => router.push('/dashboard/account')}
-          aria-label="アカウント設定"
-          style={{ width: '56px', height: '56px', padding: 0, background: 'rgba(255,255,255,0.15)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', fontSize: '22px' }}
-        >⚙️</button>
-      </div>
-
-      <div style={{ padding: '16px' }}>
-        {pendingBookings.length > 0 && (
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--status-pending-dot)' }} />
-              <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)' }}>新しい予約が{pendingBookings.length}件届いています</span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[24px] font-medium leading-tight text-white">{vessel?.name}</div>
+            <div className="mt-1 truncate text-[16px] font-normal text-white/85">{vessel?.captain_name}</div>
+          </div>
+          {pendingBookings.length > 0 && (
+            <div className="rounded-[20px] border-[0.5px] border-white/40 bg-white/10 px-3 py-2 text-[13px] font-medium text-white">
+              承認待ち {pendingBookings.length}件
             </div>
-            {pendingBookings.map(b => <PendingCard key={b.id} b={b} />)}
-          </div>
+          )}
+          <button
+            onClick={() => router.push('/dashboard/account')}
+            aria-label="設定を開く"
+            className="min-h-0 h-12 rounded-[9px] border-[0.5px] border-white/40 bg-white/10 px-4 text-[14px] font-medium text-white"
+          >
+            設定
+          </button>
+        </div>
+      </header>
+
+      <main className="space-y-4 px-4 py-4">
+        {pendingBookings.length > 0 && (
+          <section>
+            <div className="mb-2 text-[18px] font-medium text-[#1C1917]">新しい予約</div>
+            <div className="space-y-2">
+              {pendingBookings.map(booking => <BookingCard key={booking.id} booking={booking} />)}
+            </div>
+          </section>
         )}
 
         {tomorrowBookings.length > 0 && (
-          <div style={{
-            background: tomorrowUncontacted.length === 0 ? 'var(--status-ok-bg)' : 'var(--status-pending-bg)',
-            border: `2px solid ${tomorrowUncontacted.length === 0 ? 'var(--status-ok-bd)' : 'var(--status-pending-dot)'}`,
-            borderRadius: '14px', padding: '16px 18px', marginBottom: '16px',
-            display: 'flex', alignItems: 'center', gap: '12px',
-          }}>
-            <div style={{ fontSize: '28px' }}>{tomorrowUncontacted.length === 0 ? '✅' : '⚠️'}</div>
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: tomorrowUncontacted.length === 0 ? 'var(--status-ok-fg)' : 'var(--status-pending-fg)' }}>
-                {tomorrowUncontacted.length === 0 ? '明日の乗船者全員に連絡済みです' : `明日の乗船者に連絡しましたか？　未連絡${tomorrowUncontacted.length}名`}
-              </div>
+          <Card className={`p-4 ${tomorrowUncontacted.length > 0 ? 'bg-[#FFF7ED]' : 'bg-[#ECFDF5]'}`}>
+            <div className={`text-[16px] font-medium ${tomorrowUncontacted.length > 0 ? 'text-[#D97706]' : 'text-[#059669]'}`}>
+              {tomorrowUncontacted.length > 0
+                ? `明日の予約で未連絡が${tomorrowUncontacted.length}件あります`
+                : '明日の予約は連絡済みです'}
             </div>
-          </div>
+          </Card>
         )}
 
-        <DaySection
-          label={`今日　${new Date().getMonth()+1}月${new Date().getDate()}日（${DAY_NAMES[new Date().getDay()]}）`}
-          dateBookings={todayBookings}
-        />
-        <DaySection
-          label={`明日　${new Date(Date.now()+86400000).getMonth()+1}月${new Date(Date.now()+86400000).getDate()}日（${DAY_NAMES[new Date(Date.now()+86400000).getDay()]}）`}
-          dateBookings={tomorrowBookings}
-        />
+        <DaySection label={`今日 ${formatDate(todayStr)}`} dateBookings={todayBookings} />
+        <DaySection label={`明日 ${formatDate(tomorrowStr)}`} dateBookings={tomorrowBookings} />
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px', marginBottom: '16px' }}>
-          {[
-            { icon: '📅', label: '予約一覧', path: '/dashboard/bookings' },
-            { icon: '👥', label: '顧客名簿', path: '/dashboard/customers' },
-            { icon: '📋', label: '乗船名簿', path: '/dashboard/logs' },
-            { icon: '🗓️', label: 'スケジュール', path: '/dashboard/schedule' },
-          ].map(({ icon, label, path }) => (
+        <div className="grid grid-cols-2 gap-2">
+          {quickActions.map(action => (
             <button
-              key={path}
-              onClick={() => router.push(path)}
-              style={{ padding: '16px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', minHeight: '90px' }}
+              key={action.path}
+              onClick={() => router.push(action.path)}
+              className="min-h-[64px] rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white px-4 py-4 text-[16px] font-medium text-[#1C1917]"
             >
-              <div style={{ fontSize: '28px' }}>{icon}</div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', textAlign: 'center', lineHeight: 1.3 }}>{label}</div>
+              {action.label}
             </button>
           ))}
         </div>
-      </div>
+      </main>
 
       {deleteTarget && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '440px' }}>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '8px' }}>
-              予約を削除しますか？
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-5">
+          <Card className="w-full max-w-[440px] p-5">
+            <div className="mb-2 text-[20px] font-medium text-[#1C1917]">予約を削除しますか？</div>
+            <div className="mb-4 text-[15px] font-normal leading-7 text-[#57534E]">
+              {deleteTarget.name}さん {formatDate(deleteTarget.date)} {binLabel(deleteTarget.bin_type)}
             </div>
-            <div style={{ fontSize: '15px', color: 'var(--fg-2)', marginBottom: '20px', lineHeight: 1.7 }}>
-              {deleteTarget.name}さん　{new Date(deleteTarget.date + 'T00:00:00').getMonth()+1}月{new Date(deleteTarget.date + 'T00:00:00').getDate()}日　{deleteTarget.bin_type === 'day' ? '昼便' : '夜便'}
+            <div className="mb-4 rounded-[12px] border-[0.5px] border-[#FCA5A5] bg-[#FEF2F2] p-3 text-[14px] font-normal leading-6 text-[#B91C1C]">
+              出船を中止する場合は、この日を休船日に設定できます。
             </div>
-
-            <div style={{ background: 'var(--status-pending-bg)', border: '2px solid var(--status-pending-dot)', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '14px', color: 'var(--status-pending-fg)', lineHeight: 1.7 }}>
-              ⚠️ この日の出船を中止する場合は、新たな予約が入らないよう休船日に設定することをお勧めします。
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="space-y-2">
               <button
                 onClick={() => handleDelete(deleteTarget, true)}
                 disabled={deleting}
-                style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700, background: 'var(--status-full-fg)', color: '#fff', border: 'none', borderRadius: '12px', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                className="min-h-[56px] w-full rounded-[9px] bg-[#B91C1C] px-4 py-3 text-[15px] font-medium text-white disabled:opacity-60"
               >
-                削除する＋この日を休船日に設定する
+                削除して休船日にする
               </button>
               <button
                 onClick={() => handleDelete(deleteTarget, false)}
                 disabled={deleting}
-                style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '12px', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                className="min-h-[56px] w-full rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-[15px] font-medium text-[#B91C1C] disabled:opacity-60"
               >
                 削除のみ
               </button>
               <button
                 onClick={() => setDeleteTarget(null)}
-                style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: 700, background: 'transparent', color: 'var(--fg-2)', border: '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit' }}
+                className="min-h-[56px] w-full rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-white px-4 py-3 text-[15px] font-medium text-[#57534E]"
               >
                 キャンセル
               </button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>

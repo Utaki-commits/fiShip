@@ -176,3 +176,33 @@ a {
   color: var(--fg-3);
 }
 
+.asahi-rays {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.asahi-rays span {
+  position: absolute;
+  left: 50%;
+  bottom: -32px;
+  width: 0.5px;
+  height: 180px;
+  background: rgba(255, 255, 255, 0.12);
+  transform-origin: bottom center;
+}
+
+.asahi-rays span:nth-child(1) { transform: rotate(-72deg); }
+.asahi-rays span:nth-child(2) { transform: rotate(-60deg); }
+.asahi-rays span:nth-child(3) { transform: rotate(-48deg); }
+.asahi-rays span:nth-child(4) { transform: rotate(-36deg); }
+.asahi-rays span:nth-child(5) { transform: rotate(-24deg); }
+.asahi-rays span:nth-child(6) { transform: rotate(-12deg); }
+.asahi-rays span:nth-child(7) { transform: rotate(0deg); }
+.asahi-rays span:nth-child(8) { transform: rotate(12deg); }
+.asahi-rays span:nth-child(9) { transform: rotate(24deg); }
+.asahi-rays span:nth-child(10) { transform: rotate(36deg); }
+.asahi-rays span:nth-child(11) { transform: rotate(48deg); }
+.asahi-rays span:nth-child(12) { transform: rotate(60deg); }
+

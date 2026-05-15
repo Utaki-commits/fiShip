@@ -1,9 +1,9 @@
-import type { Metadata, Viewport } from 'next'
+﻿import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ThemeInitializer } from './preferences-initializer'
 
 export const metadata: Metadata = {
-  title: '遊漁船予約システム',
+  title: 'fiShip',
   description: '遊漁船の予約管理システム',
 }
 

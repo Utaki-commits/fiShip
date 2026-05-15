@@ -184,3 +184,10 @@ Claudeのレビューで指摘されやすいパターン。事前に自己チ�
 | 既存ロジックとの競合 | Claudeに相談する |
 | Vercel buildが失敗 | `AI_IMPLEMENTATION_GUIDE.md` の「よくあるミス」を確認 |
 | Supabaseのエラー | RLS設定・サービスロールキーの使用可否を確認 |
+
+## v0生成コードの受け取りルール
+- ブランチ名：v0/[画面名]-[YYYYMMDD]
+- 配置先：src/app/dashboard/[画面名]/page.tsx
+- コミット：v0: [画面名]の初期コンポーネントを生成
+- 受け取り後：docs/design-system/concept.md の禁止事項に従いリファクタする
+- Tailwind + shadcn/ui はそのまま使用可（インラインスタイルに戻さない）
