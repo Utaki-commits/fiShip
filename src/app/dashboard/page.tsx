@@ -312,7 +312,7 @@ export default function DashboardPage() {
         {booking.status === 'confirmed' && (
           <button
             onClick={() => toggleContacted(booking)}
-            className="min-h-0 rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-white px-4 py-3 text-[14px] font-medium text-[#57534E]"
+            className="min-h-0 rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-4 py-3 text-[14px] font-medium text-[#57534E]"
           >
             {booking.contacted ? '未連絡に戻す' : '連絡済みにする'}
           </button>
@@ -329,14 +329,14 @@ export default function DashboardPage() {
           {booking.status === 'confirmed' && (
             <button
               onClick={() => handleCancel(booking)}
-              className="min-h-0 rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-white px-4 py-3 text-[14px] font-medium text-[#B91C1C]"
+              className="min-h-0 rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-transparent px-4 py-3 text-[14px] font-medium text-[#B91C1C]"
             >
               取消
             </button>
           )}
           <button
             onClick={() => setDeleteTarget(booking)}
-            className="min-h-0 rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-white px-4 py-3 text-[14px] font-medium text-[#B91C1C]"
+            className="min-h-0 rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-transparent px-4 py-3 text-[14px] font-medium text-[#B91C1C]"
           >
             削除
           </button>
@@ -481,7 +481,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => handleDelete(deleteTarget, false)}
                 disabled={deleting}
-                className="min-h-[56px] w-full rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-[#FEF2F2] px-4 py-3 text-[15px] font-medium text-[#B91C1C] disabled:opacity-60"
+                className="min-h-[56px] w-full rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-transparent px-4 py-3 text-[15px] font-medium text-[#B91C1C] disabled:opacity-60"
               >
                 削除のみ
               </button>
