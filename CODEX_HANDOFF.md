@@ -1,227 +1,72 @@
 # Codex 引き継ぎガイド — fiShip
 
-> このファイルはCodexがコーディング作業を開始する前に必ず読むこと。
-> Claudeは仕様策定・レビュー担当。Codexがすべての実装を担当する。
+> 実装開始前に必ず読む。詳細ルールは各参照先を確認すること。
 
----
+## 着手前に読むファイル（この順で）
+1. CLAUDE.md — 役割・フロー・絶対ルール
+2. PROJECT_DNA.md — DBスキーマ・予約ロジック
+3. AI_IMPLEMENTATION_GUIDE.md — コードパターン・スタイル
+4. docs/design-system/concept.md — 旭波デザイントークン
 
-## 役割と作業フロー
+## タスク指示フォーマット
+Claudeから以下の形式で渡される：
 
 ```
-オーナー
-  ↓ 要件を伝える
-Claude（仕様策定・レビュー）
-  ↓ 仕様書・タスク指示を渡す
-Codex（コーディング）
-  ↓ 実装・コミット・プッシュ
-Claude（レビュー・評価）
-  ↓ 承認 or 修正指摘
-オーナー（最終確認）
-```
-
-**Claudeはコードを書かない。Codexはレビューをしない。**
-
----
-
-## 着手前に必ず読むファイル
-
-| ファイル | 内容 |
-|---|---|
-| `PROJECT_DNA.md` | プロジェクト全体の設計思想・DBスキーマ・予約ロジック |
-| `AI_IMPLEMENTATION_GUIDE.md` | コードテンプレート・スタイルチートシート・よくあるミス |
-| `CLAUDE.md` | プロジェクトルール・UI原則・ボタン色ルール |
-
----
-
-## Codexへのタスク指示フォーマット
-
-Claudeからタスクを受け取るときは以下の形式で渡される。
-
-```markdown
 ## タスク: [機能名]
-
 ### 概要
-[何を作るか・なぜ必要か]
-
 ### 変更ファイル
-- `src/app/...` — [変更内容]
-- `src/app/api/...` — [変更内容]
-- `supabase/migrations/...` — [変更内容（あれば）]
-
 ### 仕様詳細
-[UIの構造・データフロー・バリデーションルール]
-
 ### 完了条件
-- [ ] 条件1
-- [ ] 条件2
-
 ### 注意事項
-[既存ロジックとの干渉・禁止事項]
 ```
 
----
-
-## コーディング規約（必須）
-
-### スタイル
-- **インラインスタイルのみ**。Tailwindクラスは使わない
-- `AI_IMPLEMENTATION_GUIDE.md` の「スタイルチートシート」から色・ボタンをコピーする
-
-### TypeScript
-- `any` 禁止。型を必ず定義する
-- 型定義はファイル先頭にまとめる
-
-### コメント
-- コメントは原則書かない
-- 書く場合は「なぜ」だけ。「何をしているか」は書かない
-
-### 日付処理
-```ts
-// ❌ タイムゾーンで前日になる
-new Date('2026-05-08')
-
-// ✅ 必ずこの形式
-new Date('2026-05-08' + 'T00:00:00')
-```
-
-### 祝日
-```ts
-// ❌ 使用禁止（Vercel buildで死ぬ）
-import * as holidaysJp from 'holidays-jp'
-
-// ✅ 必ずこのラッパー
-import { getHolidayInfo } from '@/lib/holidays'
-```
-
----
+## コーディング規約
+- スタイル：既存画面=インラインスタイル / 新規画面=Tailwind + shadcn/ui
+- `any` 禁止・型定義はファイル先頭
+- 日付：`new Date('YYYY-MM-DD' + 'T00:00:00')` を使う
+- 祝日：`import { getHolidayInfo } from '@/lib/holidays'` のみ
 
 ## Gitルール
-
-```bash
-# ブランチ命名
-git checkout -b codex/[機能名]-[日付]
-# 例: codex/add-notification-20260508
-
-# コミットメッセージ（日本語OK）
-git commit -m "Add: 通知設定ページを追加"
-git commit -m "Fix: 定員チェックのバグを修正"
-git commit -m "Update: 便設定の表示を改善"
-
-# プッシュ後はClaude（またはオーナー）にレビューを依頼する
-git push origin codex/[機能名]-[日付]
 ```
+git checkout -b codex/[機能名]-[YYYYMMDD]
+git commit -m "Add: ..."
+git push origin codex/[機能名]-[YYYYMMDD]
+```
+mainへの直接プッシュ禁止。必ずブランチを切る。
 
-**mainへの直接プッシュは禁止。必ずブランチを切ること。**
+## 実装前セルフチェック
+- [ ] ボタン色がルール通りか（docs/design-system/concept.md）
+- [ ] IT用語が混入していないか（docs/ux-principles.md）
+- [ ] タップ対象が padding 14px 以上か
+- [ ] `any` 型を使っていないか
+- [ ] `new Date('YYYY-MM-DD')` を直接使っていないか
+- [ ] `holidays-jp` を直接インポートしていないか
+- [ ] 承認ロジックが正しいか（docs/reservation-logic.md）
+- [ ] bin_settings の重複チェックが name ベースか
+- [ ] DBカラム追加時にマイグレーションを作成したか
 
----
-
-## レビュー依頼の方法
-
-実装完了後、以下の情報をClaudeへ渡す：
-
-```markdown
+## レビュー依頼フォーマット
+```
 ## レビュー依頼
-
-### ブランチ
-codex/[機能名]-[日付]
-
-### 変更ファイル
-- `src/app/...`
-- `src/app/api/...`
-
-### 実装内容
-[何を実装したか]
-
-### 確認してほしい点
-- [特に不安な箇所]
-- [仕様通りか確認してほしい箇所]
-
-### 動作確認済み
-- [ ] ローカルで npm run dev を起動して確認した
-- [ ] 主要な操作フローを手動テストした
+### ブランチ: codex/[機能名]-[日付]
+### 変更ファイル:
+### 実装内容:
+### 確認してほしい点:
+### Vercel Preview URL:
 ```
-
----
-
-## よくある指摘事項（レビューで引っかかる箇所）
-
-Claudeのレビューで指摘されやすいパターン。事前に自己チェックすること。
-
-| チェック項目 | 確認方法 |
-|---|---|
-| ボタンの色がルール通りか | CLAUDE.md の「ボタンの色統一ルール」と照合 |
-| IT用語が混入していないか | CLAUDE.md の「IT用語の言い換え一覧」を確認 |
-| タップ対象が44px以上か | padding: '14px' 以上かチェック |
-| Tailwindクラスを使っていないか | `className=` を grep で検索 |
-| `new Date('YYYY-MM-DD')` を直接使っていないか | コード検索 |
-| `holidays-jp` を直接インポートしていないか | import文を確認 |
-| `any` 型を使っていないか | TypeScriptの型チェック |
-| 承認ロジックを正しく実装しているか | `PROJECT_DNA.md` の予約ロジックと照合 |
-| bin_settingsの重複チェックが名前ベースか | `bin_type` でなく `name` で比較しているか確認 |
-| 新しいDBカラムはマイグレーションを作成したか | `supabase/migrations/` にSQLがあるか |
-
----
 
 ## 禁止事項
+- mainへの直接コミット
+- `any` 型
+- `holidays-jp` 直接インポート
+- `new Date('YYYY-MM-DD')` パターン
+- bin_type による便重複チェック
+- SUPABASE_SERVICE_ROLE_KEY をクライアントに含める
+- 仕様書なしでの実装開始
 
-- `main` ブランチへの直接コミット・プッシュ
-- Tailwind CSS クラスの使用（`className` 属性）
-- `any` 型の使用
-- `holidays-jp` の直接インポート
-- `new Date('YYYY-MM-DD')` パターン（タイムゾーン問題）
-- `bin_type` による便重複チェック（`name` を使う）
-- `SUPABASE_SERVICE_ROLE_KEY` をクライアントコードに含める
-- 仕様書なしでの実装開始（必ずClaudeに確認する）
-- レビューなしでの `main` マージ
-
----
-
-## 緊急連絡先
-
+## トラブル対応
 | 状況 | 対応 |
 |---|---|
-| 仕様が不明確 | Claudeに確認してから実装する |
-| 既存ロジックとの競合 | Claudeに相談する |
-| Vercel buildが失敗 | `AI_IMPLEMENTATION_GUIDE.md` の「よくあるミス」を確認 |
-| Supabaseのエラー | RLS設定・サービスロールキーの使用可否を確認 |
-
----
-
-## AIリミットリスク対策
-
-### 基本方針
-どのAIが止まっても人間が判断できる状態を維持する。
-判断基準は常にGitHubのドキュメントに書かれている状態にする。
-
-### 役割分担（リミット耐性を考慮した確定版）
-
-| 作業種別 | 主担当 | 止まった時の代替 |
-|---|---|---|
-| Markdown・ドキュメント作成 | Claude Code | 人間が手動コミット |
-| git操作・ブランチ管理 | Claude Code | 人間が手動コミット |
-| 設定ファイル修正（.github/等） | Claude Code | Codexに依頼可能 |
-| 機能実装（src/配下） | Codex | Claude Codeでは行わない |
-| APIルート・Supabase連携 | Codex | Claude Codeでは行わない |
-| テストシナリオ追加 | Codex | Claude Codeでは行わない |
-| レビュー・設計判断 | Claude | 人間がドキュメントを読んで代行 |
-
-### 絶対に混在させないルール
-- Claude Code に TypeScript・APIルート等の実装コードを書かせない
-- Codex に Markdown ルール文書・設計ドキュメントを書かせない
-- 実装とドキュメントは必ず別コミット・別担当にする
-
-### リミットサイクルの考え方
-- Claude / Claude Code と Codex はリミットのサイクルが異なる
-- 両方が同時に止まる確率は低い
-- Codex がリミット → Claude Code で対応
-- Claude Code がリミット → Codex で対応
-- 両方止まった場合 → 人間が手動でコミット（ドキュメントを読めば判断できる状態を維持）
-
-### 1セッション1タスク原則
-- リミット途中で止まっても影響が最小になるよう1コミット1タスクを徹底する
-- セッションをまたぐ作業は docs/ai-reports/ に進捗を記録してから終了する
-
-### リミット発生時の確認手順
-1. docs/ai-reports/ の最新レポートを読む
-2. git log --oneline -5 で直近の作業を確認する
-3. 未完了タスクがあれば代替AIまたは人間が引き継ぐ
+| 仕様不明 | Claudeに確認してから実装 |
+| Vercel build失敗 | AI_IMPLEMENTATION_GUIDE.md の「よくあるミス」を確認 |
+| Supabaseエラー | RLS設定・サービスロールキーを確認 |
