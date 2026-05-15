@@ -65,4 +65,4 @@
 - `docs/design-system/concept.md` 欠落時の扱いが運用として妥当か。
 
 ## Vercel Preview URL
-- push 後に確認して追記。
+- https://fiship-n2deogws7-utaki-commits-projects.vercel.app

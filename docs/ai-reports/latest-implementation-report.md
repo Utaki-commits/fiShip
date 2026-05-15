@@ -1,86 +1,50 @@
 # Latest Implementation Report
 
 ## 実装目的
-
-- AIオーケストレーション構造をGitHub上で実際に連結する。
-- PR、CI、Playwright、実装レポート、Preview URLをAI間の共有経路にする。
-- 今後のAIセッションが会話履歴なしで作業を継続できる状態にする。
+- GitHub Actions、Playwright、AI実装レポート運用、v0からCodexへの受け渡しルールを整える。
+- `src/app/dashboard/page.tsx` を旭波デザインシステム指定に合わせて更新する。
 
 ## 変更内容
-
-- `.github/pull_request_template.md` を指定項目つきの日本語テンプレートへ更新。
-- `.github/workflows/ci.yml` を追加。
-  - PR時に `npm install`, `npm run lint`, `npm run build` を実行。
-  - `npm test` scriptが存在する場合のみ実行。
-- `.github/workflows/playwright.yml` を追加。
-  - PR時にPlaywrightを実行。
-  - mobile projectは `390px x 844px`。
-  - Playwright HTML reportと主要ページスクリーンショットをartifact化。
-- Playwrightテストを追加。
-  - ログインCTA表示。
-  - 利用規約ページ表示。
-  - 不正な予約URLの安全なエラー表示。
-  - `PLAYWRIGHT_RESERVE_VESSEL_ID` がある場合の予約導線検証。
-  - 主要ページスクリーンショット取得。
-- `AI_ORCHESTRATION.md` に、今後のAI連携は会話ではなくGitHub PR、実装レポート、テスト結果、Preview URLを通じて行うルールを追記。
-- Codex完了時に必ず記入する項目を `AI_ORCHESTRATION.md` と `docs/ai-orchestration/07-codex-implementation-rules.md` に追記。
-
-## 変更ファイル
-
-- `AI_ORCHESTRATION.md`
-- `.github/pull_request_template.md`
-- `.eslintrc.json`
-- `.github/workflows/ci.yml`
-- `.github/workflows/playwright.yml`
-- `docs/ai-orchestration/07-codex-implementation-rules.md`
-- `docs/ai-reports/latest-implementation-report.md`
-- `tests/playwright/major-pages.spec.ts`
-- `tests/playwright/reservation-flow.spec.ts`
+- `.github/workflows/ci.yml` と `.github/workflows/playwright.yml` の設定を確認。
+- `tests/login.spec.ts`、`tests/dashboard.spec.ts`、`tests/reserve.spec.ts` を追加。
+- `tests/playwright/smoke.spec.ts` を新しいログインspecへ置き換え。
+- `playwright.config.ts` の `testDir` を `./tests` に変更。
+- `CODEX_HANDOFF.md` に v0生成コードの受け取りルールを追記。
+- `docs/ai-reports/README.md` を追加。
+- `docs/ai-reports/2026-05-16-dashboard-redesign-codex.md` を追加。
+- `src/app/dashboard/page.tsx` を Tailwind ベースの旭波デザインへ更新。
+- `src/app/globals.css` に旭日放射モチーフ用CSSを追加。
+- `src/app/layout.tsx` のタイトルを `fiShip` に修正し、追加されたログイン画面テストに合わせた。
 
 ## UI影響
-
-- アプリUIへの変更はなし。
-- 画面ルートへの変更はなし。
-- PR上でUI変更点、確認URL、スクリーンショット確認を必須化。
+- ダッシュボードのヘッダー背景を `#7F1D1D` に変更。
+- 画面背景を `#F7F2EF` に変更。
+- カード背景を白、枠線を `0.5px #E8DDD8`、角丸を `12px` に統一。
+- ダッシュボード内の主要文字は `font-medium` までに制限。
+- 予約カードの便バッジ、ステータス、操作ボタンを旭波カラーへ変更。
 
 ## 確認すべき画面
-
-- `/login`
-- `/legal/terms`
-- `/reserve/not-a-valid-vessel-id`
-- 実船IDがある場合: `/reserve/[vesselId]`
+- `/dashboard`
+- `/`
+- `/reserve`
+- `/dashboard/bookings`
 
 ## 未確認事項
-
-- `PLAYWRIGHT_RESERVE_VESSEL_ID` はGitHub Secrets未設定の可能性がある。
-- Secret未設定時、実船予約導線テストはskipされる。
-- `npm run lint` は既存のNext.js lint設定に依存する。
+- 認証後の実データ入りダッシュボードはローカルでログイン状態を作れないため未確認。
+- `docs/design-system/concept.md` は指定パスに存在しなかったため未読。
+- shadcn/ui の実体コンポーネントは既存リポジトリに無かったため、Tailwindで同等構造を実装。
 
 ## テスト結果
-
-- `git diff --check`: passed.
-- `npm run lint`: passed with existing warnings.
-  - Existing warnings include `no-img-element`, missing hook dependency warnings, and custom font warning.
-- `npm run build`: passed with existing warnings.
-  - Existing warnings include Google Fonts optimization fetch, Auth0 dynamic dependency, and Edge Runtime warnings from `jose`.
-- `npm run test:e2e:list`: passed.
-  - 7 Playwright tests discovered across 3 files.
-- `npm run test:e2e`: attempted locally.
-  - 6 public tests passed.
-  - 1 real reservation route test skipped because `PLAYWRIGHT_RESERVE_VESSEL_ID` was not set.
-  - The local command hit the 180s shell timeout after test execution output; CI should run this on Ubuntu via `.github/workflows/playwright.yml`.
-- Remaining before final handoff:
-  - commit and push to `origin/main`
-  - GitHub main verification
-  - Vercel production deployment verification
+- `npm run lint`: 成功。既存の `<img>`、Hook dependency、font 警告あり。
+- `npm run build`: 成功。既存の Auth0 / Edge Runtime / Google Fonts 警告あり。
+- `npm run test:e2e:list`: 成功。7件検出。
+- `npm run test:e2e`: 6件成功、1件 skip。ローカルシェルは Playwright 出力後にタイムアウト。
+- Vercel Preview: Ready。
 
 ## Claude/ChatGPTに見てほしい観点
+- 旭波デザイン制約に対して、カード密度と中高年船長向けの読みやすさが十分か。
+- Tailwind + shadcn/ui 方針に対して、現状のローカルコンポーネント構造で許容できるか。
+- `docs/design-system/concept.md` 欠落時の扱いが運用として妥当か。
 
-- Claude:
-  - AI同士の責務分離が明確か。
-  - PRテンプレートと実装レポートでUXレビューに必要な情報が揃うか。
-  - Playwright検証範囲がプロダクトの主要導線に合っているか。
-- ChatGPT:
-  - PR本文だけで人間に説明できるか。
-  - Preview URL、テスト結果、未確認事項からレビュー観点を作れるか。
-  - 次タスク化しやすい粒度になっているか。
+## Vercel Preview URL
+- https://fiship-n2deogws7-utaki-commits-projects.vercel.app
