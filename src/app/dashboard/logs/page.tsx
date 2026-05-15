@@ -236,364 +236,257 @@ export default function LogsPage() {
   const displayDays = tab === 'upcoming' ? upcomingDisplay : pastDisplay
 
   if (loading) return (
-    <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
+    <main className="flex min-h-screen items-center justify-center bg-[#F7F2EF]">
+      <div className="text-[15px] font-normal text-[#57534E]">読み込み中...</div>
     </main>
   )
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
+    <div className="mx-auto min-h-screen max-w-[480px] bg-[#F7F2EF] text-[#1C1917]">
 
-      {/* 印刷用スタイル */}
       <style>{`
         @media print {
           .no-print { display: none !important; }
           .print-title { display: block !important; }
-          body { background: var(--surface) !important; margin: 0; padding: 16px; }
+          body { background: #FFFFFF !important; margin: 0; padding: 16px; }
           * { font-family: sans-serif; }
         }
         .print-title { display: none; }
       `}</style>
 
-      {/* ヘッダー */}
-      <div className="no-print" style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, zIndex: 20, minHeight: '80px', overflow: 'hidden' }}>
+      <header className="no-print sticky top-0 z-20 flex min-h-[80px] items-center gap-4 bg-[#7F1D1D] px-5 py-[18px]">
         <button
           onClick={() => selectedDay ? setSelectedDay(null) : router.push('/dashboard')}
-          style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.3)', color: 'var(--surface)', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}
-        >←</button>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>
-            {selectedDay ? formatDateShort(selectedDay.date) + ' の乗船名簿' : '乗船名簿'}
+          className="h-14 w-14 shrink-0 rounded-[9px] border-[0.5px] border-white/30 bg-transparent text-[20px] font-normal text-white"
+        >
+          ←
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[22px] font-medium leading-tight text-white">
+            {selectedDay ? `${formatDateShort(selectedDay.date)} の乗船名簿` : '乗船名簿'}
           </div>
-          <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5 }}>
+          <div className="mt-1 text-[14px] font-normal leading-relaxed text-white/80">
             {selectedDay
               ? `乗船人数 ${selectedDay.bookings.reduce((s, b) => s + b.count, 0)}名`
               : '出船日ごとの乗船者記録'}
           </div>
         </div>
         {selectedDay && forms.every(f => f.saved) && forms.length > 0 && (
-          <span style={{ background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', fontSize: '14px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px' }}>記録完了</span>
+          <span className="rounded-full bg-white px-3 py-1 text-[13px] font-medium text-[#7F1D1D]">記録完了</span>
         )}
-      </div>
+      </header>
 
-      {/* ===== 日付一覧ビュー ===== */}
       {!selectedDay && (
-        <div style={{ padding: '16px' }}>
-
-          {/* 今後/過去 タブ */}
-          <div style={{ display: 'flex', gap: '4px', background: 'var(--border)', borderRadius: '10px', padding: '3px', marginBottom: '12px' }}>
+        <main className="p-4">
+          <div className="mb-3 grid grid-cols-2 gap-2 rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white p-1">
             {([
-              { key: 'upcoming' as const, label: `今後の出船（直近1件）` },
-              { key: 'past' as const, label: `過去の出船（${past.length}件）` },
+              { key: 'upcoming' as const, label: '今後の出船' },
+              { key: 'past' as const, label: `過去の出船 ${past.length}件` },
             ]).map(t => (
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                style={{
-                  flex: 1, padding: '14px', fontSize: '14px', fontWeight: 700,
-                  background: tab === t.key ? 'var(--surface)' : 'transparent',
-                  color: tab === t.key ? 'var(--ocean)' : 'var(--fg-3)',
-                  border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
-                  boxShadow: tab === t.key ? '0 1px 3px rgba(0,0,0,.1)' : 'none',
-                }}
-              >{t.label}</button>
+                className={`min-h-0 rounded-[9px] px-3 py-[14px] text-[14px] font-medium ${
+                  tab === t.key ? 'bg-[#B91C1C] text-white' : 'bg-transparent text-[#57534E]'
+                }`}
+              >
+                {t.label}
+              </button>
             ))}
           </div>
 
           {days.length === 0 ? (
-            <div style={{ background: 'var(--surface)', border: '2px dashed var(--border)', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: '36px', marginBottom: '12px' }}>📋</div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>まだ出船記録がありません</div>
-              <div style={{ fontSize: '14px', color: 'var(--fg-3)', lineHeight: 1.6 }}>
-                予約が承認されると<br />ここに出船日が表示されます
+            <section className="rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white px-5 py-10 text-center">
+              <div className="mb-2 text-[17px] font-medium text-[#1C1917]">まだ出船記録がありません</div>
+              <div className="text-[14px] font-normal leading-relaxed text-[#57534E]">
+                予約が承認されるとここに出船日が表示されます
               </div>
-            </div>
+            </section>
           ) : displayDays.length === 0 ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: '14px', color: 'var(--fg-3)' }}>
-                {tab === 'upcoming' ? '今後の出船予定はありません' : '過去の出船記録はありません'}
-              </div>
-            </div>
+            <section className="rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white px-5 py-10 text-center text-[14px] font-normal text-[#57534E]">
+              {tab === 'upcoming' ? '今後の出船予定はありません' : '過去の出船記録はありません'}
+            </section>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="space-y-2">
               {displayDays.map(day => {
                 const totalCount = day.bookings.reduce((s, b) => s + b.count, 0)
                 const isToday = day.date === today
+                const d = new Date(day.date + 'T00:00:00')
 
                 return (
                   <button
                     key={day.date}
                     onClick={() => openDay(day)}
-                    style={{
-                      background: 'var(--surface)', border: isToday ? '2px solid var(--gold)' : '1px solid var(--border)',
-                      borderRadius: '12px', padding: '14px 16px',
-                      display: 'flex', alignItems: 'center', gap: '12px',
-                      cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', width: '100%',
-                    }}
+                    className="flex w-full items-center gap-3 rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white px-4 py-[14px] text-left"
                   >
-                    {/* 日付アイコン */}
-                    <div style={{
-                      width: '56px', height: '56px', borderRadius: '10px', flexShrink: 0,
-                      background: isToday ? 'var(--gold)' : day.isCompleted ? 'var(--status-ok-bg)' : 'var(--bg)',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      border: isToday ? 'none' : '1px solid var(--border)',
-                    }}>
-                      <div style={{ fontSize: '14px', fontWeight: 700, color: isToday ? 'var(--surface)' : 'var(--fg-3)' }}>
-                        {new Date(day.date + 'T00:00:00').getMonth() + 1}月
-                      </div>
-                      <div style={{ fontSize: '18px', fontWeight: 700, color: isToday ? 'var(--surface)' : 'var(--fg-1)', lineHeight: 1 }}>
-                        {new Date(day.date + 'T00:00:00').getDate()}
-                      </div>
-                      <div style={{ fontSize: '14px', fontWeight: 700, color: isToday ? 'var(--surface)' : 'var(--fg-3)' }}>
-                        {DAY_NAMES[new Date(day.date + 'T00:00:00').getDay()]}
-                      </div>
+                    <div className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-[9px] border-[0.5px] ${
+                      isToday ? 'border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]' : 'border-[#E8DDD8] bg-[#F7F2EF] text-[#57534E]'
+                    }`}>
+                      <div className="text-[12px] font-medium">{d.getMonth() + 1}月</div>
+                      <div className="text-[18px] font-medium leading-none">{d.getDate()}</div>
+                      <div className="text-[12px] font-medium">{DAY_NAMES[d.getDay()]}</div>
                     </div>
-
-                    {/* 情報 */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                        {isToday && (
-                          <span style={{ fontSize: '14px', fontWeight: 700, background: 'var(--gold)', color: 'var(--ocean)', padding: '2px 6px', borderRadius: '4px' }}>今日</span>
-                        )}
-                        <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>
-                          乗船 {totalCount}名
-                        </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        {isToday && <span className="rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[12px] font-medium text-[#B91C1C]">今日</span>}
+                        <span className="text-[15px] font-medium text-[#1C1917]">乗船 {totalCount}名</span>
                       </div>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      <div className="flex flex-wrap gap-1.5">
                         {day.bookings.map(b => (
-                          <span key={b.id} style={{
-                            fontSize: '14px', color: 'var(--fg-2)',
-                            background: 'var(--status-closed-bg)', padding: '2px 8px', borderRadius: '99px',
-                          }}>
+                          <span key={b.id} className="rounded-full bg-[#F7F2EF] px-2 py-1 text-[13px] font-normal text-[#57534E]">
                             {b.name} {b.count}名
                           </span>
                         ))}
                       </div>
                     </div>
-
-                    {/* 完了ステータス */}
-                    <div style={{ flexShrink: 0, textAlign: 'center' }}>
-                      {day.isCompleted ? (
-                        <>
-                          <div style={{ fontSize: '18px' }}>✅</div>
-                          <div style={{ fontSize: '14px', color: 'var(--status-ok-fg)', fontWeight: 700 }}>記録済</div>
-                        </>
-                      ) : (
-                        <>
-                          <div style={{ fontSize: '18px' }}>📋</div>
-                          <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700 }}>未記録</div>
-                        </>
-                      )}
+                    <div className={`shrink-0 rounded-full px-3 py-1 text-[12px] font-medium ${
+                      day.isCompleted ? 'bg-[#ECFDF5] text-[#059669]' : 'bg-[#F7F2EF] text-[#57534E]'
+                    }`}>
+                      {day.isCompleted ? '記録済' : '未記録'}
                     </div>
                   </button>
                 )
               })}
 
-              {/* 過去タブのページング */}
               {tab === 'past' && pastTotalPages > 1 && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', marginTop: '4px' }}>
+                <div className="mt-3 flex items-center justify-between gap-3">
                   <button
                     onClick={() => setPastPage(p => Math.max(0, p - 1))}
                     disabled={pastPage === 0}
-                    style={{
-                      padding: '14px 20px', fontSize: '14px', fontWeight: 700,
-                      background: pastPage === 0 ? 'var(--status-closed-bg)' : 'var(--surface)',
-                      color: pastPage === 0 ? 'var(--fg-3)' : 'var(--ocean)',
-                      border: '2px solid var(--border)', borderRadius: '8px',
-                      cursor: pastPage === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                    }}
-                  >← 前へ</button>
-                  <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 700 }}>
-                    {pastPage + 1} / {pastTotalPages}ページ
-                  </span>
+                    className="min-h-0 rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-5 py-[14px] text-[14px] font-medium text-[#57534E] disabled:text-[#A8A29E]"
+                  >
+                    前へ
+                  </button>
+                  <span className="text-[14px] font-normal text-[#57534E]">{pastPage + 1} / {pastTotalPages}</span>
                   <button
                     onClick={() => setPastPage(p => Math.min(pastTotalPages - 1, p + 1))}
                     disabled={pastPage >= pastTotalPages - 1}
-                    style={{
-                      padding: '14px 20px', fontSize: '14px', fontWeight: 700,
-                      background: pastPage >= pastTotalPages - 1 ? 'var(--status-closed-bg)' : 'var(--surface)',
-                      color: pastPage >= pastTotalPages - 1 ? 'var(--fg-3)' : 'var(--ocean)',
-                      border: '2px solid var(--border)', borderRadius: '8px',
-                      cursor: pastPage >= pastTotalPages - 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                    }}
-                  >次へ →</button>
+                    className="min-h-0 rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-5 py-[14px] text-[14px] font-medium text-[#57534E] disabled:text-[#A8A29E]"
+                  >
+                    次へ
+                  </button>
                 </div>
               )}
             </div>
           )}
-        </div>
+        </main>
       )}
 
-      {/* ===== 名簿記入ビュー ===== */}
       {selectedDay && (
-        <div style={{ padding: '16px' }}>
-
-          {/* 印刷用タイトル */}
-          <div className="print-title" style={{ marginBottom: '16px', borderBottom: '2px solid var(--fg-1)', paddingBottom: '8px' }}>
-            <div style={{ fontSize: '18px', fontWeight: 700 }}>乗船名簿</div>
-            <div style={{ fontSize: '14px', marginTop: '4px' }}>{formatDate(selectedDay.date)}</div>
+        <main className="p-4">
+          <div className="print-title mb-4 border-b-[0.5px] border-[#1C1917] pb-2">
+            <div className="text-[18px] font-medium">乗船名簿</div>
+            <div className="mt-1 text-[14px] font-normal">{formatDate(selectedDay.date)}</div>
           </div>
 
-          {/* 日付ヘッダー */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ fontSize: '24px' }}>📋</div>
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{formatDate(selectedDay.date)}</div>
-              <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>
-                合計 {selectedDay.bookings.reduce((s, b) => s + b.count, 0)}名が乗船予定
-              </div>
+          <section className="mb-3 rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white p-4">
+            <div className="text-[17px] font-medium text-[#1C1917]">{formatDate(selectedDay.date)}</div>
+            <div className="mt-1 text-[14px] font-normal text-[#57534E]">
+              合計 {selectedDay.bookings.reduce((s, b) => s + b.count, 0)}名が乗船予定
             </div>
-          </div>
+          </section>
 
-          {/* 定員超過の警告 */}
           {selectedDay.bookings.length > 0 && (() => {
             const binType = selectedDay.bookings[0].bin_type
             const bin = binSettings.find(b => b.bin_type === binType)
             const total = selectedDay.bookings.reduce((s, b) => s + b.count, 0)
             if (bin && total > bin.max_capacity) {
               return (
-                <div style={{ background: 'var(--status-pending-bg)', border: '1px solid var(--status-pending-dot)', borderRadius: '10px', padding: '12px 14px', marginBottom: '12px', fontSize: '14px', color: 'var(--status-pending-fg)', fontWeight: 700 }}>
-                  ⚠ 定員（{bin.max_capacity}名）を超えて登録されています（合計{total}名）
+                <div className="mb-3 rounded-[12px] border-[0.5px] border-[#FCA5A5] bg-[#FEF2F2] p-3 text-[14px] font-medium text-[#B91C1C]">
+                  定員（{bin.max_capacity}名）を超えて登録されています（合計{total}名）
                 </div>
               )
             }
             return null
           })()}
 
-          {/* 乗客ごとのフォーム */}
-          {forms.map((form) => {
-            return (
-              <div
+          <div className="space-y-3">
+            {forms.map((form) => (
+              <section
                 key={form.formKey}
-                style={{
-                  background: 'var(--surface)',
-                  border: form.saved ? '2px solid var(--status-ok-bd)' : form.isCompanion ? '1px dashed var(--fg-3)' : '1px solid var(--border)',
-                  borderRadius: '12px', overflow: 'hidden', marginBottom: '12px',
-                }}
+                className="overflow-hidden rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white"
               >
-                {/* 乗客ヘッダー */}
-                <div style={{
-                  background: form.saved ? 'var(--status-ok-bg)' : form.isCompanion ? 'var(--bg)' : (form.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)'),
-                  padding: '10px 14px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{
-                      fontSize: '14px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px',
-                      background: form.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)', color: 'var(--surface)',
-                    }}>
-                      {form.bin_type === 'day' ? '昼便' : '夜便'}
-                    </span>
-                    {form.isCompanion && (
-                      <span style={{ fontSize: '14px', fontWeight: 700, background: 'var(--border)', color: 'var(--fg-2)', padding: '2px 8px', borderRadius: '99px' }}>
-                        同伴者
+                <div className="flex items-start justify-between gap-3 border-b-[0.5px] border-[#E8DDD8] bg-[#F7F2EF] px-4 py-[14px]">
+                  <div className="min-w-0">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <span className={`rounded-full px-3 py-1 text-[12px] font-medium ${
+                        form.bin_type === 'day' ? 'bg-[#DBEAFE] text-[#1E3A8A]' : 'bg-[#EDE9FE] text-[#5B21B6]'
+                      }`}>
+                        {form.bin_type === 'day' ? '昼便' : '夜便'}
                       </span>
-                    )}
-                    <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>
-                      {form.isCompanion ? `（代表：${form.representativeName}様のご同行）` : form.name}
-                    </span>
+                      {form.isCompanion && (
+                        <span className="rounded-full bg-white px-3 py-1 text-[12px] font-medium text-[#57534E]">同伴者</span>
+                      )}
+                    </div>
+                    <div className="text-[15px] font-medium leading-relaxed text-[#1C1917]">
+                      {form.isCompanion ? `代表：${form.representativeName}様のご同行` : form.name}
+                    </div>
                   </div>
-                  {form.saved && <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--status-ok-fg)' }}>保存済 ✓</span>}
+                  {form.saved && <span className="shrink-0 rounded-full bg-[#ECFDF5] px-3 py-1 text-[12px] font-medium text-[#059669]">保存済</span>}
                 </div>
 
-                <div style={{ padding: '14px' }}>
-                  {/* 電話番号（代表者のみ表示） */}
+                <div className="p-4">
                   {!form.isCompanion && form.tel && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', padding: '10px 12px', background: 'var(--bg)', borderRadius: '8px' }}>
-                      <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 700, flexShrink: 0 }}>電話番号</span>
-                      <a href={`tel:${form.tel}`} style={{ fontSize: '14px', color: 'var(--ocean)', fontWeight: 700, textDecoration: 'none' }}>{form.tel}</a>
+                    <div className="mb-3 rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-[#F7F2EF] p-3">
+                      <div className="text-[12px] font-normal text-[#57534E]">電話番号</div>
+                      <a href={`tel:${form.tel}`} className="text-[15px] font-medium text-[#B91C1C]">{form.tel}</a>
                     </div>
                   )}
 
-                  {/* 住所 */}
-                  <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
-                    住所
-                    <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400, marginLeft: '6px' }}>乗船名簿に必要な情報です</span>
+                  <label className="mb-2 block text-[14px] font-medium text-[#57534E]">
+                    住所 <span className="font-normal text-[#A8A29E]">乗船名簿に必要な情報です</span>
                   </label>
                   <input
                     value={form.address}
                     onChange={e => updateForm(form.formKey, 'address', e.target.value)}
                     placeholder="例：福岡県福岡市博多区〇〇1-2-3"
-                    style={{
-                      width: '100%', padding: '16px', fontSize: '18px',
-                      border: '2px solid var(--border)', borderRadius: '8px',
-                      fontFamily: 'inherit', marginBottom: '12px', boxSizing: 'border-box',
-                    }}
+                    className="mb-3 w-full rounded-[8px] border-[0.5px] border-[#E8DDD8] bg-white p-4 text-[16px] font-normal text-[#1C1917] outline-none"
                   />
 
-                  {/* 緊急連絡先 */}
-                  <label style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-2)', display: 'block', marginBottom: '6px' }}>
-                    緊急連絡先
-                    <span style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 400, marginLeft: '6px' }}>（任意）</span>
+                  <label className="mb-2 block text-[14px] font-medium text-[#57534E]">
+                    緊急連絡先 <span className="font-normal text-[#A8A29E]">任意</span>
                   </label>
                   <input
                     value={form.emergency_contact}
                     onChange={e => updateForm(form.formKey, 'emergency_contact', e.target.value)}
                     placeholder="例：妻・090-0000-0000"
                     type="tel"
-                    style={{
-                      width: '100%', padding: '16px', fontSize: '18px',
-                      border: '2px solid var(--border)', borderRadius: '8px',
-                      fontFamily: 'inherit', marginBottom: '14px', boxSizing: 'border-box',
-                    }}
+                    className="mb-4 w-full rounded-[8px] border-[0.5px] border-[#E8DDD8] bg-white p-4 text-[16px] font-normal text-[#1C1917] outline-none"
                   />
 
-                  {/* 保存ボタン */}
                   <button
                     onClick={() => savePassenger(form)}
                     disabled={form.saving || !form.address.trim()}
-                    style={{
-                      width: '100%', padding: '13px', fontSize: '14px', fontWeight: 700,
-                      background: form.saving || !form.address.trim() ? 'var(--border)'
-                        : form.saved ? 'var(--status-ok-bg)' : 'var(--ocean)',
-                      color: form.saving || !form.address.trim() ? 'var(--fg-3)'
-                        : form.saved ? 'var(--status-ok-fg)' : 'var(--surface)',
-                      border: form.saved ? '2px solid var(--status-ok-bd)' : 'none',
-                      borderRadius: '8px', cursor: form.saving || !form.address.trim() ? 'not-allowed' : 'pointer',
-                      fontFamily: 'inherit',
-                    }}
+                    className="min-h-0 w-full rounded-[9px] bg-[#B91C1C] px-4 py-[14px] text-[15px] font-medium text-white disabled:bg-[#E8DDD8] disabled:text-[#A8A29E]"
                   >
-                    {form.saving ? '保存中...' : form.saved ? '保存済み ✓' : `${form.isCompanion ? '同伴者の' : `${form.name}の`}情報を保存する`}
+                    {form.saving ? '保存中...' : form.saved ? '保存済み' : `${form.isCompanion ? '同伴者の' : `${form.name}の`}情報を保存する`}
                   </button>
                 </div>
-              </div>
-            )
-          })}
+              </section>
+            ))}
+          </div>
 
-          {/* 全員分保存済みのメッセージ */}
           {forms.length > 0 && forms.every(f => f.saved) && (
-            <div style={{ background: 'var(--status-ok-bg)', border: '2px solid var(--status-ok-bd)', borderRadius: '12px', padding: '16px', textAlign: 'center', marginBottom: '12px' }}>
-              <div style={{ fontSize: '24px', marginBottom: '6px' }}>✅</div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--status-ok-fg)' }}>この日の乗船名簿は記録完了です</div>
-              <div style={{ fontSize: '14px', color: 'var(--status-ok-fg)', marginTop: '4px' }}>全員分の情報が保存されました</div>
+            <div className="mt-3 rounded-[12px] border-[0.5px] border-[#A7F3D0] bg-[#ECFDF5] p-4 text-center">
+              <div className="text-[17px] font-medium text-[#059669]">この日の乗船名簿は記録完了です</div>
+              <div className="mt-1 text-[14px] font-normal text-[#059669]">全員分の情報が保存されました</div>
             </div>
           )}
 
-          {/* 印刷ボタン */}
           <button
-            className="no-print"
+            className="no-print mt-3 min-h-0 w-full rounded-[9px] bg-[#B91C1C] px-4 py-[14px] text-[15px] font-medium text-white"
             onClick={() => window.print()}
-            style={{
-              width: '100%', padding: '14px', fontSize: '14px', fontWeight: 700,
-              background: 'var(--ocean)', color: 'var(--surface)', border: 'none',
-              borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', marginBottom: '8px',
-            }}
           >
-            この日の乗船名簿を保存する（印刷・提出用）
+            この日の乗船名簿を保存する
           </button>
 
           <button
-            className="no-print"
+            className="no-print mt-2 min-h-0 w-full rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-4 py-[14px] text-[15px] font-medium text-[#57534E]"
             onClick={() => setSelectedDay(null)}
-            style={{
-              width: '100%', padding: '14px', fontSize: '14px', fontWeight: 700,
-              background: 'var(--surface)', color: 'var(--fg-2)', border: '2px solid var(--border)',
-              borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit',
-            }}
           >
-            ← 一覧に戻る
+            一覧に戻る
           </button>
-        </div>
+        </main>
       )}
     </div>
   )
