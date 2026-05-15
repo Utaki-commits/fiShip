@@ -65,4 +65,4 @@
 - `docs/design-system/concept.md` 欠落時の扱いが運用として妥当か。
 
 ## Vercel Preview URL
-- https://fiship-n2deogws7-utaki-commits-projects.vercel.app
+- https://fiship-git-codex-design-redesign-2f161f-utaki-commits-projects.vercel.app
