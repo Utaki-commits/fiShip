@@ -1,120 +1,57 @@
-# fiShip — 遊漁船予約管理システム
+# fiShip — CLAUDE.md
 
-## 役割分担ルール（最優先・厳守）
-### Claudeの役割
-- **仕様策定・レビュー・評価に徹する**
-- **コーディングは一切行わない**
-- Codexが実装したコードを受け取り、品質・仕様適合性・UI一貫性を評価する
-- 仕様が不明確な場合は実装前に確認し、明文化してからCodexへ渡す
-- レビュー結果は具体的な指摘（ファイル名・行番号・修正内容）で返す
+## このファイルの役割
+Claude・Claude Code・Codexが最初に読む入口ファイル。
+詳細は下記の関連ドキュメントを参照すること。
 
-### Codexの役割
-- **コーディングをすべて担当する**
-- Claudeが作成した仕様・ガイドに従って実装する
-- 実装後はClaude（またはオーナー）にレビューを依頼する
-- `AI_IMPLEMENTATION_GUIDE.md` と `PROJECT_DNA.md` を必ず参照してから着手する
+---
 
-### 作業フロー
-```
-オーナー → Claude（仕様策定）→ Codex（実装）→ Claude（レビュー）→ オーナー（最終承認）
-```
-## 開発ワークフロー
-1. 人間（要件定義・仕様確認・承認）
-2. Claude（仕様作成・レビュー）
-   - 要件を仕様に落とし込む
-   - 仕様変更が必要な場合は必ず事前に人間へ確認
-3. Codex（コーディング・実装・デバッグ）
-   - Claude作成の仕様に基づいて実装
-   - CLAUDE.mdを参照して実装する
-4. Claude（Codexが作成した内容のレビュー）
-   - 仕様通りに実装されているか確認
-   - UI/UX原則・色ルール・文言統一の遵守確認
-   - 問題があればCodexに差し戻し
-5. GitHubへPullして実装
-   - レビューOK後にmainブランチへマージ
-   - Vercelが自動デプロイ
+## 役割分担
 
-## 開発ルール
-- 仕様と異なる実装をする場合は必ず事前に確認する。勝手に仕様変更しない。
+| 担当 | 作業範囲 |
+|---|---|
+| Claude | 仕様・設計・レビューのみ |
+| Claude Code | docs/・.github/・git操作のみ |
+| Codex | src/配下の実装のみ |
+| Uizard | ラフ案生成のみ |
+| Figma | 正式デザイン・トークン管理のみ |
+| v0 | Figmaベースのコンポーネント生成のみ |
 
-## プロジェクト概要
-遊漁船船長向けの24時間予約管理SaaS。
-ターゲット：30〜65歳男性船長（ITリテラシー低め）
+---
 
-## 技術スタック
-- Next.js 14 (App Router) / TypeScript / スタイリング: 既存画面=インラインスタイル / 新規画面=Tailwind CSS + shadcn/ui
-  ※デザイン刷新（旭波コンセプト）により移行中
-- Supabase (PostgreSQL・認証)
-- Vercel (ホスティング)
+## 作業フロー
 
-## ディレクトリ構成
-- src/app/login/ — 船長ログイン
-- src/app/register/ — 初回登録
-- src/app/dashboard/ — 船長管理画面
-- src/lib/supabase.ts — Supabase接続
+### 設計
+オーナー → Claude（仕様策定）→ Claude Code（ドキュメント整備）
 
-## データベース
-- vessels — 船・船長情報
-- bookings — 予約データ
-- customers — 顧客名簿
-- passenger_logs — 乗船名簿
+### デザイン
+Uizard（ラフ案）→ Figma（正式デザイン）→ v0（コード生成）
 
-## UI/UX原則（必ず守る）
+### 実装
+Codex（実装・PR）→ GitHub Actions（CI）→ Vercel（Preview）→ Playwright（E2E）
+
+### レビュー
+Claude（PRレビュー）→ オーナー（最終承認・マージ）
+
+### リミット時
+- Codexリミット → Claude Codeで継続
+- Claude/Claude Codeリミット → Codexで継続
+- 両方リミット → 人間が手動コミット
+
+---
+
+## 絶対ルール
+- FigmaにないUIを勝手に実装しない
+- border幅は0.5px（2px禁止）
+- font-weightは400/500のみ（700禁止）
+- IT用語をUIに使わない
 - 1画面1アクション
-- タップ対象は最小44px以上
-- IT用語禁止（OCR・PDF・Webhook等）
-- 選択肢は4つ以下・デフォルト値を適切に設定
-- 文字は大きく・コントラスト高く
 
-## 色の統一ルール
-- 水色：昼便・空きあり
-- 紺紫：夜便・空きあり
-- 赤：満員・残り2名以下
-- オレンジ：貸切・承認待ち
-- グレー：休船日・操作不可
+---
 
-## 文言統一
-- 「満員」「休船日」で統一
-- IT用語は使わない
-
-## 予約ロジック
-- 承認待ち0件のみ即時成立（チャーターは常に承認待ち）
-- 残り2名以下で赤色表示
-- 代替日提案はSNS・電話経由のみ
-
-## ボタンの色統一ルール（全画面で必ず守る）
-- 保存・登録ボタン：bg #B91C1C・白文字・border-radius 9px
-- 編集ボタン：bg #FEF2F2・text #B91C1C・border 0.5px #FCA5A5・border-radius 9px
-- 削除ボタン：bg transparent・text #B91C1C・border 0.5px #FCA5A5・border-radius 9px
-- キャンセルボタン：bg transparent・text #57534E・border 0.5px #E8DDD8
-- border幅は全て0.5px（2px禁止）
-※詳細は docs/design-system/concept.md を参照。
-
-## 設備・サービス表示ルール
-- 以下のカテゴリ順で表示・編集する：釣り道具・船内設備・魚の処理・販売品・支払方法・こだわり設備
-- 現金支払いはデフォルトON（cash: true）
-
-## カレンダー週表示ルール
-- 月表示から週表示に切り替えた際は、表示中の月の第1週（その月の1日を含む週の日曜日）を初期表示する
-
-## 便設定の重複チェック
-- 便名称（name）で重複を判定し、重複がある場合は登録ボタンを非活性にする
-- bin_typeではなくbin_nameで重複判定する
-
-## IT用語の言い換え一覧
-- URL → リンク（例：「予約リンクを共有する」「リンクをコピーする」）
-
-## 環境変数
-- NEXT_PUBLIC_SUPABASE_URL
-- NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-## 開発
-- npm run dev — ローカル起動
-- git push origin main — Vercel自動デプロイ
-
-## 関連ドキュメント（優先読み込み順）
-1. CODEX_HANDOFF.md
-2. PROJECT_DNA.md
-3. docs/design-system/concept.md
-4. AI_IMPLEMENTATION_GUIDE.md
-5. docs/ai-orchestration/claude-skill.md
+## 関連ドキュメント（この順で読む）
+1. CODEX_HANDOFF.md — 実装ルール・チェックリスト
+2. PROJECT_DNA.md — DB・予約ロジック・UX原則
+3. docs/design-system/concept.md — 旭波デザイントークン
+4. AI_IMPLEMENTATION_GUIDE.md — コードパターン集
+5. docs/ai-orchestration/claude-skill.md — オーケストレーション定義
