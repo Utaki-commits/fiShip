@@ -315,7 +315,8 @@ LINE → HMAC-SHA256署名検証 → sns_messages INSERT
 - 日付・数字（強調）: 18〜24px
 
 ### ヘッダー
-全画面共通: `background: '#0A3D62'`（濃紺）、白文字。下端に丸みのある白い「なみ」が入る。
+全画面共通: `background: '#7F1D1D'`（朱赤）、白文字。
+※旭波デザインコンセプト適用後。詳細は docs/design-system/concept.md を参照。
 
 ---
 
