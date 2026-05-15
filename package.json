@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:list": "playwright test --list"
+    "test:e2e:list": "playwright test --list",
+    "setup:figma": "node scripts/setup-figma-tokens.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.0",
