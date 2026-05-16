@@ -113,222 +113,178 @@ export default function CustomersPage() {
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   if (loading) return (
-    <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
+    <main className="flex min-h-screen items-center justify-center bg-[#F7F2EF]">
+      <div className="text-[15px] font-normal text-[#57534E]">読み込み中...</div>
     </main>
   )
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
-
-      {/* ヘッダー */}
-      <div style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, zIndex: 20, minHeight: '80px', overflow: 'hidden' }}>
+    <div className="mx-auto min-h-screen max-w-[480px] bg-[#F7F2EF] text-[#1C1917]">
+      <header className="sticky top-0 z-20 flex min-h-[80px] items-center gap-4 bg-[#7F1D1D] px-5 py-[18px]">
         <button
           onClick={() => selectedCustomer ? setSelectedCustomer(null) : router.push('/dashboard')}
-          style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.3)', color: 'var(--surface)', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}
-        >←</button>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)', lineHeight: 1.2 }}>
+          className="h-14 w-14 shrink-0 rounded-[9px] border-[0.5px] border-white/30 bg-transparent text-[20px] font-normal text-white"
+        >
+          ←
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[22px] font-medium leading-tight text-white">
             {selectedCustomer ? selectedCustomer.name : '顧客名簿'}
           </div>
-          <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5 }}>
+          <div className="mt-1 text-[14px] font-normal leading-relaxed text-white/80">
             {selectedCustomer
               ? `来船 ${selectedCustomer.totalVisits}回 / 合計 ${selectedCustomer.totalPeople}名`
               : `承認済み ${customers.length}名のお客さん`}
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* ===== 顧客詳細ビュー ===== */}
       {selectedCustomer && (
-        <div style={{ padding: '16px' }}>
-
-          {/* プロフィールカード */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '16px', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
-              <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>
-                👤
+        <main className="p-4">
+          <section className="mb-3 rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white p-4">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-[#FEF2F2] text-[17px] font-medium text-[#B91C1C]">
+                {selectedCustomer.name.slice(0, 1)}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)' }}>{selectedCustomer.name}</div>
-                <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>{selectedCustomer.tel}</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[18px] font-medium text-[#1C1917]">{selectedCustomer.name}</div>
+                <div className="mt-1 text-[14px] font-normal text-[#57534E]">{selectedCustomer.tel}</div>
               </div>
             </div>
 
-            {/* 統計 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
+            <div className="mb-4 grid grid-cols-3 gap-2">
               {[
                 { label: '来船回数', value: `${selectedCustomer.totalVisits}回` },
                 { label: '合計人数', value: `${selectedCustomer.totalPeople}名` },
                 { label: '最終来船', value: formatDateShort(selectedCustomer.lastDate) },
               ].map(({ label, value }) => (
-                <div key={label} style={{ background: 'var(--bg)', borderRadius: '8px', padding: '14px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700, marginBottom: '4px' }}>{label}</div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-1)' }}>{value}</div>
+                <div key={label} className="rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-[#F7F2EF] p-3 text-center">
+                  <div className="mb-1 text-[12px] font-normal text-[#57534E]">{label}</div>
+                  <div className="text-[13px] font-medium text-[#1C1917]">{value}</div>
                 </div>
               ))}
             </div>
 
-            {/* よく使う釣り方 */}
             {selectedCustomer.fishingStyles.length > 0 && (
-              <div style={{ marginBottom: '14px' }}>
-                <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700, marginBottom: '6px' }}>よく使う釣り方</div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <div className="mb-4">
+                <div className="mb-2 text-[13px] font-normal text-[#57534E]">よく使う釣り方</div>
+                <div className="flex flex-wrap gap-1.5">
                   {selectedCustomer.fishingStyles.map(s => (
-                    <span key={s} style={{ fontSize: '14px', background: 'var(--status-day-bg)', color: 'var(--ocean)', padding: '4px 10px', borderRadius: '99px', fontWeight: 600 }}>{s}</span>
+                    <span key={s} className="rounded-full bg-[#DBEAFE] px-3 py-1 text-[13px] font-medium text-[#1E3A8A]">{s}</span>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* 電話ボタン */}
             {selectedCustomer.tel && (
               <a
                 href={`tel:${selectedCustomer.tel}`}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  width: '100%', padding: '14px', fontSize: '18px', fontWeight: 700,
-                  background: 'var(--status-day-bg)', color: 'var(--ocean)', border: '2px solid var(--ocean-light)',
-                  borderRadius: '10px', textDecoration: 'none', boxSizing: 'border-box',
-                }}
+                className="flex w-full items-center justify-center rounded-[9px] bg-[#B91C1C] px-4 py-[14px] text-[15px] font-medium text-white no-underline"
               >
-                📞　{selectedCustomer.tel} に電話する
+                {selectedCustomer.tel} に電話する
               </a>
             )}
-          </div>
+          </section>
 
-          {/* 予約履歴 */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
-            <div style={{ background: 'var(--bg)', padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-1)' }}>来船履歴</div>
+          <section className="overflow-hidden rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white">
+            <div className="border-b-[0.5px] border-[#E8DDD8] bg-[#F7F2EF] px-4 py-[14px] text-[15px] font-medium text-[#1C1917]">
+              来船履歴
             </div>
             {selectedCustomer.bookings
               .sort((a, b) => b.date.localeCompare(a.date))
               .map(b => (
-                <div key={b.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--status-closed-bg)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {/* 昼/夜バッジ */}
-                  <span style={{
-                    fontSize: '14px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', flexShrink: 0,
-                    background: b.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)',
-                    color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)',
-                  }}>
+                <div key={b.id} className="flex items-center gap-3 border-b-[0.5px] border-[#E8DDD8] px-4 py-[14px] last:border-b-0">
+                  <span className={`shrink-0 rounded-full px-3 py-1 text-[12px] font-medium ${
+                    b.bin_type === 'day' ? 'bg-[#DBEAFE] text-[#1E3A8A]' : 'bg-[#EDE9FE] text-[#5B21B6]'
+                  }`}>
                     {b.bin_type === 'day' ? '昼' : '夜'}
                   </span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--fg-1)' }}>{formatDate(b.date)}</div>
-                    <div style={{ fontSize: '14px', color: 'var(--fg-2)', marginTop: '2px' }}>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[14px] font-medium text-[#1C1917]">{formatDate(b.date)}</div>
+                    <div className="mt-1 text-[13px] font-normal text-[#57534E]">
                       {b.count}名{b.fishing_style ? `　${b.fishing_style}` : ''}
                     </div>
                   </div>
                 </div>
               ))}
-          </div>
-        </div>
+          </section>
+        </main>
       )}
 
-      {/* ===== 顧客一覧ビュー ===== */}
       {!selectedCustomer && (
-        <div style={{ padding: '16px' }}>
-
-          {/* 検索バー */}
-          <div style={{ position: 'relative', marginBottom: '12px' }}>
-            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', color: 'var(--fg-3)' }}>🔍</span>
+        <main className="p-4">
+          <div className="mb-3">
             <input
               type="search"
               value={search}
               onChange={e => handleSearchChange(e.target.value)}
               placeholder="名前・電話番号で検索"
-              style={{
-                width: '100%', padding: '12px 12px 12px 38px',
-                fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px',
-                outline: 'none', fontFamily: 'inherit', background: 'var(--surface)', boxSizing: 'border-box',
-              }}
+              className="w-full rounded-[8px] border-[0.5px] border-[#E8DDD8] bg-white px-4 py-[14px] text-[16px] font-normal text-[#1C1917] outline-none placeholder:text-[#A8A29E]"
             />
           </div>
 
-          {/* 顧客リスト */}
           {customers.length === 0 ? (
-            <div style={{ background: 'var(--surface)', border: '2px dashed var(--border)', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: '36px', marginBottom: '12px' }}>👥</div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '6px' }}>まだ顧客データがありません</div>
-              <div style={{ fontSize: '14px', color: 'var(--fg-3)', lineHeight: 1.6 }}>
-                予約が承認されると<br />ここに顧客情報が表示されます
+            <section className="rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white px-5 py-10 text-center">
+              <div className="mb-2 text-[17px] font-medium text-[#1C1917]">まだ顧客データがありません</div>
+              <div className="text-[14px] font-normal leading-relaxed text-[#57534E]">
+                予約が承認されるとここに顧客情報が表示されます
               </div>
-            </div>
+            </section>
           ) : filtered.length === 0 ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: '14px', color: 'var(--fg-3)' }}>「{search}」に一致するお客さんが見つかりません</div>
-            </div>
+            <section className="rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white px-5 py-10 text-center text-[14px] font-normal text-[#57534E]">
+              「{search}」に一致するお客さんが見つかりません
+            </section>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <section className="overflow-hidden rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white">
               {paginated.map(c => (
                 <button
                   key={`${c.name}__${c.tel}`}
                   onClick={() => setSelectedCustomer(c)}
-                  style={{
-                    background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px',
-                    padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px',
-                    cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', width: '100%',
-                  }}
+                  className="flex w-full items-center gap-3 border-b-[0.5px] border-[#E8DDD8] px-4 py-[14px] text-left last:border-b-0"
                 >
-                  {/* アバター */}
-                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--status-day-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>
-                    👤
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#FEF2F2] text-[15px] font-medium text-[#B91C1C]">
+                    {c.name.slice(0, 1)}
                   </div>
 
-                  {/* 情報 */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '3px' }}>{c.name}</div>
-                    <div style={{ fontSize: '14px', color: 'var(--fg-2)' }}>{c.tel}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 truncate text-[15px] font-medium text-[#1C1917]">{c.name}</div>
+                    <div className="text-[13px] font-normal text-[#57534E]">{c.tel}</div>
                     {c.fishingStyles.length > 0 && (
-                      <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div className="mt-1 truncate text-[13px] font-normal text-[#A8A29E]">
                         {c.fishingStyles.join('・')}
                       </div>
                     )}
                   </div>
 
-                  {/* 来船回数バッジ */}
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ocean)' }}>{c.totalVisits}</div>
-                    <div style={{ fontSize: '14px', color: 'var(--fg-3)', fontWeight: 700 }}>回</div>
-                    <div style={{ fontSize: '14px', color: 'var(--fg-3)', marginTop: '2px' }}>{formatDateShort(c.lastDate)}</div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-[16px] font-medium text-[#B91C1C]">{c.totalVisits}回</div>
+                    <div className="mt-1 text-[12px] font-normal text-[#A8A29E]">{formatDateShort(c.lastDate)}</div>
                   </div>
                 </button>
               ))}
-            </div>
+            </section>
           )}
 
-          {/* ページング */}
           {totalPages > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', marginTop: '8px' }}>
+            <div className="mt-3 flex items-center justify-between gap-3">
               <button
                 onClick={() => setPage(p => Math.max(0, p - 1))}
                 disabled={page === 0}
-                style={{
-                  padding: '14px 20px', fontSize: '14px', fontWeight: 700,
-                  background: page === 0 ? 'var(--status-closed-bg)' : 'var(--surface)',
-                  color: page === 0 ? 'var(--fg-3)' : 'var(--ocean)',
-                  border: '2px solid var(--border)', borderRadius: '8px',
-                  cursor: page === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                }}
-              >← 前へ</button>
-              <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 700 }}>
-                {page + 1} / {totalPages}ページ
-              </span>
+                className="min-h-0 rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-5 py-[14px] text-[14px] font-medium text-[#57534E] disabled:text-[#A8A29E]"
+              >
+                前へ
+              </button>
+              <span className="text-[14px] font-normal text-[#57534E]">{page + 1} / {totalPages}</span>
               <button
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                style={{
-                  padding: '14px 20px', fontSize: '14px', fontWeight: 700,
-                  background: page >= totalPages - 1 ? 'var(--status-closed-bg)' : 'var(--surface)',
-                  color: page >= totalPages - 1 ? 'var(--fg-3)' : 'var(--ocean)',
-                  border: '2px solid var(--border)', borderRadius: '8px',
-                  cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                }}
-              >次へ →</button>
+                className="min-h-0 rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-5 py-[14px] text-[14px] font-medium text-[#57534E] disabled:text-[#A8A29E]"
+              >
+                次へ
+              </button>
             </div>
           )}
-        </div>
+        </main>
       )}
     </div>
   )
