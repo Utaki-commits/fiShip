@@ -39,4 +39,4 @@
 - 旭波デザインの制約と既存登録ロジックの両立が十分か。
 
 ## Vercel Preview URL
-- 未設定
+- https://fiship-git-codex-login-polish-utaki-commits-projects.vercel.app
