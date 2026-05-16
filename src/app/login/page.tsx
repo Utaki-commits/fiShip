@@ -38,13 +38,11 @@ export default function LoginPage() {
 
     const { error: sendError } = await supabase.auth.signInWithOtp({
       phone,
-      options: {
-        shouldCreateUser: true,
-      },
+      options: { shouldCreateUser: true },
     })
 
     if (sendError) {
-      setError('番号を送れませんでした。電話番号を確認してください。')
+      setError('認証番号を送れませんでした。電話番号を確認してください。')
     } else {
       setPhoneForAuth(phone)
       setStep('code')
@@ -55,7 +53,7 @@ export default function LoginPage() {
 
   const verifyCode = async () => {
     if (!/^\d{6}$/.test(code)) {
-      setError('6桁の番号を入力してください。')
+      setError('6桁の認証番号を入力してください。')
       return
     }
 
@@ -69,7 +67,7 @@ export default function LoginPage() {
     })
 
     if (verifyError) {
-      setError('番号が合いません。もう一度確認してください。')
+      setError('認証番号が合いません。もう一度確認してください。')
       setBusy(false)
       return
     }
@@ -77,121 +75,32 @@ export default function LoginPage() {
     router.replace('/auth/callback')
   }
 
-  const buttonBase = {
-    width: '100%',
-    minHeight: '64px',
-    borderRadius: '12px',
-    fontFamily: 'inherit',
-    fontSize: '22px',
-    fontWeight: 700,
-    cursor: busy ? 'not-allowed' : 'pointer',
-  }
-
-  const inputStyle = {
-    width: '100%',
-    minHeight: '64px',
-    borderRadius: '10px',
-    border: '2px solid var(--border)',
-    background: 'var(--surface)',
-    color: 'var(--fg-1)',
-    fontSize: '22px',
-    fontFamily: 'inherit',
-    padding: '18px 16px',
-    outline: 'none',
-  }
+  const primaryButton = 'min-h-0 w-full rounded-[9px] bg-[#B91C1C] px-4 py-[14px] text-[16px] font-medium text-white disabled:bg-[#E8DDD8] disabled:text-[#A8A29E]'
+  const secondaryButton = 'min-h-0 w-full rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-4 py-[14px] text-[16px] font-medium text-[#57534E]'
+  const inputClass = 'w-full rounded-[8px] border-[0.5px] border-[#E8DDD8] bg-white px-4 py-[14px] text-[18px] font-normal text-[#1C1917] outline-none placeholder:text-[#A8A29E]'
 
   return (
-    <main style={{
-      minHeight: '100vh',
-      background: 'var(--bg)',
-      display: 'flex',
-      justifyContent: 'center',
-      padding: '24px 16px',
-      fontFamily: 'var(--font-sans)',
-    }}>
-      <section style={{
-        width: '100%',
-        maxWidth: '480px',
-        minHeight: 'calc(100vh - 48px)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-      }}>
-        <div style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: '16px',
-          padding: '32px 20px 28px',
-        }}>
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '16px', overflow: 'hidden', margin: '0 auto 18px' }}>
-              <img src={DEFAULT_ICON} alt="fiShip" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    <main className="flex min-h-screen justify-center bg-[#F7F2EF] px-4 py-6">
+      <section className="flex min-h-[calc(100vh-48px)] w-full max-w-[480px] flex-col justify-center">
+        <div className="rounded-[12px] border-[0.5px] border-[#E8DDD8] bg-white px-5 py-8">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-[18px] h-16 w-16 overflow-hidden rounded-[16px]">
+              <img src={DEFAULT_ICON} alt="FiShip" className="h-full w-full object-cover" />
             </div>
-            <h1 style={{
-              margin: 0,
-              color: 'var(--fg-1)',
-              fontSize: '32px',
-              fontWeight: 700,
-              lineHeight: 1.3,
-            }}>
-              遊漁船予約システム
+            <h1 className="m-0 text-[19px] font-medium leading-relaxed text-[#1C1917]">
+              遊漁船予約管理サービス
             </h1>
           </div>
 
           {error && (
-            <div style={{
-              background: 'var(--status-full-bg)',
-              border: '2px solid var(--status-full-bd)',
-              borderRadius: '12px',
-              color: 'var(--status-full-fg)',
-              fontSize: '18px',
-              fontWeight: 700,
-              lineHeight: 1.6,
-              padding: '14px 16px',
-              marginBottom: '20px',
-            }}>
+            <div className="mb-5 rounded-[12px] border-[0.5px] border-[#FCA5A5] bg-[#FEF2F2] px-4 py-[14px] text-[15px] font-medium leading-relaxed text-[#B91C1C]">
               {error}
             </div>
           )}
 
           {step === 'start' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <button
-                type="button"
-                onClick={lineStart}
-                disabled={busy}
-                style={{
-                  ...buttonBase,
-                  background: '#06C755',
-                  color: '#fff',
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '12px',
-                }}
-              >
-                <span style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  background: '#06C755',
-                  border: '2px solid rgba(255,255,255,.85)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-                    <path
-                      d="M6 4v14h10"
-                      fill="none"
-                      stroke="#fff"
-                      strokeWidth="4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
+            <div className="space-y-3">
+              <button type="button" onClick={lineStart} disabled={busy} className={primaryButton}>
                 LINEではじめる
               </button>
 
@@ -202,21 +111,16 @@ export default function LoginPage() {
                   setStep('phone')
                 }}
                 disabled={busy}
-                style={{
-                  ...buttonBase,
-                  background: 'var(--surface)',
-                  color: 'var(--ocean)',
-                  border: '2px solid var(--border)',
-                }}
+                className={secondaryButton}
               >
                 電話番号ではじめる
               </button>
 
-              <p style={{ fontSize: '13px', color: 'var(--fg-2)', textAlign: 'center', marginTop: '2px', lineHeight: 1.8 }}>
+              <p className="pt-1 text-center text-[13px] font-normal leading-relaxed text-[#57534E]">
                 ご利用いただくことで
-                <a href="/legal/terms" target="_blank" style={{ color: 'var(--ocean)', textDecoration: 'underline' }}>利用規約</a>
+                <a href="/legal/terms" target="_blank" className="mx-1 text-[#B91C1C] underline">利用規約</a>
                 および
-                <a href="/legal/privacy" target="_blank" style={{ color: 'var(--ocean)', textDecoration: 'underline' }}>プライバシーポリシー</a>
+                <a href="/legal/privacy" target="_blank" className="mx-1 text-[#B91C1C] underline">プライバシーポリシー</a>
                 に同意したものとみなします
               </p>
             </div>
@@ -224,15 +128,7 @@ export default function LoginPage() {
 
           {step === 'phone' && (
             <div>
-              <label style={{
-                display: 'block',
-                fontSize: '20px',
-                fontWeight: 600,
-                color: 'var(--fg-1)',
-                marginBottom: '10px',
-              }}>
-                電話番号
-              </label>
+              <label className="mb-2 block text-[15px] font-medium text-[#57534E]">電話番号</label>
               <input
                 value={phoneDigits}
                 onChange={(event) => setPhoneDigits(event.target.value.replace(/\D/g, '').slice(0, 11))}
@@ -240,21 +136,10 @@ export default function LoginPage() {
                 pattern="[0-9]*"
                 autoComplete="tel-national"
                 placeholder="09012345678"
-                style={inputStyle}
+                className={inputClass}
               />
-              <button
-                type="button"
-                onClick={sendCode}
-                disabled={busy}
-                style={{
-                  ...buttonBase,
-                  background: busy ? 'var(--border)' : 'var(--ocean)',
-                  color: busy ? 'var(--fg-3)' : '#fff',
-                  border: 'none',
-                  marginTop: '18px',
-                }}
-              >
-                {busy ? '送っています...' : '番号を送る'}
+              <button type="button" onClick={sendCode} disabled={busy} className={`${primaryButton} mt-4`}>
+                {busy ? '送信中...' : '認証番号を送る'}
               </button>
               <button
                 type="button"
@@ -263,13 +148,7 @@ export default function LoginPage() {
                   setStep('start')
                 }}
                 disabled={busy}
-                style={{
-                  ...buttonBase,
-                  background: 'var(--surface)',
-                  color: 'var(--fg-2)',
-                  border: '2px solid var(--border)',
-                  marginTop: '12px',
-                }}
+                className={`${secondaryButton} mt-3`}
               >
                 戻る
               </button>
@@ -278,15 +157,7 @@ export default function LoginPage() {
 
           {step === 'code' && (
             <div>
-              <label style={{
-                display: 'block',
-                fontSize: '20px',
-                fontWeight: 600,
-                color: 'var(--fg-1)',
-                marginBottom: '10px',
-              }}>
-                6桁の番号
-              </label>
+              <label className="mb-2 block text-[15px] font-medium text-[#57534E]">6桁の認証番号</label>
               <input
                 value={code}
                 onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -294,25 +165,10 @@ export default function LoginPage() {
                 pattern="[0-9]*"
                 autoComplete="one-time-code"
                 placeholder="123456"
-                style={{
-                  ...inputStyle,
-                  letterSpacing: '0.18em',
-                  textAlign: 'center',
-                }}
+                className={`${inputClass} text-center tracking-[0.18em]`}
               />
-              <button
-                type="button"
-                onClick={verifyCode}
-                disabled={busy}
-                style={{
-                  ...buttonBase,
-                  background: busy ? 'var(--border)' : 'var(--ocean)',
-                  color: busy ? 'var(--fg-3)' : '#fff',
-                  border: 'none',
-                  marginTop: '18px',
-                }}
-              >
-                {busy ? '確認しています...' : '確認する'}
+              <button type="button" onClick={verifyCode} disabled={busy} className={`${primaryButton} mt-4`}>
+                {busy ? '確認中...' : '確認する'}
               </button>
               <button
                 type="button"
@@ -322,26 +178,14 @@ export default function LoginPage() {
                   setStep('phone')
                 }}
                 disabled={busy}
-                style={{
-                  ...buttonBase,
-                  background: 'var(--surface)',
-                  color: 'var(--fg-2)',
-                  border: '2px solid var(--border)',
-                  marginTop: '12px',
-                }}
+                className={`${secondaryButton} mt-3`}
               >
-                電話番号を直す
+                電話番号を変更する
               </button>
             </div>
           )}
 
-          <p style={{
-            color: 'var(--fg-2)',
-            fontSize: '16px',
-            lineHeight: 1.6,
-            textAlign: 'center',
-            margin: '24px 0 0',
-          }}>
+          <p className="mt-6 text-center text-[13px] font-normal leading-relaxed text-[#57534E]">
             2回目以降は自動で開きます
           </p>
         </div>
