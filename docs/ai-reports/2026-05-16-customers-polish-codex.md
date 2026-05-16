@@ -37,4 +37,4 @@
 - リストの情報密度が中高年男性向けに読みやすいか。
 
 ## Vercel Preview URL
-- 未設定
+- https://fiship-git-codex-customers-polish-utaki-commits-projects.vercel.app
