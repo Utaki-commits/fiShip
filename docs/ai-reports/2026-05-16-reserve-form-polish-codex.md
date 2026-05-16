@@ -40,4 +40,4 @@
 - 中高年男性向けに文字量とタップ導線が過不足ないか。
 
 ## Vercel Preview URL
-- 未設定
+- https://fiship-git-codex-reserve-form-polish-utaki-commits-projects.vercel.app
