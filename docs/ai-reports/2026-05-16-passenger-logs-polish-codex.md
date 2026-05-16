@@ -38,4 +38,4 @@
 - タップ対象と文字サイズが中高年男性向けとして十分か。
 
 ## Vercel Preview URL
-- 未設定
+- https://fiship-git-codex-passenger-logs-polish-utaki-commits-projects.vercel.app
