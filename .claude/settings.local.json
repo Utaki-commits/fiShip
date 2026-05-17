@@ -10,7 +10,12 @@
       "Bash(git fetch *)",
       "Bash(git reset *)",
       "Bash(npx tsc *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npx next *)",
+      "Bash(npm install *)",
+      "Bash(npm list *)",
+      "Bash(node -e \"const h = require\\('holidays-jp'\\); console.log\\(Object.keys\\(h\\)\\); const r = h.getHolidays\\(2025\\); console.log\\(typeof r\\); console.log\\(JSON.stringify\\(r\\).slice\\(0, 300\\)\\)\")",
+      "Bash(node -e \"const h = require\\('holidays-jp'\\); console.log\\(h.isHoliday\\(new Date\\('2025-01-01'\\)\\)\\); console.log\\(h.getHolidayInfo\\(new Date\\('2025-01-01'\\)\\)\\); console.log\\(h.getHolidayInfo\\(new Date\\('2025-01-13'\\)\\)\\); console.log\\(JSON.stringify\\(Array.from\\(h.holidayMap.entries\\(\\)\\).slice\\(0,3\\)\\)\\)\")"
     ]
   }
 }
