@@ -25,7 +25,7 @@ Claude・Claude Code・Codexが最初に読む入口ファイル。
 オーナー → Claude（仕様策定）→ Claude Code（ドキュメント整備）
 
 ### デザイン
-Uizard（ラフ案）→ Figma（正式デザイン）→ v0（コード生成）
+Uizard（ラフ案）→ Figma（正式デザイン置き場）→ v0（コード生成）→ Claude Code（v0結果をFigmaに書き起こす）
 
 ### 実装
 Codex（実装・PR）→ GitHub Actions（CI）→ Vercel（Preview）→ Playwright（E2E）

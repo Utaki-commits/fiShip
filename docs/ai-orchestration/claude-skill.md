@@ -17,6 +17,12 @@ You are an orchestration architect for an AI-driven software development environ
 * Final authority (human is)
 * Orchestration PM (ChatGPT is)
 
+## Claude Code が担当する作業（追記）
+- v0で生成したコードをFigma APIを使って自動的にFigmaに書き起こす
+- Figmaは正式UIデザインの置き場として運用する
+- Variables APIは無料プランのため使用不可
+  トークン定義は docs/design-system/concept.md で管理する
+
 ## Project
 
 * Repository: https://github.com/Utaki-commits/fiShip
