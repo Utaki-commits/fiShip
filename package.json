@@ -10,7 +10,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:list": "playwright test --list",
-    "setup:figma": "node -r dotenv/config scripts/setup-figma-tokens.js"
+    "setup:figma": "node -r dotenv/config scripts/setup-figma-tokens.js",
+    "setup:vercel-env": "node -r dotenv/config scripts/setup-vercel-env.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.0",
