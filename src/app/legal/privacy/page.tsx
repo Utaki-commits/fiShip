@@ -46,7 +46,7 @@ export default function PrivacyPage() {
         </div>
 
         <TextSection title="第5条　Cookieおよびアクセス解析" paragraphs={['本サービスでは、ユーザー認証およびサービス品質向上のためにCookieを使用することがあります。ブラウザの設定によりCookieを無効にすることができますが、一部の機能が使用できなくなる場合があります。']} sectionStyle={sectionStyle} titleStyle={titleStyle} pStyle={pStyle} />
-        <Section title="第6条　外部サービスとの連携" items={['LINEログイン（LINEヤフー株式会社）','Instagram / Facebook（Meta Platforms, Inc.）','Auth0（Okta, Inc.）','Supabase（Supabase Inc.）','Vercel（Vercel Inc.）','Stripe（Stripe, Inc.）※決済処理']} sectionStyle={sectionStyle} titleStyle={titleStyle} pStyle={pStyle} liStyle={liStyle} lead="本サービスは、以下の外部サービスと連携しています。各サービスのプライバシーポリシーもご確認ください。" />
+        <Section title="第6条　外部サービスとの連携" items={['LINEログイン（LINEヤフー株式会社）','Instagram / Facebook（Meta Platforms, Inc.）','Supabase（Supabase Inc.）','Vercel（Vercel Inc.）','Stripe（Stripe, Inc.）※決済処理']} sectionStyle={sectionStyle} titleStyle={titleStyle} pStyle={pStyle} liStyle={liStyle} lead="本サービスは、以下の外部サービスと連携しています。各サービスのプライバシーポリシーもご確認ください。" />
         <TextSection title="第7条　個人情報の開示・訂正・削除" paragraphs={['ご本人から個人情報の開示・訂正・削除・利用停止のご請求があった場合、本人確認のうえ、合理的な期間内に対応します。','ご請求は下記のお問い合わせ先までご連絡ください。']} sectionStyle={sectionStyle} titleStyle={titleStyle} pStyle={pStyle} />
         <TextSection title="第8条　未成年者の個人情報" paragraphs={['本サービスは主に成人を対象としています。未成年者が本サービスをご利用になる場合は、保護者の同意を得たうえでご利用ください。','親子での乗船など、未成年者が乗船される場合は、保護者が代理で予約を行い、未成年者の個人情報（氏名・緊急連絡先等）を入力することがあります。この場合、保護者の同意のもと情報を収集・管理します。']} sectionStyle={sectionStyle} titleStyle={titleStyle} pStyle={pStyle} />
         <TextSection title="第9条　プライバシーポリシーの変更" paragraphs={['当社は、法令の改正やサービス内容の変更に伴い、本ポリシーを改定することがあります。重要な変更が生じた場合は、本サービス内にて通知します。改定後も本サービスをご利用いただいた場合、改定後のポリシーに同意したものとみなします。']} sectionStyle={sectionStyle} titleStyle={titleStyle} pStyle={pStyle} />

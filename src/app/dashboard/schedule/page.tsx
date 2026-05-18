@@ -93,14 +93,13 @@ export default function SchedulePage() {
 
   useEffect(() => {
     const init = async () => {
-      const res = await fetch('/api/auth/profile')
-      const user = await res.json()
-      if (!user?.sub) { router.push('/login'); return }
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.push('/login'); return }
 
       const { data: vessel } = await supabase
         .from('vessels')
         .select('id')
-        .eq('user_id', user.sub)
+        .eq('user_id', session.user.id)
         .single()
       if (!vessel) { router.push('/register'); return }
 

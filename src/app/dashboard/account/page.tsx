@@ -67,11 +67,9 @@ export default function AccountPage() {
   const logoInputRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
     const init = async () => {
-      const res = await fetch('/api/auth/profile')
-      if (!res.ok) { router.push('/login'); return }
-      const user = await res.json()
-      if (!user?.sub) { router.push('/login'); return }
-      const { data } = await supabase.from('vessels').select('*').eq('user_id', user.sub).single()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.push('/login'); return }
+      const { data } = await supabase.from('vessels').select('*').eq('user_id', session.user.id).single()
       if (!data) { router.push('/register'); return }
       const v = { ...data, auto_confirm: data.auto_confirm ?? true } as Vessel
       setVessel(v)
@@ -169,7 +167,8 @@ export default function AccountPage() {
   const handleDeleteAccount = async () => {
     if (!vessel) return
     await supabase.from('vessels').delete().eq('id', vessel.id)
-    window.location.href = '/api/auth/logout'
+    await supabase.auth.signOut()
+    router.push('/login')
   }
 
   if (loading) return <main style={{ minHeight: '100vh', background: 'var(--ocean)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div></main>
@@ -289,7 +288,7 @@ export default function AccountPage() {
         </section>
         <section style={{ ...sectionStyle, marginTop: '12px' }}>
           <div style={titleStyle}>アカウント</div>
-          <button onClick={() => { window.location.href = '/api/auth/logout' }} style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700, background: 'var(--ocean)', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', marginBottom: '10px' }}>
+          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login') }} style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700, background: 'var(--ocean)', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', marginBottom: '10px' }}>
             ログアウト
           </button>
           <button onClick={() => setShowDeleteModal(true)} style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>
