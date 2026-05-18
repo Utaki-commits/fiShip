@@ -54,15 +54,14 @@ export default function RegisterPage() {
   const handleSubmit = async () => {
     setLoading(true)
     setError('')
-    const res = await fetch('/api/auth/profile')
-    const user = await res.json()
-    if (!user?.sub) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
       router.push('/login')
       return
     }
     const { error } = await supabase.from('vessels').insert([{
       ...form,
-      user_id: user.sub,
+      user_id: session.user.id,
     }])
     if (error) {
       setError('登録に失敗しました。もう一度お試しください。')
