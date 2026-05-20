@@ -5,6 +5,19 @@
 
 ---
 
+## 参照ドキュメント
+監査前に必ず以下を読むこと：
+- docs/PASSENGER_UX_DNA.md — 乗船客UI設計思想
+- docs/CAPTAIN_UX_DNA.md — 船長UI設計思想
+- docs/UI_GUARDRAILS.md — UI禁止事項一覧
+- docs/ai-orchestration/02-ux-rules.md — UXルール詳細
+
+## UI種別の判定方法
+- `/reserve/` 配下のファイル → 乗船客UI → PASSENGER_UX_DNA.mdを優先適用
+- `/dashboard/` 配下のファイル → 船長UI → CAPTAIN_UX_DNA.mdを優先適用
+
+---
+
 ## 判定基準
 
 - **red**: 業務ロジック破壊・セキュリティ問題・絶対ルール違反など修正必須

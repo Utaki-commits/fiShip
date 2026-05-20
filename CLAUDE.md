@@ -55,3 +55,6 @@ Claude（PRレビュー）→ オーナー（最終承認・マージ）
 3. docs/design-system/concept.md — 旭波デザイントークン
 4. AI_IMPLEMENTATION_GUIDE.md — コードパターン集
 5. docs/ai-orchestration/claude-skill.md — オーケストレーション定義
+6. docs/PASSENGER_UX_DNA.md — 乗船客UI設計思想
+7. docs/CAPTAIN_UX_DNA.md — 船長UI設計思想
+8. docs/UI_GUARDRAILS.md — UI禁止事項一覧
