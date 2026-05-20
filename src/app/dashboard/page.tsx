@@ -42,6 +42,24 @@ const DAY_NAMES = ['日','月','火','水','木','金','土']
 const toDateStr = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 
+// Kyokuha Design System colors
+const kyokuha = {
+  headerBg: '#7F1D1D',
+  pageBg: '#F7F2EF',
+  cardBg: '#FFFFFF',
+  cardBorder: '#E8DDD8',
+  primaryBtn: '#B91C1C',
+  editBtnBg: '#FEF2F2',
+  editBtnText: '#B91C1C',
+  editBtnBorder: '#FCA5A5',
+  dayBadgeBg: '#DBEAFE',
+  dayBadgeText: '#1E3A8A',
+  nightBadgeBg: '#EDE9FE',
+  nightBadgeText: '#5B21B6',
+  confirmed: '#059669',
+  pending: '#D97706',
+}
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [vessel, setVessel] = useState<Vessel | null>(null)
@@ -170,329 +188,567 @@ export default function DashboardPage() {
     return bin?.max_capacity ?? 0
   }
 
-  const getChannelBadge = (channel: string) => {
-    const map: Record<string, { label: string; bg: string; color: string }> = {
-      page: { label: '📱 予約ページ', bg: 'var(--status-day-bg)', color: 'var(--ocean)' },
-      line: { label: '💬 LINE', bg: '#E8F8EE', color: '#06C755' },
-      line_official: { label: '💬 LINE公式', bg: '#E8F8EE', color: '#06C755' },
-      instagram: { label: '📸 Instagram', bg: '#FDE8F4', color: '#C13584' },
-      phone: { label: '電話', bg: 'var(--status-closed-bg)', color: 'var(--fg-2)' },
-      other: { label: 'その他', bg: 'var(--status-closed-bg)', color: 'var(--fg-2)' },
-    }
-    const badge = map[channel] || map.other
-    return (
-      <span style={{ fontSize: '13px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', background: badge.bg, color: badge.color }}>
-        {badge.label}
-      </span>
-    )
-  }
-
-  const oceanGradient =
-    'radial-gradient(120% 200% at 88% 110%, rgba(46,134,193,.45) 0%, transparent 55%),' +
-    'radial-gradient(80% 120% at 12% -20%, rgba(212,172,13,.18) 0%, transparent 60%),' +
-    'linear-gradient(180deg, var(--ocean) 0%, #0F4570 55%, #04192B 100%)'
-
   if (loading) return (
-    <main style={{ minHeight: '100vh', background: oceanGradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'var(--surface)', fontSize: '18px' }}>読み込み中...</div>
+    <main style={{ minHeight: '100vh', background: kyokuha.pageBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: '#374151', fontSize: '16px', fontWeight: 400 }}>読み込み中...</div>
     </main>
   )
 
-  const PendingCard = ({ b }: { b: Booking }) => (
-    <div style={{ background: 'var(--surface)', border: '2px solid var(--status-pending-dot)', borderRadius: '14px', padding: '18px', marginBottom: '10px' }}>
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', alignItems: 'flex-start' }}>
-        <span style={{ fontSize: '14px', fontWeight: 700, padding: '6px 12px', borderRadius: '99px', flexShrink: 0, background: b.bin_type === 'day' ? 'var(--status-day-bg)' : 'var(--status-night-bg)', color: b.bin_type === 'day' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
-          {b.bin_type === 'day' ? '昼便' : '夜便'}
-        </span>
-        {getChannelBadge(b.channel)}
-        <div>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</div>
-          <div style={{ fontSize: '18px', color: 'var(--fg-2)', marginTop: '4px' }}>
-            {b.count}名　{new Date(b.date + 'T00:00:00').getMonth()+1}月{new Date(b.date + 'T00:00:00').getDate()}日（{DAY_NAMES[new Date(b.date + 'T00:00:00').getDay()]}）
-          </div>
-          {b.fishing_style && <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginTop: '2px' }}>{b.fishing_style}</div>}
-          {b.message && <div style={{ fontSize: '16px', color: 'var(--fg-2)', marginTop: '2px' }}>{b.message}</div>}
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button
-          onClick={() => updateStatus(b.id, 'confirmed')}
-          disabled={actionLoading === b.id}
-          style={{ flex: 1, padding: '16px', fontSize: '20px', fontWeight: 700, minHeight: '56px', background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
-        >{actionLoading === b.id ? '処理中...' : '承認する'}</button>
-        <button
-          onClick={() => updateStatus(b.id, 'rejected')}
-          disabled={actionLoading === b.id}
-          style={{ flex: 1, padding: '16px', fontSize: '20px', fontWeight: 700, minHeight: '56px', background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
-        >お断り</button>
-      </div>
-    </div>
-  )
-
+  // Booking Card Component
   const BookingCard = ({ b }: { b: Booking }) => (
-    <div key={b.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderLeft: b.status === 'confirmed' && !b.contacted ? '4px solid var(--status-pending-dot)' : '1px solid var(--border)', borderRadius: '16px', padding: '16px', marginBottom: '10px', boxShadow: 'var(--shadow-card)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-        <span style={{ fontSize: '13px', fontWeight: 700, padding: '4px 10px', borderRadius: '99px', background: b.bin_type === 'day' ? 'var(--status-day-bg)' : b.bin_type === 'relay' ? 'var(--ocean-pale)' : 'var(--status-night-bg)', color: b.bin_type === 'day' ? 'var(--status-day-fg)' : b.bin_type === 'relay' ? 'var(--ocean)' : 'var(--status-night-fg)' }}>
-          {b.bin_type === 'day' ? '昼便' : b.bin_type === 'relay' ? '昼夜便' : '夜便'}
-        </span>
-        <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 600 }}>{b.count}名</span>
-        <span style={{ fontSize: '12px', fontWeight: 700, padding: '3px 8px', borderRadius: '99px', marginLeft: 'auto', background: b.status === 'confirmed' ? 'var(--status-ok-bg)' : b.status === 'cancelled' ? 'var(--status-closed-bg)' : 'var(--status-pending-bg)', color: b.status === 'confirmed' ? 'var(--status-ok-fg)' : b.status === 'cancelled' ? 'var(--status-closed-fg)' : 'var(--status-pending-fg)' }}>
-          {b.status === 'confirmed' ? '承認済み' : b.status === 'cancelled' ? 'キャンセル' : '承認待ち'}
-        </span>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
-        <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--fg-1)' }}>{b.name}</span>
-        <span style={{ fontSize: '16px', color: 'var(--fg-2)', marginLeft: '6px' }}>様</span>
-      </div>
-
-      {b.status === 'confirmed' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: b.contacted ? 'var(--status-ok-fg)' : 'var(--status-pending-dot)', flexShrink: 0 }} />
-          <span style={{ fontSize: '14px', fontWeight: 700, color: b.contacted ? 'var(--status-ok-fg)' : 'var(--status-pending-dot)' }}>
-            {b.contacted ? '連絡済み' : '未連絡'}
+    <div style={{
+      background: kyokuha.cardBg,
+      border: `0.5px solid ${kyokuha.cardBorder}`,
+      borderRadius: '12px',
+      padding: '14px 16px',
+      marginBottom: '8px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '14px', fontWeight: 500, color: '#1F2937' }}>{b.name}</span>
+          <span style={{
+            fontSize: '12px',
+            fontWeight: 500,
+            padding: '2px 10px',
+            borderRadius: '20px',
+            background: b.bin_type === 'day' ? kyokuha.dayBadgeBg : kyokuha.nightBadgeBg,
+            color: b.bin_type === 'day' ? kyokuha.dayBadgeText : kyokuha.nightBadgeText,
+          }}>
+            {b.bin_type === 'day' ? '昼便' : b.bin_type === 'relay' ? '昼夜便' : '夜便'}
           </span>
-          {!b.contacted && <span style={{ fontSize: '14px', color: 'var(--fg-2)' }}>ご連絡をお願いいたします</span>}
         </div>
-      )}
-
+        <button
+          onClick={() => router.push('/dashboard/bookings')}
+          style={{
+            background: kyokuha.editBtnBg,
+            color: kyokuha.editBtnText,
+            border: `0.5px solid ${kyokuha.editBtnBorder}`,
+            borderRadius: '9px',
+            padding: '6px 12px',
+            fontSize: '12px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            minHeight: 'unset',
+          }}
+        >
+          編集
+        </button>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: '13px', fontWeight: 400, color: '#6B7280' }}>{b.count}名</span>
+        <span style={{
+          fontSize: '12px',
+          fontWeight: 500,
+          color: b.status === 'confirmed' ? kyokuha.confirmed : kyokuha.pending,
+        }}>
+          {b.status === 'confirmed' ? '確定済み' : b.status === 'cancelled' ? 'キャンセル' : '承認待ち'}
+        </span>
+      </div>
       {b.status === 'pending' && (
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-          <button onClick={() => updateStatus(b.id, 'confirmed')}
-            style={{ flex: 1, padding: '12px', fontSize: '16px', fontWeight: 700, background: 'var(--status-ok-bg)', color: 'var(--status-ok-fg)', border: '2px solid var(--status-ok-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 'unset' }}>
-            承認する
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+          <button
+            onClick={() => updateStatus(b.id, 'confirmed')}
+            disabled={actionLoading === b.id}
+            style={{
+              flex: 1,
+              padding: '10px',
+              fontSize: '13px',
+              fontWeight: 500,
+              background: '#DCFCE7',
+              color: kyokuha.confirmed,
+              border: `0.5px solid ${kyokuha.confirmed}`,
+              borderRadius: '9px',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              minHeight: 'unset',
+            }}
+          >
+            承認
           </button>
-          <button onClick={() => updateStatus(b.id, 'rejected')}
-            style={{ flex: 1, padding: '12px', fontSize: '16px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 'unset' }}>
+          <button
+            onClick={() => updateStatus(b.id, 'rejected')}
+            disabled={actionLoading === b.id}
+            style={{
+              flex: 1,
+              padding: '10px',
+              fontSize: '13px',
+              fontWeight: 500,
+              background: '#FEF2F2',
+              color: kyokuha.primaryBtn,
+              border: `0.5px solid ${kyokuha.editBtnBorder}`,
+              borderRadius: '9px',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              minHeight: 'unset',
+            }}
+          >
             お断り
           </button>
         </div>
       )}
-
-      {b.status === 'confirmed' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {b.tel ? (
-            <button onClick={() => handleCall(b)}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', fontSize: '17px', fontWeight: 700, background: 'var(--ocean)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 'unset' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
-              </svg>
-              TELする
-            </button>
-          ) : (
-            <span style={{ fontSize: '14px', color: 'var(--fg-3)' }}>電話番号なし</span>
-          )}
-
-          <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
-            <button onClick={() => router.push('/dashboard/bookings')}
-              style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--fg-2)', minHeight: 'unset' }} title="編集">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-            </button>
-            <button onClick={() => handleCancel(b)}
-              style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--status-full-fg)', minHeight: 'unset' }} title="取消">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-                <path d="M10 11v6M14 11v6"/>
-                <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-              </svg>
-            </button>
-            <button onClick={() => setDeleteTarget(b)}
-              style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--fg-3)', minHeight: 'unset' }} title="その他">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {b.status === 'cancelled' && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={() => setDeleteTarget(b)}
-            style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--status-full-fg)', minHeight: 'unset' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+      {b.status === 'confirmed' && b.tel && (
+        <div style={{ marginTop: '10px' }}>
+          <button
+            onClick={() => handleCall(b)}
+            style={{
+              width: '100%',
+              padding: '10px',
+              fontSize: '13px',
+              fontWeight: 500,
+              background: kyokuha.primaryBtn,
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '9px',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              minHeight: 'unset',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
             </svg>
+            電話する
           </button>
         </div>
       )}
     </div>
   )
 
-  const DaySection = ({ label, dateBookings }: { label: string, dateBookings: Booking[] }) => {
-    if (dateBookings.length === 0) return (
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px', marginBottom: '12px' }}>
-        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '8px' }}>{label}</div>
-        <div style={{ fontSize: '16px', color: 'var(--fg-3)' }}>予約はありません</div>
-      </div>
-    )
+  // Day Section Component
+  const DaySection = ({ label, subLabel, dateBookings }: { label: string; subLabel: string; dateBookings: Booking[] }) => {
     const dayBks = dateBookings.filter(b => b.bin_type === 'day')
-    const relayBks = dateBookings.filter(b => b.bin_type === 'relay')
-    const nightBks = dateBookings.filter(b => b.bin_type === 'night')
+    const nightBks = dateBookings.filter(b => b.bin_type === 'night' || b.bin_type === 'relay')
+    const totalCount = dateBookings.reduce((sum, b) => sum + b.count, 0)
+    const confirmedCount = dateBookings.filter(b => b.status === 'confirmed').length
+
     return (
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px', marginBottom: '12px' }}>
-        <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>{label}</div>
-        {dayBks.length > 0 && (
-          <div style={{ marginBottom: relayBks.length > 0 || nightBks.length > 0 ? '12px' : '0' }}>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '4px' }}>
-              昼便　{dayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('day')}名
-            </div>
-            {dayBks.map(b => <BookingCard key={b.id} b={b} />)}
-          </div>
-        )}
-        {relayBks.length > 0 && (
-          <div style={{ marginBottom: nightBks.length > 0 ? '12px' : '0' }}>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ocean)', marginBottom: '4px' }}>
-              昼夜便　{relayBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('relay')}名
-            </div>
-            {relayBks.map(b => <BookingCard key={b.id} b={b} />)}
-          </div>
-        )}
-        {nightBks.length > 0 && (
+      <div style={{
+        background: kyokuha.cardBg,
+        border: `0.5px solid ${kyokuha.cardBorder}`,
+        borderRadius: '12px',
+        padding: '16px',
+        marginBottom: '12px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
           <div>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--status-night-fg)', marginBottom: '4px' }}>
-              夜便　{nightBks.reduce((s,b)=>s+b.count,0)}名／{getMaxCap('night')}名
-            </div>
-            {nightBks.map(b => <BookingCard key={b.id} b={b} />)}
+            <div style={{ fontSize: '15px', fontWeight: 500, color: '#1F2937' }}>{label}</div>
+            <div style={{ fontSize: '12px', fontWeight: 400, color: '#6B7280', marginTop: '2px' }}>{subLabel}</div>
           </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '13px', fontWeight: 400, color: '#6B7280' }}>
+              {confirmedCount}件 / {totalCount}名
+            </div>
+          </div>
+        </div>
+        
+        {dateBookings.length === 0 ? (
+          <div style={{ fontSize: '13px', fontWeight: 400, color: '#9CA3AF', textAlign: 'center', padding: '16px 0' }}>
+            予約はありません
+          </div>
+        ) : (
+          <>
+            {dayBks.length > 0 && (
+              <div style={{ marginBottom: nightBks.length > 0 ? '12px' : '0' }}>
+                <div style={{
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  color: kyokuha.dayBadgeText,
+                  marginBottom: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}>
+                  <span style={{
+                    background: kyokuha.dayBadgeBg,
+                    padding: '2px 8px',
+                    borderRadius: '20px',
+                  }}>昼便</span>
+                  <span style={{ color: '#6B7280' }}>{dayBks.reduce((s,b)=>s+b.count,0)}名</span>
+                </div>
+                {dayBks.map(b => <BookingCard key={b.id} b={b} />)}
+              </div>
+            )}
+            {nightBks.length > 0 && (
+              <div>
+                <div style={{
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  color: kyokuha.nightBadgeText,
+                  marginBottom: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}>
+                  <span style={{
+                    background: kyokuha.nightBadgeBg,
+                    padding: '2px 8px',
+                    borderRadius: '20px',
+                  }}>夜便</span>
+                  <span style={{ color: '#6B7280' }}>{nightBks.reduce((s,b)=>s+b.count,0)}名</span>
+                </div>
+                {nightBks.map(b => <BookingCard key={b.id} b={b} />)}
+              </div>
+            )}
+          </>
         )}
       </div>
     )
   }
 
+  const today = new Date()
+  const tomorrow = new Date(Date.now() + 86400000)
+
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
+    <div style={{
+      maxWidth: '390px',
+      margin: '0 auto',
+      minHeight: '100vh',
+      background: kyokuha.pageBg,
+      fontFamily: 'var(--font-sans)',
+    }}>
+      {/* Header with radial sun-ray pattern */}
       <div style={{
-        background: vessel?.banner_url
-          ? `linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url(${vessel.banner_url})`
-          : oceanGradient,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        padding: '18px 20px',
-        display: 'flex', alignItems: 'center', gap: '16px',
-        position: 'sticky', top: 0, zIndex: 20, minHeight: '80px',
-        overflow: 'hidden', isolation: 'isolate'
+        background: kyokuha.headerBg,
+        padding: '20px 16px',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
+        {/* Radial sun-ray pattern */}
         <div style={{
-          width: '56px', height: '56px', borderRadius: '12px',
-          overflow: 'hidden', flexShrink: 0,
-        }}>
-          <img src={vessel?.logo_url || DEFAULT_ICON} alt={`${vessel?.name || 'fiShip'} ロゴ`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>{vessel?.name}</div>
-          <div style={{ fontSize: '18px', color: '#ffffff', marginTop: '4px', textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>{vessel?.captain_name}</div>
-        </div>
-        {getPendingCount() > 0 && (
-          <div style={{
-            background: 'rgba(212,172,13,.18)', color: 'var(--gold)',
-            fontSize: '14px', fontWeight: 700, padding: '10px 14px',
-            border: '2px solid rgba(242,199,68,.55)', borderRadius: '99px',
-            whiteSpace: 'nowrap', minHeight: '44px', display: 'flex', alignItems: 'center',
-            position: 'relative', zIndex: 3,
-          }}>
-            承認待ち {getPendingCount()}件
-          </div>
-        )}
-        <button
-          onClick={() => router.push('/dashboard/account')}
-          aria-label="アカウント設定"
-          style={{ width: '56px', height: '56px', padding: 0, background: 'rgba(255,255,255,0.15)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', fontSize: '22px' }}
-        >⚙️</button>
-      </div>
-
-      <div style={{ padding: '16px' }}>
-        {pendingBookings.length > 0 && (
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--status-pending-dot)' }} />
-              <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)' }}>新しい予約が{pendingBookings.length}件届いています</span>
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          width: '400px',
+          height: '400px',
+          transform: 'translate(-50%, -50%)',
+          background: `repeating-conic-gradient(
+            from 0deg,
+            rgba(255,255,255,0.1) 0deg 10deg,
+            transparent 10deg 20deg
+          )`,
+          pointerEvents: 'none',
+        }} />
+        
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '10px',
+              overflow: 'hidden',
+              flexShrink: 0,
+              background: '#FFFFFF',
+            }}>
+              <img
+                src={vessel?.logo_url || DEFAULT_ICON}
+                alt={`${vessel?.name || 'fiShip'} ロゴ`}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             </div>
-            {pendingBookings.map(b => <PendingCard key={b.id} b={b} />)}
-          </div>
-        )}
-
-        {tomorrowBookings.length > 0 && (
-          <div style={{
-            background: tomorrowUncontacted.length === 0 ? 'var(--status-ok-bg)' : 'var(--status-pending-bg)',
-            border: `2px solid ${tomorrowUncontacted.length === 0 ? 'var(--status-ok-bd)' : 'var(--status-pending-dot)'}`,
-            borderRadius: '14px', padding: '16px 18px', marginBottom: '16px',
-            display: 'flex', alignItems: 'center', gap: '12px',
-          }}>
-            <div style={{ fontSize: '28px' }}>{tomorrowUncontacted.length === 0 ? '✅' : '⚠️'}</div>
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: tomorrowUncontacted.length === 0 ? 'var(--status-ok-fg)' : 'var(--status-pending-fg)' }}>
-                {tomorrowUncontacted.length === 0 ? '明日の乗船者全員に連絡済みです' : `明日の乗船者に連絡しましたか？　未連絡${tomorrowUncontacted.length}名`}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '18px', fontWeight: 500, color: '#FFFFFF' }}>
+                {vessel?.name || '第一釣神丸'}
+              </div>
+              <div style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
+                {today.getMonth()+1}月{today.getDate()}日（{DAY_NAMES[today.getDay()]}）
               </div>
             </div>
+            <button
+              onClick={() => router.push('/dashboard/account')}
+              aria-label="アカウント設定"
+              style={{
+                width: '40px',
+                height: '40px',
+                padding: 0,
+                background: 'rgba(255,255,255,0.15)',
+                color: '#FFFFFF',
+                border: '0.5px solid rgba(255,255,255,0.3)',
+                borderRadius: '9px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: '18px',
+                minHeight: 'unset',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+              </svg>
+            </button>
+          </div>
+          
+          {/* Stats boxes */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{
+              flex: 1,
+              background: 'rgba(255,255,255,0.15)',
+              borderRadius: '9px',
+              padding: '10px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '20px', fontWeight: 500, color: '#FFFFFF' }}>
+                {todayBookings.length + tomorrowBookings.length}
+              </div>
+              <div style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(255,255,255,0.8)' }}>予約数</div>
+            </div>
+            <div style={{
+              flex: 1,
+              background: 'rgba(255,255,255,0.15)',
+              borderRadius: '9px',
+              padding: '10px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '20px', fontWeight: 500, color: '#FFFFFF' }}>
+                {todayBookings.reduce((s,b) => s + b.count, 0) + tomorrowBookings.reduce((s,b) => s + b.count, 0)}
+              </div>
+              <div style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(255,255,255,0.8)' }}>乗船者数</div>
+            </div>
+            <div style={{
+              flex: 1,
+              background: 'rgba(255,255,255,0.15)',
+              borderRadius: '9px',
+              padding: '10px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '20px', fontWeight: 500, color: '#FFFFFF' }}>
+                {Math.max(0, (getMaxCap('day') + getMaxCap('night')) * 2 - (todayBookings.reduce((s,b) => s + b.count, 0) + tomorrowBookings.reduce((s,b) => s + b.count, 0)))}
+              </div>
+              <div style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(255,255,255,0.8)' }}>空き数</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ padding: '16px' }}>
+        {/* Pending bookings alert */}
+        {pendingBookings.length > 0 && (
+          <div style={{
+            background: '#FEF3C7',
+            border: `0.5px solid ${kyokuha.pending}`,
+            borderRadius: '12px',
+            padding: '12px 16px',
+            marginBottom: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+          }}>
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: kyokuha.pending,
+              flexShrink: 0,
+            }} />
+            <span style={{ fontSize: '13px', fontWeight: 500, color: '#92400E' }}>
+              新しい予約が{pendingBookings.length}件届いています
+            </span>
           </div>
         )}
 
+        {/* Today's reservations */}
         <DaySection
-          label={`今日　${new Date().getMonth()+1}月${new Date().getDate()}日（${DAY_NAMES[new Date().getDay()]}）`}
+          label="今日の予約"
+          subLabel={`${today.getMonth()+1}月${today.getDate()}日（${DAY_NAMES[today.getDay()]}）`}
           dateBookings={todayBookings}
         />
+
+        {/* Tomorrow's reservations */}
         <DaySection
-          label={`明日　${new Date(Date.now()+86400000).getMonth()+1}月${new Date(Date.now()+86400000).getDate()}日（${DAY_NAMES[new Date(Date.now()+86400000).getDay()]}）`}
+          label="明日の予約"
+          subLabel={`${tomorrow.getMonth()+1}月${tomorrow.getDate()}日（${DAY_NAMES[tomorrow.getDay()]}）`}
           dateBookings={tomorrowBookings}
         />
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '8px', marginBottom: '16px' }}>
+        {/* Quick action buttons */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '8px',
+          marginBottom: '16px',
+        }}>
           {[
-            { icon: '📅', label: '予約一覧', path: '/dashboard/bookings' },
-            { icon: '👥', label: '顧客名簿', path: '/dashboard/customers' },
-            { icon: '📋', label: '乗船名簿', path: '/dashboard/logs' },
-            { icon: '🗓️', label: 'スケジュール', path: '/dashboard/schedule' },
+            { icon: (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            ), label: '予約一覧', path: '/dashboard/bookings' },
+            { icon: (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            ), label: '顧客名簿', path: '/dashboard/customers' },
+            { icon: (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            ), label: '乗船名簿', path: '/dashboard/logs' },
+            { icon: (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+                <path d="M8 14h.01"/>
+                <path d="M12 14h.01"/>
+                <path d="M16 14h.01"/>
+                <path d="M8 18h.01"/>
+                <path d="M12 18h.01"/>
+                <path d="M16 18h.01"/>
+              </svg>
+            ), label: 'スケジュール', path: '/dashboard/schedule' },
           ].map(({ icon, label, path }) => (
             <button
               key={path}
               onClick={() => router.push(path)}
-              style={{ padding: '16px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: '14px', cursor: 'pointer', fontFamily: 'inherit', minHeight: '90px' }}
+              style={{
+                padding: '14px 8px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '6px',
+                background: kyokuha.cardBg,
+                border: `0.5px solid ${kyokuha.cardBorder}`,
+                borderRadius: '12px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                minHeight: 'unset',
+                color: '#374151',
+              }}
             >
-              <div style={{ fontSize: '28px' }}>{icon}</div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--fg-1)', textAlign: 'center', lineHeight: 1.3 }}>{label}</div>
+              <div style={{ color: '#6B7280' }}>{icon}</div>
+              <div style={{ fontSize: '11px', fontWeight: 500, color: '#374151', textAlign: 'center', lineHeight: 1.3 }}>{label}</div>
             </button>
           ))}
         </div>
+
+        {/* Add reservation button */}
+        <button
+          onClick={() => router.push('/dashboard/bookings/new')}
+          style={{
+            width: '100%',
+            padding: '14px',
+            fontSize: '14px',
+            fontWeight: 500,
+            background: kyokuha.primaryBtn,
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: '9px',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            minHeight: 'unset',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          予約を追加する
+        </button>
       </div>
 
+      {/* Delete confirmation modal */}
       {deleteTarget && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '440px' }}>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '8px' }}>
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          padding: '20px',
+        }}>
+          <div style={{
+            background: kyokuha.cardBg,
+            borderRadius: '12px',
+            padding: '20px',
+            width: '100%',
+            maxWidth: '350px',
+          }}>
+            <div style={{ fontSize: '16px', fontWeight: 500, color: '#1F2937', marginBottom: '8px' }}>
               予約を削除しますか？
             </div>
-            <div style={{ fontSize: '15px', color: 'var(--fg-2)', marginBottom: '20px', lineHeight: 1.7 }}>
+            <div style={{ fontSize: '13px', fontWeight: 400, color: '#6B7280', marginBottom: '16px', lineHeight: 1.6 }}>
               {deleteTarget.name}さん　{new Date(deleteTarget.date + 'T00:00:00').getMonth()+1}月{new Date(deleteTarget.date + 'T00:00:00').getDate()}日　{deleteTarget.bin_type === 'day' ? '昼便' : '夜便'}
-            </div>
-
-            <div style={{ background: 'var(--status-pending-bg)', border: '2px solid var(--status-pending-dot)', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '14px', color: 'var(--status-pending-fg)', lineHeight: 1.7 }}>
-              ⚠️ この日の出船を中止する場合は、新たな予約が入らないよう休船日に設定することをお勧めします。
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button
                 onClick={() => handleDelete(deleteTarget, true)}
                 disabled={deleting}
-                style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700, background: 'var(--status-full-fg)', color: '#fff', border: 'none', borderRadius: '12px', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  background: kyokuha.primaryBtn,
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '9px',
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                  fontFamily: 'inherit',
+                  minHeight: 'unset',
+                }}
               >
-                削除する＋この日を休船日に設定する
+                削除 + 休船日に設定
               </button>
               <button
                 onClick={() => handleDelete(deleteTarget, false)}
                 disabled={deleting}
-                style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '12px', cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  background: kyokuha.editBtnBg,
+                  color: kyokuha.primaryBtn,
+                  border: `0.5px solid ${kyokuha.editBtnBorder}`,
+                  borderRadius: '9px',
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                  fontFamily: 'inherit',
+                  minHeight: 'unset',
+                }}
               >
                 削除のみ
               </button>
               <button
                 onClick={() => setDeleteTarget(null)}
-                style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: 700, background: 'transparent', color: 'var(--fg-2)', border: '2px solid var(--border)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  background: 'transparent',
+                  color: '#6B7280',
+                  border: `0.5px solid ${kyokuha.cardBorder}`,
+                  borderRadius: '9px',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  minHeight: 'unset',
+                }}
               >
                 キャンセル
               </button>

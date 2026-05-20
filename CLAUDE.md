@@ -14,7 +14,7 @@ Claude・Claude Code・Codexが最初に読む入口ファイル。
 | Claude Code | docs/・.github/・git操作のみ |
 | Codex | src/配下の実装のみ |
 | Uizard | ラフ案生成のみ |
-| Figma | 完成デザインの置き場のみ（生成・トークン管理には不関与）|
+| Figma | 正式デザイン・トークン管理のみ |
 | v0 | Figmaベースのコンポーネント生成のみ |
 
 ---
@@ -31,8 +31,7 @@ Uizard（ラフ案）→ Figma（正式デザイン置き場）→ v0（コー�
 Codex（実装・PR）→ GitHub Actions（CI）→ Vercel（Preview）→ Playwright（E2E）
 
 ### レビュー
-Claude（PRレビュー）→ Auditor並列監査 → オーナー（最終承認・マージ）
-※詳細: docs/ai-orchestration/AUDITOR_RULES.md
+Claude（PRレビュー）→ オーナー（最終承認・マージ）
 
 ### リミット時
 - Codexリミット → Claude Codeで継続

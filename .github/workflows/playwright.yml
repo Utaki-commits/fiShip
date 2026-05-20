@@ -1,26 +1,23 @@
-name: Playwright Tests
+name: Playwright
 
 on:
   pull_request:
     branches:
       - main
 
-permissions:
-  contents: write
-  pull-requests: read
-
 jobs:
   playwright:
-    name: Playwright Screenshot & Review
+    name: Mobile Playwright validation
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-      - uses: actions/setup-node@v4
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
@@ -31,41 +28,23 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Create screenshots directory
-        run: mkdir -p screenshots
-
-      - name: Run Playwright tests
-        run: npx playwright test tests/screenshot.spec.ts --config=tests --reporter=json > playwright-report.json || true
+      - name: Run Playwright mobile tests
+        run: npm run test:e2e
         env:
-          PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
-          TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
-          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          PLAYWRIGHT_RESERVE_VESSEL_ID: ${{ secrets.PLAYWRIGHT_RESERVE_VESSEL_ID }}
 
-      - name: Generate review report
-        run: node scripts/generate-review-report.js
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          BRANCH_NAME: ${{ github.head_ref }}
-
-      - name: Upload screenshots
+      - name: Upload Playwright HTML report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots-pr-${{ github.event.pull_request.number }}
-          path: screenshots/
-          retention-days: 30
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
 
-      - name: Upload review report
+      - name: Upload major page screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: review-report-pr-${{ github.event.pull_request.number }}
-          path: docs/ai-reports/
-          retention-days: 30
-
-      - name: Commit review report
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/ai-reports/
-          git diff --staged --quiet || git commit -m "Add: PR #${{ github.event.pull_request.number }} 自動レビューレポート"
-          git push origin ${{ github.head_ref }} || true
+          name: playwright-screenshots
+          path: test-results/screenshots/
+          if-no-files-found: ignore

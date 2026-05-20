@@ -70,8 +70,3 @@ mainへの直接プッシュ禁止。必ずブランチを切る。
 | 仕様不明 | Claudeに確認してから実装 |
 | Vercel build失敗 | AI_IMPLEMENTATION_GUIDE.md の「よくあるミス」を確認 |
 | Supabaseエラー | RLS設定・サービスロールキーを確認 |
-
-## Auditor監査について
-PRはReviewer通過後、Architecture AuditorとUX Auditorで並列監査される。
-Red判定時は修正してPRを更新すること。Yellow判定時は人間が確認して判断。
-判定基準: docs/ai-orchestration/AUDITOR_RULES.md

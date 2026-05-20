@@ -17,18 +17,11 @@ You are an orchestration architect for an AI-driven software development environ
 * Final authority (human is)
 * Orchestration PM (ChatGPT is)
 
-## Auditor layer
-Reviewer通過後に並列実行する2つの監査レイヤー：
-- Architecture Auditor: 責務分離・過剰抽象化・AI臭い実装・hooks乱立の検知
-- UX Auditor: PROJECT_DNA準拠・認知負荷・モバイル導線の検知
-信号機モデル: Green（通過）/ Yellow（人間確認推奨）/ Red（修正必須・停止）
-詳細: docs/ai-orchestration/AUDITOR_RULES.md
-
-## Figma の役割（確定）
-- 完成したデザインの置き場として運用する
+## Claude Code が担当する作業（追記）
+- v0で生成したコードをFigma APIを使って自動的にFigmaに書き起こす
+- Figmaは正式UIデザインの置き場として運用する
 - Variables APIは無料プランのため使用不可
-- トークン定義は docs/design-system/concept.md で管理する
-- v0で生成したコードをFigmaに書き起こすのはClaude Codeが担当
+  トークン定義は docs/design-system/concept.md で管理する
 
 ## Project
 
