@@ -26,11 +26,11 @@ type Vessel = {
 const areas: Record<string, string[]> = {}
 
 const inputStyle = {
-  width: '100%', padding: '14px 16px', fontSize: '18px', border: '2px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)', boxSizing: 'border-box' as const,
+  width: '100%', padding: '14px 16px', fontSize: '18px', border: '0.5px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', color: 'var(--fg-1)', background: 'var(--surface)', boxSizing: 'border-box' as const,
 }
 const sectionStyle = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px', marginBottom: '12px' }
-const titleStyle = { fontSize: '18px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '14px' }
-const labelStyle = { fontSize: '16px', fontWeight: 600, color: 'var(--fg-2)', display: 'block', marginBottom: '8px' }
+const titleStyle = { fontSize: '18px', fontWeight: 500, color: 'var(--fg-1)', marginBottom: '14px' }
+const labelStyle = { fontSize: '16px', fontWeight: 500, color: 'var(--fg-2)', display: 'block', marginBottom: '8px' }
 const togSw = (active: boolean) => ({
   width: '64px',
   height: '36px',
@@ -178,24 +178,24 @@ export default function AccountPage() {
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
       <div style={{ background: 'linear-gradient(180deg, var(--ocean) 0%, #0F4570 100%)', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', position: 'sticky', top: 0, zIndex: 20 }}>
         <button onClick={() => router.push('/dashboard')} style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.3)', color: 'var(--surface)', fontSize: '22px' }}>←</button>
-        <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--surface)' }}>設定</div>
+        <div style={{ fontSize: '24px', fontWeight: 500, color: 'var(--surface)' }}>設定</div>
       </div>
       <main style={{ padding: '16px' }}>
-        {error && <div style={{ background: 'var(--status-full-bg)', border: '2px solid var(--status-full-bd)', borderRadius: '12px', padding: '14px', marginBottom: '12px', fontSize: '16px', fontWeight: 700, color: 'var(--status-full-fg)' }}>{error}</div>}
-        {saved && <div style={{ background: 'var(--status-ok-bg)', border: '2px solid var(--status-ok-bd)', borderRadius: '12px', padding: '14px', marginBottom: '12px', fontSize: '16px', fontWeight: 700, color: 'var(--status-ok-fg)' }}>保存しました</div>}
+        {error && <div style={{ background: 'var(--status-full-bg)', border: '0.5px solid var(--status-full-bd)', borderRadius: '12px', padding: '14px', marginBottom: '12px', fontSize: '16px', fontWeight: 500, color: 'var(--status-full-fg)' }}>{error}</div>}
+        {saved && <div style={{ background: 'var(--status-ok-bg)', border: '0.5px solid var(--status-ok-bd)', borderRadius: '12px', padding: '14px', marginBottom: '12px', fontSize: '16px', fontWeight: 500, color: 'var(--status-ok-fg)' }}>保存しました</div>}
         <section style={sectionStyle}>
           <div style={titleStyle}>船のプロフィール写真</div>
           <div style={{ height: '140px', borderRadius: '12px', overflow: 'hidden', background: vessel.banner_url ? 'transparent' : 'var(--ocean)', marginBottom: '12px', position: 'relative' }}>
             {vessel.banner_url && <img src={vessel.banner_url} alt='バナー画像' style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-            {!vessel.banner_url && <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>バナー画像未設定</div>}
-            <button onClick={() => bannerInputRef.current?.click()} style={{ position: 'absolute', right: '8px', bottom: '8px', padding: '8px 14px', borderRadius: '8px', border: 'none', background: 'rgba(0,0,0,.6)', color: '#fff', fontSize: '16px', fontWeight: 700 }}>変更</button>
+            {!vessel.banner_url && <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '16px', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>バナー画像未設定</div>}
+            <button onClick={() => bannerInputRef.current?.click()} style={{ position: 'absolute', right: '8px', bottom: '8px', padding: '8px 14px', borderRadius: '8px', border: 'none', background: 'rgba(0,0,0,.6)', color: '#fff', fontSize: '16px', fontWeight: 500 }}>変更</button>
             <input ref={bannerInputRef} type='file' accept='image/*' style={{ display: 'none' }} onChange={e => handleImageSelect(e, 'banner')} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '72px', height: '72px', borderRadius: '16px', overflow: 'hidden', flexShrink: 0 }}>
               <img src={vessel?.logo_url || DEFAULT_ICON} alt='ロゴ画像' style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
-            <button onClick={() => logoInputRef.current?.click()} style={{ minHeight: '56px', padding: '0 20px', border: '2px solid var(--border)', borderRadius: '10px', background: 'var(--surface)', fontSize: '16px', fontWeight: 700 }}>ロゴを変更する</button>
+            <button onClick={() => logoInputRef.current?.click()} style={{ minHeight: '56px', padding: '0 20px', border: '0.5px solid var(--border)', borderRadius: '10px', background: 'var(--surface)', fontSize: '16px', fontWeight: 500 }}>ロゴを変更する</button>
             <input ref={logoInputRef} type='file' accept='image/*' style={{ display: 'none' }} onChange={e => handleImageSelect(e, 'logo')} />
           </div>
         </section>
@@ -233,15 +233,15 @@ export default function AccountPage() {
         </section>
         <section style={sectionStyle}>
           <div style={titleStyle}>文字サイズ</div>
-          <div style={{ display: 'flex', gap: '8px' }}>{(['small','medium','large'] as const).map(key => <button key={key} onClick={() => setFontSize(key)} style={{ flex: 1, minHeight: '56px', borderRadius: '12px', border: fontSize === key ? '3px solid var(--ocean)' : '2px solid var(--border)', background: fontSize === key ? 'var(--ocean)' : 'var(--surface)', color: fontSize === key ? '#fff' : 'var(--fg-2)', fontSize: key === 'small' ? '16px' : key === 'large' ? '24px' : '20px', fontWeight: 700 }}>{key === 'small' ? '小' : key === 'large' ? '大' : '標準'}</button>)}</div>
+          <div style={{ display: 'flex', gap: '8px' }}>{(['small','medium','large'] as const).map(key => <button key={key} onClick={() => setFontSize(key)} style={{ flex: 1, minHeight: '56px', borderRadius: '12px', border: fontSize === key ? '0.5px solid var(--ocean)' : '0.5px solid var(--border)', background: fontSize === key ? 'var(--ocean)' : 'var(--surface)', color: fontSize === key ? '#fff' : 'var(--fg-2)', fontSize: key === 'small' ? '16px' : key === 'large' ? '24px' : '20px', fontWeight: 500 }}>{key === 'small' ? '小' : key === 'large' ? '大' : '標準'}</button>)}</div>
         </section>
         <section style={sectionStyle}>
           <div style={titleStyle}>カラーモード</div>
-          <div style={{ display: 'flex', gap: '8px' }}>{(['light','dark'] as const).map(key => <button key={key} onClick={() => setColorMode(key)} style={{ flex: 1, minHeight: '56px', borderRadius: '12px', border: colorMode === key ? '3px solid var(--ocean)' : '2px solid var(--border)', background: colorMode === key ? 'var(--ocean)' : 'var(--surface)', color: colorMode === key ? '#fff' : 'var(--fg-2)', fontSize: '18px', fontWeight: 700 }}>{key === 'light' ? 'ライト' : 'ダーク'}</button>)}</div>
+          <div style={{ display: 'flex', gap: '8px' }}>{(['light','dark'] as const).map(key => <button key={key} onClick={() => setColorMode(key)} style={{ flex: 1, minHeight: '56px', borderRadius: '12px', border: colorMode === key ? '0.5px solid var(--ocean)' : '0.5px solid var(--border)', background: colorMode === key ? 'var(--ocean)' : 'var(--surface)', color: colorMode === key ? '#fff' : 'var(--fg-2)', fontSize: '18px', fontWeight: 500 }}>{key === 'light' ? 'ライト' : 'ダーク'}</button>)}</div>
         </section>
         <section style={sectionStyle}>
           <div style={titleStyle}>通知設定</div>
-          <button onClick={() => setNotifyEnabled(v => !v)} style={{ width: '100%', minHeight: '64px', padding: '14px', borderRadius: '12px', border: notifyEnabled ? '2px solid var(--gold)' : '2px solid var(--border)', background: notifyEnabled ? '#FBF3D4' : 'var(--surface)', color: notifyEnabled ? '#7A5800' : 'var(--fg-1)', fontSize: '18px', fontWeight: 700, textAlign: 'left' }}>予約通知を受け取る: {notifyEnabled ? 'オン' : 'オフ'}</button>
+          <button onClick={() => setNotifyEnabled(v => !v)} style={{ width: '100%', minHeight: '64px', padding: '14px', borderRadius: '12px', border: notifyEnabled ? '0.5px solid var(--gold)' : '0.5px solid var(--border)', background: notifyEnabled ? '#FBF3D4' : 'var(--surface)', color: notifyEnabled ? '#7A5800' : 'var(--fg-1)', fontSize: '18px', fontWeight: 500, textAlign: 'left' }}>予約通知を受け取る: {notifyEnabled ? 'オン' : 'オフ'}</button>
           {notifyEnabled && <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px' }}><select value={notifyStart} onChange={e => setNotifyStart(e.target.value)} style={{ ...inputStyle, flex: 1 }}>{Array.from({ length: 24 }, (_, i) => <option key={i} value={String(i)}>{i}:00</option>)}</select><span>〜</span><select value={notifyEnd} onChange={e => setNotifyEnd(e.target.value)} style={{ ...inputStyle, flex: 1 }}>{Array.from({ length: 24 }, (_, i) => <option key={i} value={String(i)}>{i}:00</option>)}</select></div>}
         </section>
         <section style={sectionStyle}>
@@ -253,12 +253,12 @@ export default function AccountPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               width: '100%', padding: '16px',
               background: vessel.auto_confirm ? '#FBF3D4' : 'var(--surface)',
-              border: vessel.auto_confirm ? '2px solid var(--gold)' : '2px solid var(--border)',
+              border: vessel.auto_confirm ? '0.5px solid var(--gold)' : '0.5px solid var(--border)',
               borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
             }}
           >
             <div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: vessel.auto_confirm ? '#7A5800' : 'var(--fg-1)' }}>
+              <div style={{ fontSize: '18px', fontWeight: 500, color: vessel.auto_confirm ? '#7A5800' : 'var(--fg-1)' }}>
                 空きがある予約を自動で承認する
               </div>
               <div style={{ fontSize: '15px', color: vessel.auto_confirm ? '#7A5800' : 'var(--fg-2)', marginTop: '4px', lineHeight: 1.6 }}>
@@ -276,22 +276,22 @@ export default function AccountPage() {
             </div>
           </button>
         </section>
-        <button onClick={handleSave} disabled={saving} style={{ width: '100%', minHeight: '64px', border: 'none', borderRadius: '14px', background: saving ? 'var(--border)' : 'var(--ocean)', color: saving ? 'var(--fg-3)' : '#fff', fontSize: '20px', fontWeight: 700 }}>{saving ? '保存中...' : '変更を保存する'}</button>
+        <button onClick={handleSave} disabled={saving} style={{ width: '100%', minHeight: '64px', border: 'none', borderRadius: '14px', background: saving ? 'var(--border)' : 'var(--ocean)', color: saving ? 'var(--fg-3)' : '#fff', fontSize: '20px', fontWeight: 500 }}>{saving ? '保存中...' : '変更を保存する'}</button>
         <section style={{ ...sectionStyle, marginTop: '12px' }}>
           <div style={titleStyle}>サポート</div>
-          <a href="/legal/privacy" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--border)', textDecoration: 'none', color: 'var(--fg-1)', fontSize: '18px', fontWeight: 600 }}>
+          <a href="/legal/privacy" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--border)', textDecoration: 'none', color: 'var(--fg-1)', fontSize: '18px', fontWeight: 500 }}>
             プライバシーポリシー <span style={{ color: 'var(--fg-3)' }}>→</span>
           </a>
-          <a href="/legal/terms" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', textDecoration: 'none', color: 'var(--fg-1)', fontSize: '18px', fontWeight: 600 }}>
+          <a href="/legal/terms" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', textDecoration: 'none', color: 'var(--fg-1)', fontSize: '18px', fontWeight: 500 }}>
             利用規約 <span style={{ color: 'var(--fg-3)' }}>→</span>
           </a>
         </section>
         <section style={{ ...sectionStyle, marginTop: '12px' }}>
           <div style={titleStyle}>アカウント</div>
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login') }} style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700, background: 'var(--ocean)', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', marginBottom: '10px' }}>
+          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login') }} style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 500, background: 'var(--ocean)', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit', marginBottom: '10px' }}>
             ログアウト
           </button>
-          <button onClick={() => setShowDeleteModal(true)} style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 700, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '2px solid var(--status-full-bd)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={() => setShowDeleteModal(true)} style={{ width: '100%', padding: '18px', fontSize: '20px', fontWeight: 500, background: 'var(--status-full-bg)', color: 'var(--status-full-fg)', border: '0.5px solid var(--status-full-bd)', borderRadius: '12px', cursor: 'pointer', fontFamily: 'inherit' }}>
             サービスを解約する
           </button>
         </section>
@@ -299,15 +299,15 @@ export default function AccountPage() {
       {showDeleteModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ background: 'var(--surface)', borderRadius: '16px', padding: '28px 22px', width: '100%', maxWidth: '400px' }}>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '16px' }}>
+            <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--fg-1)', marginBottom: '16px' }}>
               解約の確認
             </div>
 
-            <div style={{ background: 'var(--status-day-bg)', border: '2px solid var(--ocean-light)', borderRadius: '12px', padding: '14px 16px', marginBottom: '14px' }}>
+            <div style={{ background: 'var(--status-day-bg)', border: '0.5px solid var(--ocean-light)', borderRadius: '12px', padding: '14px 16px', marginBottom: '14px' }}>
               <div style={{ fontSize: '15px', color: 'var(--ocean)', marginBottom: '8px' }}>
                 解約後もご利用いただける期限
               </div>
-              <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--ocean)', lineHeight: 1.2, marginBottom: '8px' }}>
+              <div style={{ fontSize: '32px', fontWeight: 500, color: 'var(--ocean)', lineHeight: 1.2, marginBottom: '8px' }}>
                 {vessel ? getExpiryDate(vessel.subscribed_at) : ''}
               </div>
               <div style={{ fontSize: '14px', color: 'var(--ocean)', lineHeight: 1.6 }}>
@@ -315,17 +315,17 @@ export default function AccountPage() {
               </div>
             </div>
 
-            <div style={{ background: 'var(--status-full-bg)', border: '2px solid var(--status-full-bd)', borderRadius: '12px', padding: '14px 16px', marginBottom: '20px' }}>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--status-full-fg)', lineHeight: 1.7 }}>
+            <div style={{ background: 'var(--status-full-bg)', border: '0.5px solid var(--status-full-bd)', borderRadius: '12px', padding: '14px 16px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--status-full-fg)', lineHeight: 1.7 }}>
                 ⚠️ 料金の返金はいたしません。
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: '16px', fontSize: '18px', fontWeight: 700, background: 'var(--surface)', border: '2px solid var(--border)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--fg-1)' }}>
+              <button onClick={() => setShowDeleteModal(false)} style={{ flex: 1, padding: '16px', fontSize: '18px', fontWeight: 500, background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--fg-1)' }}>
                 キャンセル
               </button>
-              <button onClick={handleDeleteAccount} style={{ flex: 1, padding: '16px', fontSize: '18px', fontWeight: 700, background: 'var(--status-full-fg)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={handleDeleteAccount} style={{ flex: 1, padding: '16px', fontSize: '18px', fontWeight: 500, background: 'var(--status-full-fg)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}>
                 解約する
               </button>
             </div>
@@ -335,7 +335,7 @@ export default function AccountPage() {
       {cropImage && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.72)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ width: '100%', maxWidth: '420px', background: 'var(--surface)', borderRadius: '16px', padding: '18px' }}>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--fg-1)', marginBottom: '12px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 500, color: 'var(--fg-1)', marginBottom: '12px' }}>
               {cropImage.type === 'banner' ? 'バナー画像を確認' : 'ロゴ画像を確認'}
             </div>
             <div style={{ width: '100%', aspectRatio: cropImage.type === 'banner' ? '16 / 9' : '1 / 1', borderRadius: '12px', overflow: 'hidden', background: 'var(--bg)', marginBottom: '14px' }}>
@@ -345,10 +345,10 @@ export default function AccountPage() {
               {cropImage.type === 'banner' ? '16:9の横長に中央トリミングして保存します。' : '1:1の正方形に中央トリミングして保存します。'}
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setCropImage(null)} disabled={uploadingImage} style={{ flex: 1, minHeight: '56px', border: '2px solid var(--border)', borderRadius: '12px', background: 'var(--surface)', color: 'var(--fg-1)', fontSize: '18px', fontWeight: 700 }}>
+              <button onClick={() => setCropImage(null)} disabled={uploadingImage} style={{ flex: 1, minHeight: '56px', border: '0.5px solid var(--border)', borderRadius: '12px', background: 'var(--surface)', color: 'var(--fg-1)', fontSize: '18px', fontWeight: 500 }}>
                 キャンセル
               </button>
-              <button onClick={uploadCroppedImage} disabled={uploadingImage} style={{ flex: 1, minHeight: '56px', border: 'none', borderRadius: '12px', background: uploadingImage ? 'var(--border)' : 'var(--ocean)', color: uploadingImage ? 'var(--fg-3)' : '#fff', fontSize: '18px', fontWeight: 700 }}>
+              <button onClick={uploadCroppedImage} disabled={uploadingImage} style={{ flex: 1, minHeight: '56px', border: 'none', borderRadius: '12px', background: uploadingImage ? 'var(--border)' : 'var(--ocean)', color: uploadingImage ? 'var(--fg-3)' : '#fff', fontSize: '18px', fontWeight: 500 }}>
                 {uploadingImage ? '保存中...' : '保存する'}
               </button>
             </div>
