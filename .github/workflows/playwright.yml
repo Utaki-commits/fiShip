@@ -48,3 +48,88 @@ jobs:
           name: playwright-screenshots
           path: test-results/screenshots/
           if-no-files-found: ignore
+
+      - name: スクリーンショットをArtifactsに保存
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-pr-${{ github.event.pull_request.number }}
+          path: screenshots/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  ux-review:
+    needs: [playwright]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: スクリーンショットをダウンロード
+        uses: actions/download-artifact@v4
+        with:
+          name: screenshots-pr-${{ github.event.pull_request.number }}
+          path: screenshots/
+        continue-on-error: true
+
+      - name: UXレビュー実行
+        id: ux_review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SCREENSHOTS_DIR: screenshots
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node .github/scripts/ux-reviewer.js
+
+      - name: PRコメントを投稿
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `${{ steps.ux_review.outputs.pr_comment }}`
+            if (!comment) return
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: comment
+            })
+
+      - name: Red判定時にラベル付与
+        if: steps.ux_review.outputs.overall_verdict == 'red'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'ux-review:red',
+                color: 'B91C1C',
+                description: 'UX Review Red判定'
+              })
+            } catch {}
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['ux-review:red']
+            })
+
+      - name: レポートをコミット
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/ai-reports/
+          git diff --cached --quiet || git commit -m "report: UX Review結果を保存 PR#${{ github.event.pull_request.number }}"
+          git push origin HEAD:${{ github.head_ref }}
