@@ -36,19 +36,6 @@ export default function LoginPage() {
     router.replace('/dashboard')
   }
 
-  const handleLineLogin = async () => {
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: 'kakao',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-
-    if (oauthError) {
-      setError('LINEログインは現在準備中です。開発用ログインをご利用ください。')
-    }
-  }
-
   const buttonBase = {
     width: '100%',
     minHeight: '64px',
@@ -157,29 +144,13 @@ export default function LoginPage() {
               background: busy ? 'var(--border)' : 'var(--ocean)',
               color: busy ? 'var(--fg-3)' : '#fff',
               border: 'none',
-              marginBottom: '12px',
             }}
           >
             {busy ? 'ログイン中...' : 'ログインする'}
           </button>
 
-          <button
-            type="button"
-            onClick={handleLineLogin}
-            disabled
-            style={{
-              ...buttonBase,
-              background: 'var(--status-closed-bg)',
-              color: 'var(--fg-3)',
-              border: '1px solid var(--border)',
-              cursor: 'not-allowed',
-            }}
-          >
-            LINEログイン（準備中）
-          </button>
-
           <p style={{ fontSize: '13px', color: 'var(--fg-2)', textAlign: 'center', marginTop: '16px', lineHeight: 1.8 }}>
-            本番用のLINEログイン・電話番号認証は別タスクで追加します。
+            本番用のLINE・電話番号認証は別タスクで追加します
           </p>
         </div>
       </section>
