@@ -8,7 +8,8 @@ ALTER TABLE bin_settings
   ADD COLUMN IF NOT EXISTS facilities_override jsonb DEFAULT '{}';
 
 ALTER TABLE bin_settings
-  ADD COLUMN IF NOT EXISTS period_type text DEFAULT 'monthly';
+  ADD COLUMN IF NOT EXISTS period_type text DEFAULT 'monthly'
+    CHECK (period_type IN ('monthly', 'date'));
 
 ALTER TABLE bin_settings
   ADD COLUMN IF NOT EXISTS start_date date;

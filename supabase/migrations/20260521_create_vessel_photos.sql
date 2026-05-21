@@ -63,6 +63,20 @@ BEGIN
     SELECT 1 FROM pg_policies
     WHERE schemaname = 'public'
       AND tablename = 'vessel_photos'
+      AND policyname = 'vessel_owner_update'
+  ) THEN
+    CREATE POLICY "vessel_owner_update"
+      ON vessel_photos FOR UPDATE
+      USING (vessel_id IN (SELECT id FROM vessels WHERE user_id = auth.uid()));
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'vessel_photos'
       AND policyname = 'public_select'
   ) THEN
     CREATE POLICY "public_select"
@@ -72,4 +86,4 @@ BEGIN
 END $$;
 
 GRANT SELECT ON vessel_photos TO anon, authenticated;
-GRANT INSERT, DELETE ON vessel_photos TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON vessel_photos TO authenticated;

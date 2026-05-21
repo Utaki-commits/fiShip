@@ -8,7 +8,7 @@ ALTER TABLE customers
   ADD COLUMN IF NOT EXISTS age integer;
 
 ALTER TABLE customers
-  ADD COLUMN IF NOT EXISTS gender text DEFAULT '';
+  ADD COLUMN IF NOT EXISTS gender text;
 
 ALTER TABLE customers
   ADD COLUMN IF NOT EXISTS emergency_contact text DEFAULT '';
