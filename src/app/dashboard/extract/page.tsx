@@ -6,7 +6,22 @@ import { supabase } from '@/lib/supabase'
 import { PageShell, LoadingScreen, cardStyle, colors, primaryButtonStyle, secondaryButtonStyle, dangerButtonStyle, inputStyle, binBadgeStyle, binLabel, formatDate } from '../_components/CaptainShell'
 
 type Tab = 'line' | 'instagram' | 'phone'
-type SnsMessage = { id: string; channel: 'line' | 'instagram'; sender_name: string | null; message_text: string; received_at: string; status: string; ai_result: { missing_fields?: string[]; confidence?: number } | null }
+type SnsMessage = {
+  id: string
+  channel: 'line' | 'instagram'
+  sender_name: string | null
+  message_text: string
+  received_at: string
+  status: string
+  ai_result: {
+    missing_fields?: string[]
+    confidence?: number
+    reply_text?: string
+    replyText?: string
+    generated_reply?: string
+    reply?: string
+  } | null
+}
 type Customer = { id: string; name: string; tel: string; fishing_style?: string | null; memo?: string | null }
 type BinSetting = { id: string; bin_type: 'day' | 'night' | 'relay'; name: string | null; days_of_week: number[]; start_month: number; end_month: number; max_capacity: number }
 type OfflineMemo = { id: string; message: string; date: string; binType: string; count: number; savedAt: string }
@@ -30,6 +45,7 @@ export default function ExtractPage() {
   const [offlineMemos, setOfflineMemos] = useState<OfflineMemo[]>([])
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState('')
+  const [replyPreview, setReplyPreview] = useState<SnsMessage | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -39,7 +55,7 @@ export default function ExtractPage() {
       if (!vessel) { router.push('/register'); return }
       setVesselId(vessel.id)
       const [{ data: msg }, { data: cs }, { data: bs }] = await Promise.all([
-        supabase.from('sns_messages').select('*').eq('vessel_id', vessel.id).eq('status', 'unprocessed').order('received_at', { ascending: false }),
+        supabase.from('sns_messages').select('*').eq('vessel_id', vessel.id).in('status', ['unprocessed', 'reply_failed']).order('received_at', { ascending: false }),
         supabase.from('customers').select('id, name, tel, memo, note').eq('vessel_id', vessel.id).order('name'),
         supabase.from('bin_settings').select('*').eq('vessel_id', vessel.id).eq('enabled', true),
       ])
@@ -112,6 +128,20 @@ export default function ExtractPage() {
     setMessages(prev => prev.filter(m => m.id !== id))
   }
 
+  const getReplyText = (msg: SnsMessage) => {
+    return msg.ai_result?.reply_text
+      || msg.ai_result?.replyText
+      || msg.ai_result?.generated_reply
+      || msg.ai_result?.reply
+      || `ご連絡ありがとうございます。\n電波状況の良い場所から、船長が確認して返信します。\n\n元メッセージ：\n${msg.message_text}`
+  }
+
+  const copyReplyText = async (msg: SnsMessage) => {
+    await navigator.clipboard.writeText(getReplyText(msg))
+    setNotice('返信内容をコピーしました')
+    setTimeout(() => setNotice(''), 2500)
+  }
+
   if (loading) return <LoadingScreen />
 
   const tabMessages = messages.filter(m => m.channel === tab)
@@ -126,18 +156,48 @@ export default function ExtractPage() {
       {(tab === 'line' || tab === 'instagram') && (
         <section>
           {tabMessages.length === 0 && <div style={cardStyle}>手動対応が必要なメッセージはありません。</div>}
-          {tabMessages.map(msg => (
-            <div key={msg.id} style={cardStyle}>
-              <div style={{ color: colors.sub, marginBottom: '8px' }}>{msg.sender_name || '送信者未登録'} / {new Date(msg.received_at).toLocaleString('ja-JP')}</div>
-              <p style={{ fontSize: '17px', lineHeight: 1.7 }}>{msg.message_text}</p>
-              {msg.ai_result?.missing_fields?.length ? <div style={{ color: colors.amber }}>不足: {msg.ai_result.missing_fields.join('・')}</div> : <div style={{ color: colors.sub }}>解析できなかった内容です。</div>}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                <button onClick={() => setTab('phone')} style={secondaryButtonStyle}>電話メモで登録</button>
-                <button onClick={() => ignoreMessage(msg.id)} style={dangerButtonStyle}>対応済みにする</button>
+          {tabMessages.map(msg => {
+            if (msg.status === 'reply_failed') {
+              return (
+                <div key={msg.id} style={{ ...cardStyle, border: `0.5px solid ${colors.amberBorder}`, background: colors.amberBg }}>
+                  <div style={{ fontSize: '17px', fontWeight: 500, color: colors.amber, marginBottom: '8px' }}>返信できませんでした</div>
+                  <div style={{ fontSize: '16px', color: colors.text, marginBottom: '6px' }}>{msg.sender_name || 'お客様'}様からのメッセージ</div>
+                  <div style={{ fontSize: '15px', color: colors.sub, lineHeight: 1.7, marginBottom: '12px' }}>電波状況の良い場所で<br />再送してください</div>
+                  <p style={{ fontSize: '15px', lineHeight: 1.7, color: colors.text, background: colors.card, border: `0.5px solid ${colors.border}`, borderRadius: '8px', padding: '12px' }}>{msg.message_text}</p>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                    <button onClick={() => setReplyPreview(msg)} style={primaryButtonStyle}>返信内容を確認する</button>
+                    <button onClick={() => ignoreMessage(msg.id)} style={dangerButtonStyle}>対応済みにする</button>
+                  </div>
+                </div>
+              )
+            }
+
+            return (
+              <div key={msg.id} style={cardStyle}>
+                <div style={{ color: colors.sub, marginBottom: '8px' }}>{msg.sender_name || '送信者未登録'} / {new Date(msg.received_at).toLocaleString('ja-JP')}</div>
+                <p style={{ fontSize: '17px', lineHeight: 1.7 }}>{msg.message_text}</p>
+                {msg.ai_result?.missing_fields?.length ? <div style={{ color: colors.amber }}>不足: {msg.ai_result.missing_fields.join('・')}</div> : <div style={{ color: colors.sub }}>解析できなかった内容です。</div>}
+                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                  <button onClick={() => setTab('phone')} style={secondaryButtonStyle}>電話メモで登録</button>
+                  <button onClick={() => ignoreMessage(msg.id)} style={dangerButtonStyle}>対応済みにする</button>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </section>
+      )}
+
+      {replyPreview && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px' }}>
+          <div style={{ ...cardStyle, width: '100%', maxWidth: '440px', marginBottom: 0 }}>
+            <div style={{ fontSize: '18px', fontWeight: 500, color: colors.text, marginBottom: '10px' }}>返信内容</div>
+            <textarea readOnly value={getReplyText(replyPreview)} style={{ ...inputStyle, height: '180px', lineHeight: 1.7, marginBottom: '12px' }} />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => copyReplyText(replyPreview)} style={{ ...primaryButtonStyle, flex: 1 }}>コピーする</button>
+              <button onClick={() => setReplyPreview(null)} style={{ ...secondaryButtonStyle, flex: 1 }}>閉じる</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {tab === 'phone' && (
