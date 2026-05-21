@@ -32,7 +32,7 @@ export const pageStyle: CSSProperties = {
   background: colors.page,
   color: colors.text,
   fontFamily: 'var(--font-sans)',
-  paddingBottom: '92px',
+  paddingBottom: '0',
 }
 
 export const cardStyle: CSSProperties = {
@@ -164,15 +164,6 @@ export function PageShell({ title, children, menu = true }: { title: string; chi
         </div>
       </header>
       <main style={{ padding: '16px' }}>{children}</main>
-      <nav style={{ position: 'fixed', left: '50%', bottom: 0, transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: colors.card, borderTop: `0.5px solid ${colors.border}`, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', zIndex: 40 }}>
-        {[
-          { label: 'ホーム', path: '/dashboard' },
-          { label: '予約', path: '/dashboard/bookings' },
-          { label: '名簿', path: '/dashboard/logs' },
-        ].map(item => (
-          <button key={item.path} onClick={() => router.push(item.path)} style={{ minHeight: '64px', border: 'none', background: 'transparent', color: colors.text, fontSize: '15px', fontWeight: 500, fontFamily: 'inherit' }}>{item.label}</button>
-        ))}
-      </nav>
     </div>
   )
 }
