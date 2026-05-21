@@ -10,8 +10,8 @@ test.beforeAll(() => {
 test.describe('major page screenshots at mobile width', () => {
   test('captures login page CTA state', async ({ page }) => {
     await page.goto('/login')
-    await expect(page.getByRole('button', { name: /LINEではじめる/ })).toBeVisible()
-    await expect(page.getByRole('button', { name: /電話番号ではじめる/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '開発用ログイン' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'ログインする' })).toBeVisible()
     await page.screenshot({ path: `${screenshotDir}/login-mobile.png`, fullPage: true })
   })
 
