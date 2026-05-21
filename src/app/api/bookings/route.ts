@@ -1,4 +1,5 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+﻿import { randomUUID } from 'crypto'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 type SmsBooking = {
@@ -148,6 +149,7 @@ export async function POST(req: NextRequest) {
     const allowedStatuses = ['confirmed', 'rejected', 'pending']
     const status = allowedStatuses.includes(requestedStatus) ? requestedStatus : isImmediate ? 'confirmed' : 'pending'
     const resolvedDateTo = date_to || (isCharter ? date : null)
+    const resolvedBoardToken = board_token || randomUUID()
 
     const { data, error } = await supabase
       .from('bookings')
@@ -164,7 +166,7 @@ export async function POST(req: NextRequest) {
         status,
         channel,
         is_charter: isCharter,
-        board_token: board_token || null,
+        board_token: resolvedBoardToken,
         needs_call: Boolean(needs_call),
         needs_call_reason: needs_call_reason || '',
       }])
@@ -315,7 +317,7 @@ export async function PATCH(req: NextRequest) {
 
     if (
       status === 'confirmed' &&
-      previousBooking?.status !== 'confirmed' &&
+      previousBooking?.status === 'pending' &&
       data.channel !== 'phone'
     ) {
       await sendBoardingSms(req, data)
