@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 // POST: 便設定を新規作成する
@@ -17,6 +17,11 @@ export async function POST(req: NextRequest) {
       fish_types,
       max_capacity,
       price,
+      note,
+      facilities_override,
+      period_type,
+      start_date,
+      end_date,
     } = body
 
     // 必須項目のバリデーション
@@ -57,6 +62,11 @@ export async function POST(req: NextRequest) {
         fish_types: fish_types || [],
         max_capacity: Number(max_capacity),
         price: price || '',
+        note: note || '',
+        facilities_override: facilities_override || null,
+        period_type: period_type || 'monthly',
+        start_date: start_date || null,
+        end_date: end_date || null,
       }])
       .select()
       .single()
@@ -84,6 +94,11 @@ export async function PATCH(req: NextRequest) {
       fish_types,
       max_capacity,
       price,
+      note,
+      facilities_override,
+      period_type,
+      start_date,
+      end_date,
     } = body
 
     if (!id) return NextResponse.json({ error: 'idが必要です' }, { status: 400 })
@@ -125,6 +140,11 @@ export async function PATCH(req: NextRequest) {
         fish_types: fish_types || [],
         max_capacity: Number(max_capacity),
         price: price || '',
+        note: note || '',
+        facilities_override: facilities_override || null,
+        period_type: period_type || 'monthly',
+        start_date: start_date || null,
+        end_date: end_date || null,
       })
       .eq('id', id)
       .select()
