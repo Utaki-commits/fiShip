@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
 type RouteContext = { params: Promise<{ token: string }> }
+
+const getAdminClient = () => createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+)
 
 // GET: トークンで予約情報と既存顧客情報を取得する
 export async function GET(_req: NextRequest, { params }: RouteContext) {
   const { token } = await params
+  const adminClient = getAdminClient()
 
-  const { data: booking, error } = await supabase
+  const { data: booking, error } = await adminClient
     .from('bookings')
     .select('*, vessels(id, name, captain_name)')
     .eq('board_token', token)
@@ -30,7 +37,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
   // 同じ電話番号の既存顧客情報を確認（2回目以降の判定）
   let existingCustomer = null
   if (booking.tel && booking.vessels?.id) {
-    const { data: customer } = await supabase
+    const { data: customer } = await adminClient
       .from('customers')
       .select('id, address, age, gender, emergency_contact, emergency_contact_relation')
       .eq('vessel_id', booking.vessels.id)
@@ -45,8 +52,9 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 // POST: 乗船名簿記入・同意を処理する
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const { token } = await params
+  const adminClient = getAdminClient()
 
-  const { data: booking, error: fetchError } = await supabase
+  const { data: booking, error: fetchError } = await adminClient
     .from('bookings')
     .select('*, vessels(id, name)')
     .eq('board_token', token)
@@ -79,7 +87,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   let customerChanged = false
 
   if (vesselId && booking.tel) {
-    const { data: existing } = await supabase
+    const { data: existing } = await adminClient
       .from('customers')
       .select('id, address, emergency_contact, name')
       .eq('vessel_id', vesselId)
@@ -98,13 +106,13 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         updatePayload.note = changeNote
       }
 
-      await supabase
+      await adminClient
         .from('customers')
         .update(updatePayload)
         .eq('id', existing.id)
     } else if (vesselId) {
       // 初回：新規顧客として登録
-      const { data: newCustomer } = await supabase
+      const { data: newCustomer } = await adminClient
         .from('customers')
         .insert([{
           vessel_id: vesselId,
@@ -123,7 +131,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
 
   // passenger_logs に記録（booking_id でupsert）
-  await supabase
+  await adminClient
     .from('passenger_logs')
     .upsert(
       {
@@ -147,7 +155,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     )
 
   // 乗船名簿完了フラグを更新する
-  await supabase
+  await adminClient
     .from('bookings')
     .update({ board_completed: true, board_completed_at: new Date().toISOString() })
     .eq('id', booking.id)

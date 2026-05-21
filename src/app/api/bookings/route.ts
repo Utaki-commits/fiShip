@@ -1,6 +1,62 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
+type SmsBooking = {
+  id: string
+  vessel_id: string
+  date: string
+  bin_type: string
+  tel: string | null
+  board_token: string | null
+}
+
+const binLabel = (binType: string) => {
+  if (binType === 'day') return '昼便'
+  if (binType === 'night') return '夜便'
+  if (binType === 'relay') return '昼夜便'
+  return binType
+}
+
+const sendBoardingSms = async (req: NextRequest, booking: SmsBooking) => {
+  if (!booking.tel || !booking.board_token) return
+
+  try {
+    const [{ data: vessel }, { data: binSetting }] = await Promise.all([
+      supabase
+        .from('vessels')
+        .select('name')
+        .eq('id', booking.vessel_id)
+        .maybeSingle(),
+      supabase
+        .from('bin_settings')
+        .select('name')
+        .eq('vessel_id', booking.vessel_id)
+        .eq('bin_type', booking.bin_type)
+        .maybeSingle(),
+    ])
+
+    const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin
+    const res = await fetch(`${origin}/api/sms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tel: booking.tel,
+        booking_id: booking.id,
+        board_token: booking.board_token,
+        vessel_name: vessel?.name || 'FiShip',
+        date: booking.date,
+        bin_name: binSetting?.name || binLabel(booking.bin_type),
+      }),
+    })
+
+    if (!res.ok) {
+      console.error('SMS送信に失敗しました:', await res.text())
+    }
+  } catch (error) {
+    console.error('SMS送信処理でエラーが発生しました:', error)
+  }
+}
+
 // POST: 莠育ｴ・ｒ譁ｰ隕丈ｽ懈・縺吶ｋ
 export async function POST(req: NextRequest) {
   try {
@@ -119,6 +175,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    if (data.status === 'confirmed' && data.channel !== 'phone') {
+      await sendBoardingSms(req, data)
+    }
+
     return NextResponse.json({ booking: data, isImmediate }, { status: 201 })
   } catch {
     return NextResponse.json(
@@ -195,6 +255,14 @@ export async function PATCH(req: NextRequest) {
       )
     }
 
+    const { data: previousBooking } = status === 'confirmed'
+      ? await supabase
+        .from('bookings')
+        .select('status, channel')
+        .eq('id', id)
+        .maybeSingle()
+      : { data: null }
+
     const { data, error } = await supabase
       .from('bookings')
       .update(updatePayload)
@@ -243,6 +311,14 @@ export async function PATCH(req: NextRequest) {
             }])
         }
       }
+    }
+
+    if (
+      status === 'confirmed' &&
+      previousBooking?.status !== 'confirmed' &&
+      data.channel !== 'phone'
+    ) {
+      await sendBoardingSms(req, data)
     }
 
     return NextResponse.json({ booking: data })

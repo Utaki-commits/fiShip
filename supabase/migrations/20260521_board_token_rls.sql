@@ -1,0 +1,3 @@
+-- Board token access is handled only by server-side API routes using
+-- SUPABASE_SERVICE_ROLE_KEY.
+-- Do not add a bookings.board_token RLS policy.
