@@ -123,6 +123,8 @@ const getBinLabel = (binType: 'day' | 'night' | 'relay') => {
   return '夜便'
 }
 
+const cn = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(' ')
+
 const isValidTel = (tel: string): boolean => {
   const cleaned = tel.replace(/[-\s()]/g, '')
   return /^\d{10,11}$/.test(cleaned) || /^\+\d{7,15}$/.test(cleaned)
@@ -322,23 +324,26 @@ export default function ReservePage() {
     const unavailable = isPast || charterDate || bins.length === 0 || availableBins.length === 0
 
     let mark = '×'
-    let label = '予約できません'
-    let bg = '#E5E7EB'
+    let label = '予約不可'
+    let bg = '#F1F5F9'
     let color = '#57534E'
+    let borderColor = '#E8DDD8'
 
     if (isPast) {
-      bg = '#F3F4F6'
+      bg = '#F1F5F9'
       label = '過去日'
     } else if (!unavailable && lowRemaining) {
       mark = String(maxRemaining)
       label = '残りわずか'
-      bg = '#FEE2E2'
+      bg = '#FEF2F2'
       color = '#B91C1C'
+      borderColor = '#FCA5A5'
     } else if (!unavailable) {
       mark = '○'
       label = '空きあり'
       bg = '#FFFFFF'
       color = '#059669'
+      borderColor = '#D6CCC7'
     }
 
     return (
@@ -347,30 +352,24 @@ export default function ReservePage() {
         type="button"
         onClick={() => handleDateSelect(year, month, day)}
         disabled={unavailable}
-        style={{
-          minHeight: '68px',
-          borderRadius: '12px',
-          border: isSelected ? '0.5px solid #B91C1C' : '0.5px solid #E8DDD8',
-          background: bg,
-          color,
-          padding: '8px 4px',
-          cursor: unavailable ? 'not-allowed' : 'pointer',
-          opacity: isPast ? 0.55 : 1,
-          fontFamily: 'inherit',
-        }}
+        className={cn(
+          'min-h-[74px] rounded-xl px-1.5 py-2 text-center transition-colors',
+          'border-[0.5px] font-medium',
+          unavailable ? 'cursor-not-allowed opacity-60' : 'cursor-pointer active:scale-[0.99]',
+          isSelected && 'ring-1 ring-[#B91C1C]',
+        )}
+        style={{ background: bg, color, borderColor, fontFamily: 'inherit' }}
       >
-        <div style={{
-          fontSize: '15px',
-          fontWeight: 500,
-          color: (holiday || cellDate.getDay() === 0) ? '#B91C1C' : cellDate.getDay() === 6 ? '#1E3A8A' : '#1C1917',
-          marginBottom: '3px',
-        }}>
+        <div
+          className="mb-1 text-[15px] font-medium leading-none"
+          style={{ color: (holiday || cellDate.getDay() === 0) ? '#B91C1C' : cellDate.getDay() === 6 ? '#1E3A8A' : '#1C1917' }}
+        >
           {day}
         </div>
-        <div style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1 }}>
+        <div className="text-[23px] font-medium leading-none">
           {mark}
         </div>
-        <div style={{ fontSize: '10px', fontWeight: 400, color: '#57534E', marginTop: '3px' }}>
+        <div className="mt-1 truncate text-[10px] font-normal leading-tight text-[#57534E]">
           {charterDate ? '貸切' : holiday ? holiday.name.slice(0, 4) : label}
         </div>
       </button>
@@ -492,18 +491,20 @@ export default function ReservePage() {
 
   if (loading) {
     return (
-      <main style={{ minHeight: '100vh', background: '#F7F2EF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#1C1917', fontSize: '18px' }}>読み込み中...</div>
+      <main className="flex min-h-screen items-center justify-center bg-[#F7F2EF] px-5 font-sans text-[#1C1917]">
+        <div className="rounded-xl border-[0.5px] border-[#E8DDD8] bg-white px-5 py-4 text-[16px] font-medium">
+          読み込み中...
+        </div>
       </main>
     )
   }
 
   if (!vessel) {
     return (
-      <main style={{ minHeight: '100vh', background: '#F7F2EF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'var(--font-sans)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <img src={DEFAULT_ICON} alt="FiShip" style={{ width: '64px', height: '64px', borderRadius: '16px', objectFit: 'cover', marginBottom: '12px' }} />
-          <div style={{ fontSize: '18px', fontWeight: 500, color: '#1C1917' }}>{fetchError || '船の情報が見つかりません'}</div>
+      <main className="flex min-h-screen items-center justify-center bg-[#F7F2EF] px-5 font-sans text-[#1C1917]">
+        <div className="text-center">
+          <img src={DEFAULT_ICON} alt="FiShip" className="mx-auto mb-3 h-16 w-16 rounded-2xl object-cover" />
+          <div className="text-[18px] font-medium">{fetchError || '船の情報が見つかりません'}</div>
         </div>
       </main>
     )
@@ -512,93 +513,150 @@ export default function ReservePage() {
   const maxCount = selectedBin?.actualRemaining || 1
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F7F2EF', fontFamily: 'var(--font-sans)', color: '#1C1917' }}>
-      <header style={{
-        background: vessel.banner_url ? `url(${vessel.banner_url})` : '#7F1D1D',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        padding: '20px 16px 18px',
-      }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
-          <img src={vessel.logo_url || DEFAULT_ICON} alt={`${vessel.name} ロゴ`} style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover' }} />
-          <div style={{ minWidth: 0 }}>
-            <h1 style={{ fontSize: '24px', lineHeight: 1.25, fontWeight: 500, color: '#FFFFFF', margin: 0 }}>{vessel.name}</h1>
-            <div style={{ fontSize: '15px', fontWeight: 400, color: '#FFFFFF', marginTop: '4px' }}>{vessel.captain_name} 船長</div>
+    <div className="mx-auto min-h-screen max-w-[480px] bg-[#F7F2EF] font-sans text-[#1C1917]">
+      <header className="relative overflow-hidden bg-[#7F1D1D] px-4 pb-5 pt-5 text-white">
+        {vessel.banner_url && (
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-25"
+            style={{ backgroundImage: `url(${vessel.banner_url})` }}
+          />
+        )}
+        <div className="absolute -bottom-16 -right-16 h-48 w-48 rounded-full border-[0.5px] border-white/15" />
+        <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full border-[0.5px] border-white/10" />
+        <div className="relative">
+          <div className="mb-4 flex items-center gap-3">
+            <img src={vessel.logo_url || DEFAULT_ICON} alt={`${vessel.name} ロゴ`} className="h-14 w-14 rounded-xl object-cover" />
+            <div className="min-w-0">
+              <h1 className="m-0 truncate text-[24px] font-medium leading-tight">{vessel.name}</h1>
+              <div className="mt-1 text-[15px] font-normal text-white/85">{vessel.captain_name} 船長</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 rounded-xl border-[0.5px] border-white/20 bg-white/10 p-2 text-center">
+            {[
+              { key: 'calendar', label: '日付' },
+              { key: 'bin', label: '便' },
+              { key: 'form', label: '予約' },
+            ].map(item => (
+              <div
+                key={item.key}
+                className={cn(
+                  'rounded-lg px-2 py-2 text-[13px] font-medium',
+                  step === item.key || (step === 'complete' && item.key === 'form') ? 'bg-white text-[#7F1D1D]' : 'text-white/70',
+                )}
+              >
+                {item.label}
+              </div>
+            ))}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => router.push(`/reserve/${vesselId}/facilities`)}
-          style={{ width: '100%', padding: '14px', borderRadius: '9px', border: '0.5px solid rgba(255,255,255,.65)', background: 'rgba(255,255,255,.12)', color: '#FFFFFF', fontSize: '16px', fontWeight: 500, fontFamily: 'inherit' }}
-        >
-          船の設備を見る
-        </button>
       </header>
 
-      <main style={{ padding: '14px 12px 24px' }}>
+      <main className="px-3 py-3">
         {step === 'calendar' && (
-          <>
-            <section style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
-              <div style={{ display: 'grid', gap: '8px', fontSize: '15px', color: '#57534E' }}>
-                <div>港: <span style={{ color: '#1C1917', fontWeight: 500 }}>{vessel.port_name}</span></div>
-                {vessel.price && <div>料金: <span style={{ color: '#1C1917', fontWeight: 500 }}>{formatPrice(vessel.price)}</span></div>}
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {hasText(vessel.facilities || {}, 'parking', 'free') && <span>駐車場あり</span>}
-                  {hasFlag(vessel.facilities || {}, 'toilet') && <span>トイレあり</span>}
-                  {(hasFlag(vessel.facilities || {}, 'life_jacket') || enabledByValue((vessel.facilities || {}).life_jacket_rental)) && <span>ライフジャケット貸出あり</span>}
+          <div className="space-y-3">
+            <section className="rounded-xl border-[0.5px] border-[#E8DDD8] bg-white p-4">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-[13px] font-normal text-[#57534E]">出船場所</div>
+                  <div className="mt-0.5 text-[18px] font-medium">{vessel.port_name || vessel.prefecture}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/reserve/${vesselId}/facilities`)}
+                  className="min-h-[44px] rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-[#FEF2F2] px-4 text-[14px] font-medium text-[#B91C1C]"
+                >
+                  設備
+                </button>
+              </div>
+              <div className="grid gap-2 text-[14px] font-normal text-[#57534E]">
+                {vessel.price && (
+                  <div className="flex justify-between gap-3 border-t-[0.5px] border-[#E8DDD8] pt-2">
+                    <span>乗船料</span>
+                    <span className="font-medium text-[#1C1917]">{formatPrice(vessel.price)}</span>
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {vessel.beginner_accepted && <span className="rounded-full bg-[#ECFDF5] px-3 py-1 text-[12px] font-medium text-[#059669]">初心者歓迎</span>}
+                  {vessel.charter_accepted && <span className="rounded-full bg-[#FEF2F2] px-3 py-1 text-[12px] font-medium text-[#B91C1C]">貸切相談可</span>}
+                  {hasText(vessel.facilities || {}, 'parking', 'free') && <span className="rounded-full bg-[#F7F2EF] px-3 py-1 text-[12px] font-medium text-[#57534E]">駐車場あり</span>}
+                  {hasFlag(vessel.facilities || {}, 'toilet') && <span className="rounded-full bg-[#F7F2EF] px-3 py-1 text-[12px] font-medium text-[#57534E]">トイレあり</span>}
                 </div>
               </div>
             </section>
 
-            <section style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <button type="button" onClick={() => setCalM(m => m === 0 ? (setCalYear(y => y - 1), 11) : m - 1)} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: 'transparent', color: '#57534E', fontWeight: 500 }}>前月</button>
-                <div style={{ fontSize: '20px', fontWeight: 500 }}>{calYear}年 {calM + 1}月</div>
-                <button type="button" onClick={() => setCalM(m => m === 11 ? (setCalYear(y => y + 1), 0) : m + 1)} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: 'transparent', color: '#57534E', fontWeight: 500 }}>次月</button>
+            <section className="rounded-xl border-[0.5px] border-[#E8DDD8] bg-white p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setCalM(m => m === 0 ? (setCalYear(y => y - 1), 11) : m - 1)}
+                  className="min-h-[44px] rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-4 text-[14px] font-medium text-[#57534E]"
+                >
+                  前月
+                </button>
+                <div className="text-center">
+                  <div className="text-[20px] font-medium">{calYear}年 {calM + 1}月</div>
+                  <div className="text-[12px] font-normal text-[#57534E]">空いている日を選んでください</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCalM(m => m === 11 ? (setCalYear(y => y + 1), 0) : m + 1)}
+                  className="min-h-[44px] rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-4 text-[14px] font-medium text-[#57534E]"
+                >
+                  次月
+                </button>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', marginBottom: '6px' }}>
+              <div className="mb-2 grid grid-cols-7 gap-1">
                 {DAY_NAMES.map((d, i) => (
-                  <div key={d} style={{ textAlign: 'center', fontSize: '12px', color: i === 0 ? '#B91C1C' : i === 6 ? '#1E3A8A' : '#57534E' }}>{d}</div>
+                  <div key={d} className="text-center text-[12px] font-medium" style={{ color: i === 0 ? '#B91C1C' : i === 6 ? '#1E3A8A' : '#57534E' }}>{d}</div>
                 ))}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px' }}>
+              <div className="grid grid-cols-7 gap-1">
                 {renderCalendarCells()}
               </div>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '14px', fontSize: '13px', color: '#57534E' }}>
-                <span>○ 空き</span>
-                <span>数字 残りわずか</span>
-                <span>× 予約できません</span>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[12px] font-normal text-[#57534E]">
+                <div className="rounded-lg bg-[#ECFDF5] py-2 text-[#059669]">○ 空き</div>
+                <div className="rounded-lg bg-[#FEF2F2] py-2 text-[#B91C1C]">数字 残り少</div>
+                <div className="rounded-lg bg-[#F1F5F9] py-2">× 不可</div>
               </div>
             </section>
-          </>
+          </div>
         )}
 
         {step === 'bin' && selectedDate && (
-          <section style={{ display: 'grid', gap: '12px' }}>
-            <button type="button" onClick={() => setStep('calendar')} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: 'transparent', color: '#57534E', fontWeight: 500, fontFamily: 'inherit' }}>日付を選び直す</button>
-            <div style={{ fontSize: '20px', fontWeight: 500 }}>{formatDate(selectedDate)} の空き</div>
+          <section className="space-y-3 pb-4">
+            <button type="button" onClick={() => setStep('calendar')} className="min-h-[52px] w-full rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-4 text-[16px] font-medium text-[#57534E]">日付を選び直す</button>
+            <div className="rounded-xl border-[0.5px] border-[#E8DDD8] bg-white p-4">
+              <div className="text-[13px] font-normal text-[#57534E]">選択中の日付</div>
+              <div className="text-[22px] font-medium">{formatDate(selectedDate)}</div>
+            </div>
             {selectedBins.map(bin => (
-              <article key={bin.setting.id} style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
+              <article key={bin.setting.id} className="rounded-xl border-[0.5px] border-[#E8DDD8] bg-white p-4">
+                <div className="mb-3 flex justify-between gap-3">
                   <div>
-                    <div style={{ fontSize: '21px', fontWeight: 500 }}>{getBinName(bin.setting)}</div>
-                    <div style={{ fontSize: '15px', color: '#57534E', marginTop: '4px' }}>{bin.setting.departure_time} 出船{bin.setting.end_time ? ` - ${bin.setting.end_time} 終了予定` : ''}</div>
+                    <div className="mb-2 inline-flex rounded-full px-3 py-1 text-[13px] font-medium" style={{ background: bin.setting.bin_type === 'night' ? '#EDE9FE' : bin.setting.bin_type === 'relay' ? '#FEF2F2' : '#DBEAFE', color: bin.setting.bin_type === 'night' ? '#5B21B6' : bin.setting.bin_type === 'relay' ? '#B91C1C' : '#1E3A8A' }}>{getBinLabel(bin.setting.bin_type)}</div>
+                    <div className="text-[22px] font-medium leading-tight">{getBinName(bin.setting)}</div>
+                    <div className="mt-1 text-[14px] font-normal text-[#57534E]">{bin.setting.departure_time} 出船{bin.setting.end_time ? ` - ${bin.setting.end_time} 終了予定` : ''}</div>
                   </div>
-                  <div style={{ fontSize: '18px', fontWeight: 500, color: bin.actualRemaining <= 2 ? '#B91C1C' : '#059669' }}>残り {bin.actualRemaining}席</div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-[12px] font-normal text-[#57534E]">空席</div>
+                    <div className="text-[24px] font-medium leading-none" style={{ color: bin.actualRemaining <= 2 ? '#B91C1C' : '#059669' }}>{bin.actualRemaining}</div>
+                  </div>
                 </div>
-                {bin.setting.note && <p style={{ fontSize: '14px', color: '#57534E', lineHeight: 1.7, margin: '8px 0' }}>{bin.setting.note}</p>}
+                {bin.setting.price && <div className="mb-2 text-[15px] font-medium text-[#1C1917]">{formatPrice(bin.setting.price)}</div>}
+                {bin.setting.note && <p className="my-2 text-[14px] font-normal leading-[1.7] text-[#57534E]">{bin.setting.note}</p>}
                 {bin.displayFacilities.length > 0 && (
-                  <div style={{ display: 'grid', gap: '4px', margin: '10px 0 14px' }}>
-                    {bin.displayFacilities.map(label => <div key={label} style={{ fontSize: '14px', color: '#1C1917' }}>・{label}</div>)}
+                  <div className="mb-4 mt-3 flex flex-wrap gap-2">
+                    {bin.displayFacilities.map(label => <span key={label} className="rounded-full bg-[#F7F2EF] px-3 py-1 text-[12px] font-medium text-[#57534E]">{label}</span>)}
                   </div>
                 )}
-                <button type="button" onClick={() => handleSelectBin(bin)} style={{ width: '100%', padding: '14px', borderRadius: '9px', border: 'none', background: '#B91C1C', color: '#FFFFFF', fontSize: '17px', fontWeight: 500, fontFamily: 'inherit' }}>
+                <button type="button" onClick={() => handleSelectBin(bin)} className="min-h-[56px] w-full rounded-[9px] border-none bg-[#B91C1C] px-4 py-[14px] text-[17px] font-medium text-white">
                   この便を予約する
                 </button>
               </article>
             ))}
             {vessel.charter_accepted && (
-              <button type="button" onClick={() => setShowCharter(v => !v)} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #FCA5A5', background: '#FEF2F2', color: '#B91C1C', fontWeight: 500, fontFamily: 'inherit' }}>
+              <button type="button" onClick={() => setShowCharter(v => !v)} className="min-h-[56px] w-full rounded-[9px] border-[0.5px] border-[#FCA5A5] bg-[#FEF2F2] px-4 py-[14px] text-[16px] font-medium text-[#B91C1C]">
                 貸切でのご利用はこちら
               </button>
             )}
@@ -609,24 +667,25 @@ export default function ReservePage() {
         )}
 
         {step === 'form' && selectedDate && selectedBin && (
-          <section style={{ display: 'grid', gap: '12px' }}>
-            <button type="button" onClick={() => selectedBins.length > 1 ? setStep('bin') : setStep('calendar')} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: 'transparent', color: '#57534E', fontWeight: 500, fontFamily: 'inherit' }}>戻る</button>
-            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '4px' }}>予約内容</div>
-              <div style={{ color: '#57534E', fontSize: '15px' }}>{formatDate(selectedDate)}　{getBinName(selectedBin.setting)}</div>
+          <section className="space-y-3 pb-[96px]">
+            <button type="button" onClick={() => selectedBins.length > 1 ? setStep('bin') : setStep('calendar')} className="min-h-[52px] w-full rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-4 text-[16px] font-medium text-[#57534E]">戻る</button>
+            <div className="rounded-xl border-[0.5px] border-[#E8DDD8] bg-white p-4">
+              <div className="mb-1 text-[18px] font-medium">予約内容</div>
+              <div className="text-[15px] font-normal text-[#57534E]">{formatDate(selectedDate)}　{getBinName(selectedBin.setting)}</div>
+              <div className="mt-2 inline-flex rounded-full bg-[#ECFDF5] px-3 py-1 text-[13px] font-medium text-[#059669]">残り {selectedBin.actualRemaining}席</div>
             </div>
-            {formError && <div style={{ background: '#FEE2E2', border: '0.5px solid #FCA5A5', borderRadius: '12px', padding: '14px', color: '#B91C1C', fontWeight: 500 }}>{formError}</div>}
+            {formError && <div className="rounded-xl border-[0.5px] border-[#FCA5A5] bg-[#FEE2E2] p-4 text-[15px] font-medium text-[#B91C1C]">{formError}</div>}
             <FormField label="お名前" required>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="例：山田 太郎" style={inputStyle} />
             </FormField>
             <FormField label="電話番号" required>
               <input type="tel" value={form.tel} onChange={e => setForm(f => ({ ...f, tel: e.target.value }))} placeholder="例：090-1234-5678" style={inputStyle} />
             </FormField>
-            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px' }}>
-              <div style={{ fontSize: '16px', fontWeight: 500, marginBottom: '10px' }}>人数</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+            <div className="rounded-xl border-[0.5px] border-[#E8DDD8] bg-white p-4">
+              <div className="mb-3 text-[16px] font-medium">人数</div>
+              <div className="grid grid-cols-4 gap-2">
                 {[1, 2, 3, 4].map(n => (
-                  <button key={n} disabled={n > maxCount} onClick={() => setForm(f => ({ ...f, count: n }))} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: form.count === n ? '#B91C1C' : '#FFFFFF', color: form.count === n ? '#FFFFFF' : '#1C1917', opacity: n > maxCount ? 0.4 : 1, fontWeight: 500, fontFamily: 'inherit' }}>{n}名</button>
+                  <button key={n} disabled={n > maxCount} onClick={() => setForm(f => ({ ...f, count: n }))} className="min-h-[52px] rounded-[9px] border-[0.5px] px-2 text-[16px] font-medium disabled:opacity-40" style={{ borderColor: '#E8DDD8', background: form.count === n ? '#B91C1C' : '#FFFFFF', color: form.count === n ? '#FFFFFF' : '#1C1917' }}>{n}名</button>
                 ))}
               </div>
               {maxCount >= 5 && (
@@ -641,24 +700,27 @@ export default function ReservePage() {
             <FormField label="メッセージ">
               <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} placeholder="質問や希望があれば入力してください" style={{ ...inputStyle, minHeight: '92px', resize: 'none' }} />
             </FormField>
-            <button type="button" disabled={submitting} onClick={submitBooking} style={{ width: '100%', minHeight: '64px', padding: '16px', borderRadius: '9px', border: 'none', background: submitting ? '#E8DDD8' : '#B91C1C', color: submitting ? '#57534E' : '#FFFFFF', fontSize: '19px', fontWeight: 500, fontFamily: 'inherit' }}>
-              {submitting ? '送信中...' : '予約を申し込む'}
-            </button>
             <p style={{ fontSize: '13px', color: '#57534E', lineHeight: 1.7, margin: 0 }}>申し込み後、船長から確認の連絡が届きます。</p>
+            <div className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-[480px] border-t-[0.5px] border-[#E8DDD8] bg-white/95 px-3 py-3">
+              <button type="button" disabled={submitting} onClick={submitBooking} className="min-h-[64px] w-full rounded-[9px] border-none px-4 py-4 text-[19px] font-medium" style={{ background: submitting ? '#E8DDD8' : '#B91C1C', color: submitting ? '#57534E' : '#FFFFFF' }}>
+                {submitting ? '送信中...' : '予約を申し込む'}
+              </button>
+            </div>
           </section>
         )}
 
         {step === 'complete' && (
-          <section style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '24px 16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '28px', fontWeight: 500, color: '#059669', marginBottom: '10px' }}>申し込みを受け付けました</div>
-            <div style={{ fontSize: '16px', color: '#57534E', lineHeight: 1.8, marginBottom: '18px' }}>
+          <section className="rounded-xl border-[0.5px] border-[#E8DDD8] bg-white px-4 py-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#ECFDF5] text-[30px] font-medium text-[#059669]">✓</div>
+            <div className="mb-3 text-[26px] font-medium leading-tight text-[#059669]">申し込みを受け付けました</div>
+            <div className="mb-5 text-[16px] font-normal leading-[1.8] text-[#57534E]">
               {selectedDate && selectedBin ? `${formatDate(selectedDate)} ${getBinName(selectedBin.setting)}` : '貸切のご相談'}<br />
               船長から確認の連絡が届きます。しばらくお待ちください。
             </div>
-            <button type="button" onClick={() => { setStep('calendar'); setSelectedDate(null); setSelectedBin(null); setSelectedBins([]); setCompletedImmediate(false) }} style={{ padding: '14px 24px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: 'transparent', color: '#57534E', fontWeight: 500, fontFamily: 'inherit' }}>
+            <button type="button" onClick={() => { setStep('calendar'); setSelectedDate(null); setSelectedBin(null); setSelectedBins([]); setCompletedImmediate(false) }} className="min-h-[52px] rounded-[9px] border-[0.5px] border-[#E8DDD8] bg-transparent px-6 py-[14px] text-[16px] font-medium text-[#57534E]">
               別の日を探す
             </button>
-            {completedImmediate && <div style={{ fontSize: '13px', color: '#059669', marginTop: '12px' }}>この予約は自動で承認されました。</div>}
+            {completedImmediate && <div className="mt-3 text-[13px] font-normal text-[#059669]">この予約は自動で承認されました。</div>}
           </section>
         )}
       </main>
@@ -680,12 +742,12 @@ const inputStyle = {
 
 function FormField({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
   return (
-    <label style={{ display: 'grid', gap: '6px', background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px' }}>
-      <span style={{ fontSize: '16px', fontWeight: 500, color: '#1C1917' }}>
+    <div className="grid gap-2 rounded-xl border-[0.5px] border-[#E8DDD8] bg-white p-[14px]">
+      <div className="text-[16px] font-medium text-[#1C1917]">
         {label}{required && <span style={{ color: '#B91C1C', marginLeft: '6px', fontSize: '13px' }}>必須</span>}
-      </span>
+      </div>
       {children}
-    </label>
+    </div>
   )
 }
 
@@ -703,18 +765,18 @@ function CharterForm({
   onSubmit: () => void
 }) {
   return (
-    <div style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px', display: 'grid', gap: '10px' }}>
-      <div style={{ fontSize: '20px', fontWeight: 500 }}>貸切のご相談</div>
-      {error && <div style={{ color: '#B91C1C', fontSize: '14px' }}>{error}</div>}
+    <div className="grid gap-3 rounded-xl border-[0.5px] border-[#E8DDD8] bg-white p-4">
+      <div className="text-[20px] font-medium">貸切のご相談</div>
+      {error && <div className="rounded-lg bg-[#FEE2E2] px-3 py-2 text-[14px] font-medium text-[#B91C1C]">{error}</div>}
       <input style={inputStyle} value={charter.name} onChange={e => setCharter(c => ({ ...c, name: e.target.value }))} placeholder="お名前" />
       <input style={inputStyle} value={charter.tel} onChange={e => setCharter(c => ({ ...c, tel: e.target.value }))} placeholder="電話番号" type="tel" />
       <input style={inputStyle} value={charter.preferred_date} onChange={e => setCharter(c => ({ ...c, preferred_date: e.target.value }))} type="date" />
       <input style={inputStyle} value={charter.count} onChange={e => setCharter(c => ({ ...c, count: e.target.value }))} placeholder="人数（任意）" inputMode="numeric" />
       <textarea style={{ ...inputStyle, minHeight: '90px', resize: 'none' }} value={charter.message} onChange={e => setCharter(c => ({ ...c, message: e.target.value }))} placeholder="ご希望があれば入力してください" />
-      <button type="button" onClick={onSubmit} disabled={submitting} style={{ padding: '14px', border: 'none', borderRadius: '9px', background: submitting ? '#E8DDD8' : '#B91C1C', color: submitting ? '#57534E' : '#FFFFFF', fontWeight: 500, fontFamily: 'inherit' }}>
+      <button type="button" onClick={onSubmit} disabled={submitting} className="min-h-[56px] rounded-[9px] border-none px-4 py-[14px] text-[16px] font-medium" style={{ background: submitting ? '#E8DDD8' : '#B91C1C', color: submitting ? '#57534E' : '#FFFFFF' }}>
         {submitting ? '送信中...' : '問い合わせを送る'}
       </button>
-      <div style={{ fontSize: '13px', color: '#57534E', lineHeight: 1.7 }}>送信後、船長より電話にてご連絡いたします。</div>
+      <div className="text-[13px] font-normal leading-[1.7] text-[#57534E]">送信後、船長より電話にてご連絡いたします。</div>
     </div>
   )
 }
