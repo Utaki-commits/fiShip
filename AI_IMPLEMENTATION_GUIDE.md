@@ -72,16 +72,16 @@ export default function MyNewPage() {
 
   // ---- ローディング画面 ----
   if (loading) return (
-    <main style={{ minHeight: '100vh', background: '#7F1D1D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <main style={{ minHeight: '100vh', background: '#1B2A4A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: '#fff', fontSize: '16px' }}>読み込み中...</div>
     </main>
   )
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F8F9FA', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F4F6F2', fontFamily: 'sans-serif' }}>
 
-      {/* ヘッダー（必ず朱赤・戻るボタンあり） */}
-      <div style={{ background: '#7F1D1D', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
+      {/* ヘッダー（必ずダークネイビー・戻るボタンあり） */}
+      <div style={{ background: '#1B2A4A', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', position: 'sticky', top: 0, zIndex: 20 }}>
         <button
           onClick={() => router.push('/dashboard')}
           style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', flexShrink: 0 }}
@@ -351,27 +351,27 @@ const handleDelete = async (id: string) => {
 ```tsx
 {/* テキスト入力 */}
 <div>
-  <label style={{ fontSize: '13px', fontWeight: 500, color: '#6B7280', marginBottom: '6px', display: 'block' }}>
-    ラベル <span style={{ background: '#B91C1C', color: '#fff', fontSize: '9px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
+  <label style={{ fontSize: '13px', fontWeight: 500, color: '#5A6A78', marginBottom: '6px', display: 'block' }}>
+    ラベル <span style={{ background: '#1E4D3A', color: '#fff', fontSize: '9px', padding: '1px 5px', borderRadius: '3px', marginLeft: '4px' }}>必須</span>
   </label>
   <input
     value={form.field}
     onChange={e => setForm(prev => ({ ...prev, field: e.target.value }))}
     placeholder="入力例"
-    style={{ width: '100%', padding: '14px', fontSize: '15px', border: '0.5px solid #E8DDD8', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
+    style={{ width: '100%', padding: '14px', fontSize: '15px', border: '0.5px solid #CDD3DC', borderRadius: '10px', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
   />
 </div>
 
 {/* トグルスイッチ */}
 <div
   onClick={() => setForm(prev => ({ ...prev, flag: !prev.flag }))}
-  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px', background: form.flag ? '#E8F4FD' : '#fff', border: '0.5px solid #E8DDD8', borderRadius: '10px', cursor: 'pointer', marginBottom: '10px' }}
+  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px', background: form.flag ? '#F4F6F2' : '#fff', border: '0.5px solid #CDD3DC', borderRadius: '10px', cursor: 'pointer', marginBottom: '10px' }}
 >
   <div>
-    <div style={{ fontSize: '14px', fontWeight: 500, color: '#111827' }}>オプション名</div>
-    <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>説明文</div>
+    <div style={{ fontSize: '14px', fontWeight: 500, color: '#1A2420' }}>オプション名</div>
+    <div style={{ fontSize: '11px', color: '#5A6A78', marginTop: '2px' }}>説明文</div>
   </div>
-  <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: form.flag ? '#2E86C1' : '#E5E7EB', position: 'relative', flexShrink: 0 }}>
+  <div style={{ width: '46px', height: '26px', borderRadius: '13px', background: form.flag ? '#1E4D3A' : '#CDD3DC', position: 'relative', flexShrink: 0 }}>
     <div style={{ position: 'absolute', top: '3px', left: form.flag ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
   </div>
 </div>
@@ -389,8 +389,8 @@ const handleDelete = async (id: string) => {
       style={{
         padding: '12px', fontSize: '14px', fontWeight: 500,
         background: form.myField === value ? '#E8F4FD' : '#fff',
-        color: form.myField === value ? '#B91C1C' : '#6B7280',
-        border: '0.5px solid #E8DDD8',
+        color: form.myField === value ? '#1E4D3A' : '#5A6A78',
+        border: '0.5px solid #CDD3DC',
         borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit',
       }}
     >{label}</button>
@@ -399,7 +399,7 @@ const handleDelete = async (id: string) => {
 
 {/* エラー表示 */}
 {error && (
-  <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#B91C1C' }}>
+  <div style={{ background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#1A2420' }}>
     {error}
   </div>
 )}
@@ -408,12 +408,12 @@ const handleDelete = async (id: string) => {
 <div style={{ display: 'flex', gap: '10px', paddingTop: '8px' }}>
   <button
     onClick={() => setView('list')}
-    style={{ flex: 1, padding: '15px', fontSize: '15px', fontWeight: 500, background: '#fff', color: '#6B7280', border: '0.5px solid #E8DDD8', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
+    style={{ flex: 1, padding: '15px', fontSize: '15px', fontWeight: 500, background: '#fff', color: '#5A6A78', border: '0.5px solid #CDD3DC', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}
   >キャンセル</button>
   <button
     onClick={handleSave}
     disabled={saving}
-    style={{ flex: 2, padding: '15px', fontSize: '15px', fontWeight: 500, background: saving ? '#9CA3AF' : '#B91C1C', color: '#fff', border: 'none', borderRadius: '10px', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
+    style={{ flex: 2, padding: '15px', fontSize: '15px', fontWeight: 500, background: saving ? '#8A9BB5' : '#1E4D3A', color: '#fff', border: 'none', borderRadius: '10px', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}
   >{saving ? '保存中...' : '保存する'}</button>
 </div>
 ```
@@ -463,17 +463,17 @@ const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 ```ts
 const SHELL = {
   maxWidth: '480px', margin: '0 auto',
-  minHeight: '100vh', background: '#F7F2EF',
+  minHeight: '100vh', background: '#F4F6F2',
   fontFamily: 'sans-serif'
 }
 const HEADER = {
-  background: '#7F1D1D', padding: '12px 16px',
+  background: '#1B2A4A', padding: '12px 16px',
   display: 'flex', alignItems: 'center', gap: '10px',
   position: 'sticky' as const, top: 0, zIndex: 20
 }
 const BODY = { padding: '12px' }
 const CARD = {
-  background: '#fff', border: '0.5px solid #E8DDD8',
+  background: '#fff', border: '0.5px solid #CDD3DC',
   borderRadius: '12px', padding: '16px', marginBottom: '12px'
 }
 ```
@@ -481,25 +481,25 @@ const CARD = {
 ### ボタン（コピー用）
 
 ```ts
-// 保存・登録（朱赤）
+// 保存・登録（ダークグリーン）
 { padding: '14px', fontSize: '15px', fontWeight: 500,
-  background: '#B91C1C', color: '#fff', border: 'none',
+  background: '#1E4D3A', color: '#fff', border: 'none',
   borderRadius: '9px', cursor: 'pointer', width: '100%' }
 
 // 編集
 { padding: '10px 16px', fontSize: '14px', fontWeight: 500,
-  background: '#FEF2F2', color: '#B91C1C',
-  border: '0.5px solid #FCA5A5', borderRadius: '9px', cursor: 'pointer' }
+  background: '#FFFFFF', color: '#1E4D3A',
+  border: '0.5px solid #CDD3DC', borderRadius: '9px', cursor: 'pointer' }
 
 // 削除
 { padding: '10px 16px', fontSize: '14px', fontWeight: 500,
-  background: 'transparent', color: '#B91C1C',
-  border: '0.5px solid #FCA5A5', borderRadius: '9px', cursor: 'pointer' }
+  background: 'transparent', color: '#1E4D3A',
+  border: '0.5px solid #CDD3DC', borderRadius: '9px', cursor: 'pointer' }
 
 // キャンセル
 { padding: '14px', fontSize: '15px', fontWeight: 500,
-  background: 'transparent', color: '#57534E',
-  border: '0.5px solid #E8DDD8', borderRadius: '9px', cursor: 'pointer' }
+  background: 'transparent', color: '#5A6A78',
+  border: '0.5px solid #CDD3DC', borderRadius: '9px', cursor: 'pointer' }
 
 // 無効状態
 { background: '#9CA3AF', color: '#fff', cursor: 'not-allowed' }
@@ -509,24 +509,13 @@ const CARD = {
 
 ```ts
 const COLORS = {
-  vermilion: '#B91C1C',   // 主アクション・必須バッジ
-  header:    '#7F1D1D',   // ヘッダー背景
-  washi:     '#F7F2EF',   // 画面背景
-  blue:       '#2E86C1',   // 編集ボタン・昼便
-  gold:       '#D4AC0D',   // 今日の強調・アイコン背景
-  red:        '#B91C1C',   // 削除・満員・エラー・必須バッジ
-  orange:     '#D97706',   // 承認待ちバッジ・貸切
-  purple:     '#4338CA',   // 夜便
-  gray100:    '#F8F9FA',   // 画面背景・休船日
-  gray200:    '#E5E7EB',   // ボーダー
-  gray400:    '#9CA3AF',   // プレースホルダー・セクションヘッダー
-  gray600:    '#6B7280',   // サブテキスト
-  gray900:    '#111827',   // 主テキスト
-  bgBlue:     '#E8F4FD',   // 昼便・情報バッジ背景
-  bgPurple:   '#EEF2FF',   // 夜便バッジ背景
-  bgRed:      '#FEE2E2',   // エラー背景・満員背景
-  bgGreen:    '#D4EDDA',   // 承認済み背景
-  bgYellow:   '#FFF3CD',   // 警告背景
+  bg:         '#F4F6F2',   // 画面背景
+  header:     '#1B2A4A',   // ヘッダー背景
+  cta:        '#1E4D3A',   // メインCTA
+  accent:     '#8A9BB5',   // アクセント
+  border:     '#CDD3DC',   // ボーダー
+  text:       '#1A2420',   // 主テキスト
+  subtext:    '#5A6A78',   // サブテキスト
 }
 ```
 
@@ -547,7 +536,7 @@ const toDateStr = (year: number, month: number, day: number) =>
 
 ```tsx
 // リスト内のカテゴリヘッダー（設備一覧などで使用）
-<div style={{ fontSize: '13px', fontWeight: 500, color: '#9CA3AF', padding: '10px 16px 4px', background: '#F8F9FA', borderBottom: '1px solid #F3F4F6' }}>
+<div style={{ fontSize: '13px', fontWeight: 500, color: '#8A9BB5', padding: '10px 16px 4px', background: '#F4F6F2', borderBottom: '0.5px solid #CDD3DC' }}>
   カテゴリ名
 </div>
 ```
@@ -555,7 +544,7 @@ const toDateStr = (year: number, month: number, day: number) =>
 ### 空状態（データなし表示）
 
 ```tsx
-<div style={{ background: '#fff', border: '2px dashed #E5E7EB', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
+<div style={{ background: '#fff', border: '0.5px dashed #CDD3DC', borderRadius: '14px', padding: '40px 20px', textAlign: 'center' }}>
   <div style={{ fontSize: '36px', marginBottom: '12px' }}>🎣</div>
   <div style={{ fontSize: '15px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>まだデータがありません</div>
   <div style={{ fontSize: '13px', color: '#9CA3AF', lineHeight: 1.6 }}>

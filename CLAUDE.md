@@ -44,6 +44,10 @@ Claude（PRレビュー）→ オーナー（最終承認・マージ）
 - FigmaにないUIを勝手に実装しない
 - border幅は0.5px（2px禁止）
 - font-weightは400/500のみ（700禁止）
+- ヘッダー背景は #1B2A4A
+- CTA背景は #1E4D3A
+- 画面背景は #F4F6F2
+- border色は #CDD3DC
 - IT用語をUIに使わない
 - 1画面1アクション
 
@@ -52,7 +56,7 @@ Claude（PRレビュー）→ オーナー（最終承認・マージ）
 ## 関連ドキュメント（この順で読む）
 1. CODEX_HANDOFF.md — 実装ルール・チェックリスト
 2. PROJECT_DNA.md — DB・予約ロジック・UX原則
-3. docs/design-system/concept.md — 旭波デザイントークン
+3. docs/design-system/concept.md — 信頼・安心・プロフェッショナルのデザイントークン
 4. AI_IMPLEMENTATION_GUIDE.md — コードパターン集
 5. docs/ai-orchestration/claude-skill.md — オーケストレーション定義
 6. docs/PASSENGER_UX_DNA.md — 乗船客UI設計思想
