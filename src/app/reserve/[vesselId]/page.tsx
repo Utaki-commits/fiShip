@@ -98,15 +98,15 @@ const formatPrice = (price: string): string => {
 const getBinDefaultName = (binType: 'day' | 'night' | 'relay') =>
   binType === 'day' ? '昼便' : binType === 'relay' ? '昼夜便' : '夜便'
 
-// ---- 旭波デザイントークン（インラインスタイル用） ----
+// ---- デザイントークン（インラインスタイル用） ----
 const K = {
-  bg: '#F7F2EF',
+  bg: '#F4F6F2',
   surface: '#FFFFFF',
-  border: '#E8DDD8',
-  headerBg: '#7F1D1D',
-  primary: '#B91C1C',
-  primaryLight: '#FEF2F2',
-  primaryBorder: '#FCA5A5',
+  border: '#CDD3DC',
+  headerBg: '#1B2A4A',
+  primary: '#1E4D3A',
+  primaryLight: '#E6F2EE',
+  primaryBorder: '#8AB8A8',
   fg1: '#1C1917',
   fg2: '#78716C',
   fg3: '#A8A29E',
@@ -123,6 +123,7 @@ const K = {
   okBg: '#F0FDF4',
   okFg: '#059669',
   okBd: '#BBF7D0',
+  accent: '#8A9BB5',
   font: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif",
 } as const
 
@@ -308,43 +309,52 @@ export default function ReservePage() {
     const dow = cellDate.getDay()
     const bins = isPast ? [] : getBinsForDate(year, month, day)
     const hasAvailable = bins.some(b => !b.isConfirmedFull)
-    const isClosed = bins.length === 0 && !isPast
+    const isClosed = (bins.length === 0 && !isPast) || isCharterDate
     const isFull = bins.length > 0 && bins.every(b => b.isFull)
-    const isLow = bins.some(b => !b.isFull && b.remaining > 0 && b.remaining <= 3)
+    // 残り席数（最も少ない便の残席）
+    const minRemaining = bins.filter(b => !b.isFull).reduce((m, b) => Math.min(m, b.remaining), Infinity)
+    const isLow = !isFull && Number.isFinite(minRemaining) && minRemaining <= 3
     const holiday = getHolidayInfo(new Date(year, month, day))
 
-    // セル背景色
+    // セル状態:
+    // - 空きあり: 白背景、緑丸のみ（テキストなし）
+    // - 残少: 薄赤背景、赤数字バッジ①②③
+    // - 空き不可/過去/貸切: 薄グレー背景、日付数字のみ（×なし）
+    // - 選択: ダークグリーンボーダー
+
+    const isUnavailable = isPast || isClosed || isFull
     let cellBg = K.surface
-    let cellBorderColor = K.border
-    if (isPast || isCharterDate) {
-      cellBg = '#F5F0ED'
-    } else if (isFull) {
+    let cellBorderColor = isSelected ? K.primary : K.border
+    let cellBorderWidth = isSelected ? '1.5px' : '0.5px'
+
+    if (isUnavailable) {
+      cellBg = '#EEF0EB'
+      cellBorderColor = '#CDD3DC'
+      cellBorderWidth = '0.5px'
+    } else if (isLow) {
       cellBg = '#FEF2F2'
-      cellBorderColor = '#FCA5A5'
-    } else if (isClosed) {
-      cellBg = '#F5F0ED'
+      cellBorderColor = isSelected ? K.primary : '#CDD3DC'
     } else if (isSelected) {
-      cellBg = '#FEF2F2'
-      cellBorderColor = K.primary
+      cellBg = K.surface
     }
 
-    const dayColor = (holiday || dow === 0) ? K.primary : dow === 6 ? K.dayBadgeFg : K.fg1
+    const dayColor = (holiday || dow === 0) ? '#B91C1C' : dow === 6 ? K.dayBadgeFg : K.fg1
+    const circledNumbers = ['①', '②', '③']
 
     return (
       <div
         key={dateStr}
         onClick={() => {
-          if (isCharterDate || isPast) return
+          if (isUnavailable) return
           if (isSelected) { setSelectedDate(null); setSelectedBins([]); setStep('calendar'); return }
           if (hasAvailable) handleDateSelect(year, month, day)
         }}
         style={{
           borderRadius: '8px',
           minHeight: '52px',
-          cursor: (!isPast && !isCharterDate && hasAvailable) ? 'pointer' : 'default',
-          opacity: isPast ? 0.38 : 1,
-          border: `0.5px solid ${isSelected ? K.primary : cellBorderColor}`,
-          outline: isSelected ? `2px solid ${K.primary}` : isToday ? `1.5px solid ${K.pending}` : 'none',
+          cursor: (!isUnavailable && hasAvailable) ? 'pointer' : 'default',
+          border: `${cellBorderWidth} solid ${cellBorderColor}`,
+          outline: isToday && !isSelected ? `1.5px solid ${K.accent}` : 'none',
           outlineOffset: '-1px',
           background: cellBg,
           padding: '5px 3px 4px',
@@ -354,51 +364,39 @@ export default function ReservePage() {
           gap: '3px',
         }}
       >
-        <span style={{ fontSize: '16px', fontWeight: 500, color: dayColor, lineHeight: 1 }}>
+        {/* 日付数字 */}
+        <span style={{
+          fontSize: '15px',
+          fontWeight: isUnavailable ? 400 : 500,
+          color: isUnavailable ? K.fg3 : dayColor,
+          lineHeight: 1,
+        }}>
           {day}
         </span>
 
-        {holiday && (
-          <div style={{ fontSize: '9px', color: K.primary, fontWeight: 400, width: '100%', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
-            {holiday.name}
-          </div>
+        {/* 空きあり: 緑丸のみ */}
+        {!isUnavailable && !isLow && (
+          <div style={{
+            width: '14px',
+            height: '14px',
+            borderRadius: '50%',
+            border: `1.5px solid ${K.primary}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }} />
         )}
 
-        {isCharterDate && (
-          <div style={{ fontSize: '9px', color: K.fg3, fontWeight: 400, width: '100%', textAlign: 'center', lineHeight: 1.2 }}>貸切</div>
-        )}
-
-        {/* 残席インジケーター */}
-        {!isPast && !isCharterDate && bins.length > 0 && (
-          <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
-            {bins.map(b => (
-              <div
-                key={b.setting.id}
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: b.isFull
-                    ? '#FCA5A5'
-                    : b.setting.bin_type === 'day'
-                    ? K.dayBadgeFg
-                    : b.setting.bin_type === 'night'
-                    ? K.nightBadgeFg
-                    : K.pending,
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {isFull && !isCharterDate && (
-          <div style={{ fontSize: '9px', color: K.primary, fontWeight: 500, lineHeight: 1 }}>満</div>
-        )}
-        {isClosed && !isCharterDate && !isPast && (
-          <div style={{ fontSize: '9px', color: K.fg3, fontWeight: 400, lineHeight: 1 }}>×</div>
-        )}
+        {/* 残少: 丸数字バッジ */}
         {isLow && !isFull && (
-          <div style={{ fontSize: '9px', color: K.pending, fontWeight: 500, lineHeight: 1 }}>残少</div>
+          <div style={{
+            fontSize: '13px',
+            fontWeight: 500,
+            color: '#B91C1C',
+            lineHeight: 1,
+          }}>
+            {Number.isFinite(minRemaining) ? (circledNumbers[minRemaining - 1] ?? `残${minRemaining}`) : ''}
+          </div>
         )}
       </div>
     )
@@ -418,7 +416,7 @@ export default function ReservePage() {
 
   // ---- ローディング ----
   if (loading) return (
-    <main style={{ minHeight: '100vh', background: K.headerBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <main style={{ minHeight: '100vh', background: '#1B2A4A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: '#ffffff', fontSize: '17px', fontFamily: K.font, fontWeight: 400 }}>読み込み中...</div>
     </main>
   )
@@ -785,44 +783,43 @@ export default function ReservePage() {
         {/* 船情報カード */}
         <div style={{ background: K.surface, border: `0.5px solid ${K.border}`, borderRadius: '12px', padding: '16px', marginBottom: '14px' }}>
           {/* 港名・料金 */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <div>
-              <div style={{ fontSize: '14px', color: K.fg2, fontWeight: 400, marginBottom: '2px' }}>
-                {vessel.prefecture}・{vessel.port_name}
-              </div>
-              {vessel.price && (
-                <div style={{ fontSize: '18px', fontWeight: 500, color: K.fg1 }}>{formatPrice(vessel.price)}</div>
-              )}
-            </div>
-            <button
-              onClick={() => {/* 詳細モーダルなど */}}
-              style={{ fontSize: '13px', color: K.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: K.font, fontWeight: 500, whiteSpace: 'nowrap', padding: 0 }}
-            >
-              詳細を見る →
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={K.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+              <circle cx="12" cy="9" r="2.5"/>
+            </svg>
+            <span style={{ fontSize: '14px', color: K.fg2, fontWeight: 400 }}>{vessel.prefecture}・{vessel.port_name}</span>
           </div>
+          {vessel.price && (
+            <div style={{ fontSize: '18px', fontWeight: 500, color: K.fg1, marginBottom: '12px' }}>{formatPrice(vessel.price)}<span style={{ fontSize: '13px', color: K.fg3, fontWeight: 400 }}> / 1名</span></div>
+          )}
 
-          {/* 基本設備 */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '12px', color: K.fg2, background: K.bg, border: `0.5px solid ${K.border}`, borderRadius: '20px', padding: '3px 10px', fontWeight: 400 }}>駐車場あり</span>
-            <span style={{ fontSize: '12px', color: K.fg2, background: K.bg, border: `0.5px solid ${K.border}`, borderRadius: '20px', padding: '3px 10px', fontWeight: 400 }}>トイレあり</span>
-            <span style={{ fontSize: '12px', color: K.fg2, background: K.bg, border: `0.5px solid ${K.border}`, borderRadius: '20px', padding: '3px 10px', fontWeight: 400 }}>ライフジャケット貸出</span>
-            {vessel.beginner_accepted && (
-              <span style={{ fontSize: '12px', color: K.okFg, background: K.okBg, border: `0.5px solid ${K.okBd}`, borderRadius: '20px', padding: '3px 10px', fontWeight: 400 }}>初心者歓迎</span>
-            )}
-            {vessel.charter_accepted && (
-              <span style={{ fontSize: '12px', color: K.dayBadgeFg, background: K.dayBadgeBg, border: `0.5px solid #BFDBFE`, borderRadius: '20px', padding: '3px 10px', fontWeight: 400 }}>貸切OK</span>
-            )}
+          {/* 設備アイコン横スクロール */}
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', marginLeft: '-16px', marginRight: '-16px', paddingLeft: '16px', paddingRight: '16px' }}>
+            <div style={{ display: 'flex', gap: '16px', paddingBottom: '4px', width: 'max-content' }}>
+              {[
+                { icon: <path d="M12 2L9 7H3l4.5 4-1.7 5.5L12 13l6.2 3.5-1.7-5.5L21 7h-6L12 2z" />, label: 'キャスティングOK' },
+                { icon: <><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></>, label: 'イカメタル対応' },
+                { icon: <><path d="M3 3h3v18H3zM18 3h3v18h-3z"/><path d="M6 12h12"/></>, label: '個室トイレ' },
+                { icon: <><rect x="2" y="7" width="20" height="10" rx="2"/><path d="M12 7v10M7 12h10"/></>, label: '電動リール電源' },
+                { icon: <><path d="M4 8h16v8a4 4 0 01-4 4H8a4 4 0 01-4-4V8z"/><path d="M8 8V6a4 4 0 018 0v2"/></>, label: '生け簀あり' },
+                { icon: <><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8m-4-4v8"/></>, label: 'タックル貸出' },
+              ].map(({ icon, label }) => (
+                <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', minWidth: '56px' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={K.primary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    {icon}
+                  </svg>
+                  <span style={{ fontSize: '11px', color: K.fg2, fontWeight: 400, textAlign: 'center', whiteSpace: 'nowrap' }}>{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* カレンダーカード */}
         <div style={{ background: K.surface, border: `0.5px solid ${K.border}`, borderRadius: '12px', padding: '14px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 500, color: K.fg1, marginBottom: '3px', textAlign: 'center' }}>
+          <div style={{ fontSize: '14px', fontWeight: 500, color: K.fg1, marginBottom: '12px', textAlign: 'center' }}>
             ご希望の日をタップしてください
-          </div>
-          <div style={{ fontSize: '13px', color: K.fg3, fontWeight: 400, marginBottom: '12px', textAlign: 'center' }}>
-            色のついた日が予約可能です
           </div>
 
           {/* 月ナビ */}
@@ -851,18 +848,24 @@ export default function ReservePage() {
           </div>
 
           {/* 凡例 */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
-            {[
-              { dot: K.dayBadgeFg, label: '昼便' },
-              { dot: K.nightBadgeFg, label: '夜便' },
-              { dot: K.pending, label: '昼夜便' },
-              { dot: '#FCA5A5', label: '満員' },
-            ].map(({ dot, label }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: dot, flexShrink: 0 }} />
-                <span style={{ fontSize: '12px', color: K.fg2, fontWeight: 400 }}>{label}</span>
-              </div>
-            ))}
+          <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', marginTop: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div style={{ width: '14px', height: '14px', borderRadius: '50%', border: `1.5px solid ${K.primary}`, flexShrink: 0 }} />
+              <span style={{ fontSize: '12px', color: K.fg2, fontWeight: 400 }}>空きあり</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontSize: '14px', color: '#B91C1C', fontWeight: 500, lineHeight: 1 }}>①</span>
+              <span style={{ fontSize: '12px', color: K.fg2, fontWeight: 400 }}>残りわずか</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <div style={{ width: '14px', height: '14px', borderRadius: '8px', background: '#EEF0EB', flexShrink: 0 }} />
+              <span style={{ fontSize: '12px', color: K.fg2, fontWeight: 400 }}>満席・受付不可</span>
+            </div>
+          </div>
+
+          {/* ガイドノート */}
+          <div style={{ marginTop: '10px', textAlign: 'center', fontSize: '12px', color: K.fg3, fontWeight: 400 }}>
+            空き日をタップすると便の選択に進みます
           </div>
         </div>
 
@@ -871,75 +874,72 @@ export default function ReservePage() {
   )
 }
 
-// ---- 旭波ヘッダーコンポーネント ----
+// ---- ヘッダーコンポーネント ----
 function KyokuhaHeader({ vessel }: { vessel: Vessel }) {
-  const DEFAULT_ICON = 'https://whnpkellpiauxovxtpnz.supabase.co/storage/v1/object/public/vessel-images/Fiship_icon.png'
-  const K = {
-    headerBg: '#7F1D1D',
-    font: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif",
-  }
+  const FONT = "'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif"
+  const HEADER_BG = '#1B2A4A'
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden' }}>
-      {/* バナー画像エリア */}
+    <div>
+      {/* ナビバー */}
+      <div style={{
+        background: HEADER_BG,
+        padding: '0 16px',
+        height: '56px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        {/* 左: 船輪アイコン + 船名 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="3"/>
+            <line x1="12" y1="2" x2="12" y2="9"/>
+            <line x1="12" y1="15" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="9" y2="12"/>
+            <line x1="15" y1="12" x2="22" y2="12"/>
+            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+            <line x1="19.07" y1="4.93" x2="16.24" y2="7.76"/>
+            <line x1="7.76" y1="16.24" x2="4.93" y2="19.07"/>
+          </svg>
+          <span style={{ fontSize: '17px', fontWeight: 500, color: '#ffffff', fontFamily: FONT, letterSpacing: '0.01em' }}>
+            {vessel.name}
+          </span>
+        </div>
+
+        {/* 右: ハンバーガーメニュー */}
+        <button
+          aria-label="メニューを開く"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', display: 'flex', flexDirection: 'column', gap: '5px' }}
+        >
+          <div style={{ width: '22px', height: '1.5px', background: 'rgba(255,255,255,0.85)', borderRadius: '1px' }} />
+          <div style={{ width: '22px', height: '1.5px', background: 'rgba(255,255,255,0.85)', borderRadius: '1px' }} />
+          <div style={{ width: '15px', height: '1.5px', background: 'rgba(255,255,255,0.85)', borderRadius: '1px' }} />
+        </button>
+      </div>
+
+      {/* ヒーロー写真 + 船名・船長名オーバーレイ */}
       {vessel.banner_url && (
-        <div style={{ height: '160px', overflow: 'hidden' }}>
+        <div style={{ position: 'relative', height: '200px', overflow: 'hidden' }}>
           <img
             src={vessel.banner_url}
             alt={vessel.name}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '160px', background: 'rgba(0,0,0,0.45)' }} />
-        </div>
-      )}
-
-      {/* ヘッダーバー */}
-      <div style={{
-        background: K.headerBg,
-        padding: vessel.banner_url ? '14px 16px 16px' : '28px 16px 18px',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* 旭日放射パターン */}
-        <svg
-          aria-hidden="true"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.10, pointerEvents: 'none' }}
-          viewBox="0 0 390 120"
-          preserveAspectRatio="xMidYMid slice"
-        >
-          {Array.from({ length: 18 }).map((_, i) => {
-            const angle = (i * 360) / 18
-            const rad = (angle * Math.PI) / 180
-            const cx = 195; const cy = 200
-            const len = 320
-            return (
-              <line
-                key={i}
-                x1={cx}
-                y1={cy}
-                x2={cx + Math.cos(rad) * len}
-                y2={cy + Math.sin(rad) * len}
-                stroke="white"
-                strokeWidth="12"
-              />
-            )
-          })}
-        </svg>
-
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0, border: '0.5px solid rgba(255,255,255,0.3)' }}>
-            <img src={vessel.logo_url || DEFAULT_ICON} alt={`${vessel.name} ロゴ`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div>
-            <div style={{ fontSize: '22px', fontWeight: 500, color: '#ffffff', lineHeight: 1.2, fontFamily: K.font }}>
+          {/* グラデーションオーバーレイ（下部のみ） */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)' }} />
+          <div style={{ position: 'absolute', bottom: '14px', left: '16px', right: '16px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 500, color: '#ffffff', fontFamily: FONT, lineHeight: 1.3 }}>
               {vessel.name}
             </div>
-            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)', fontWeight: 400, marginTop: '2px', fontFamily: K.font }}>
+            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.82)', fontWeight: 400, fontFamily: FONT, marginTop: '2px' }}>
               {vessel.captain_name} 船長
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -948,9 +948,9 @@ function KyokuhaHeader({ vessel }: { vessel: Vessel }) {
 function StepIndicator({ current }: { current: number }) {
   const steps = ['日程', '便選択', '予約情報']
   const K = {
-    primary: '#B91C1C',
-    bg: '#F7F2EF',
-    border: '#E8DDD8',
+    primary: '#1E4D3A',
+    bg: '#F4F6F2',
+    border: '#CDD3DC',
     fg2: '#78716C',
     fg3: '#A8A29E',
     surface: '#FFFFFF',
@@ -995,7 +995,7 @@ function StepIndicator({ current }: { current: number }) {
 
 // ---- フォームラベルコンポーネント ----
 function FormLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
-  const K = { fg2: '#78716C', primary: '#B91C1C', surface: '#FFFFFF' }
+  const K = { fg2: '#78716C', primary: '#1E4D3A', surface: '#FFFFFF' }
   return (
     <label style={{ fontSize: '14px', fontWeight: 500, color: K.fg2, display: 'block', marginBottom: '6px' }}>
       {children}
