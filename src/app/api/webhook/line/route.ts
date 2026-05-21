@@ -119,6 +119,7 @@ async function updateSnsMessage(
   extracted: ExtractedInfo,
   isBooking: boolean,
   autoReplied = false,
+  forceStatus?: 'reply_failed',
 ): Promise<void> {
   try {
     const adminClient = getAdminClient()
@@ -135,7 +136,7 @@ async function updateSnsMessage(
       aiResult.auto_reply_sent = true
       aiResult.auto_reply_at = new Date().toISOString()
     }
-    const status = autoReplied ? 'auto_replied' : isBooking ? 'unprocessed' : 'ignored'
+    const status = forceStatus ?? (autoReplied ? 'auto_replied' : isBooking ? 'unprocessed' : 'ignored')
     await adminClient
       .from('sns_messages')
       .update({ ai_result: aiResult, status })
@@ -236,7 +237,14 @@ export async function POST(req: NextRequest) {
         replyText = `ご予約のリクエストを受け付けました。\n${formatDate(extracted.date!)} ${extracted.count}名様\n船長が確認してご連絡します。`
       }
 
-      await replyToLine(replyToken, replyText)
+      try {
+        await replyToLine(replyToken, replyText)
+      } catch (replyErr) {
+        console.error('LINE返信失敗（replyToken期限切れの可能性）:', replyErr)
+        if (snsMessageId) {
+          await updateSnsMessage(snsMessageId, extracted, isBooking, hasMissingFields, 'reply_failed')
+        }
+      }
 
     } catch (err) {
       console.error('LINE webhook イベント処理エラー:', err)
