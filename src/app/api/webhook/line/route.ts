@@ -118,22 +118,27 @@ async function updateSnsMessage(
   id: string,
   extracted: ExtractedInfo,
   isBooking: boolean,
+  autoReplied = false,
 ): Promise<void> {
   try {
     const adminClient = getAdminClient()
+    const aiResult: Record<string, unknown> = {
+      name: extracted.name,
+      date: extracted.date,
+      count: extracted.count,
+      fishing_style: extracted.fishing_style,
+      missing_fields: extracted.missing_fields,
+      is_booking: isBooking,
+      confidence: extracted.confidence,
+    }
+    if (autoReplied) {
+      aiResult.auto_reply_sent = true
+      aiResult.auto_reply_at = new Date().toISOString()
+    }
+    const status = autoReplied ? 'auto_replied' : isBooking ? 'unprocessed' : 'ignored'
     await adminClient
       .from('sns_messages')
-      .update({
-        ai_result: {
-          name: extracted.name,
-          date: extracted.date,
-          count: extracted.count,
-          fishing_style: extracted.fishing_style,
-          is_booking: isBooking,
-          confidence: extracted.confidence,
-        },
-        status: isBooking ? 'unprocessed' : 'ignored',
-      })
+      .update({ ai_result: aiResult, status })
       .eq('id', id)
   } catch (err) {
     console.error('LINE: sns_messages UPDATE エラー:', err)
@@ -200,24 +205,35 @@ export async function POST(req: NextRequest) {
       const isBooking = !!(extracted.date && extracted.count)
 
       // Step 3: AI解析結果をsns_messagesに保存・予約でない場合はignoredに更新
+      const hasMissingFields = extracted.missing_fields && extracted.missing_fields.length > 0
       if (snsMessageId) {
-        await updateSnsMessage(snsMessageId, extracted, isBooking)
+        await updateSnsMessage(snsMessageId, extracted, isBooking, hasMissingFields)
       }
 
       // Step 4: 返信メッセージを決定して送信
       // ※新フローでは予約の自動登録は行わず、船長がダッシュボードから確認・登録する
       let replyText: string
 
-      if (!extracted.date || !extracted.count) {
-        replyText = 'ご予約ありがとうございます。\nご希望の日程とお人数を教えていただけますか？'
+      if (hasMissingFields) {
+        // 不足項目を具体的に示した自動返信
+        const fieldLabels: Record<string, string> = {
+          date: 'ご希望の日程',
+          count: 'ご人数',
+          name: 'お名前',
+          bin_type: 'ご希望の便（昼便・夜便）',
+        }
+        const missingLabels = extracted.missing_fields
+          .map(f => `・${fieldLabels[f] || f}`)
+          .join('\n')
+        replyText = `ご予約のご連絡ありがとうございます。\n以下の内容が不足しておりますのでお教えください。\n${missingLabels}\nよろしくお願いいたします。`
       } else if (availability === 'full' || availability === 'charter') {
         if (altDates.length > 0) {
-          replyText = `ご希望の${formatDate(extracted.date)}は満員です。\n以下の日程はいかがでしょうか？\n${formatAltDates(altDates)}`
+          replyText = `ご希望の${formatDate(extracted.date!)}は満員です。\n以下の日程はいかがでしょうか？\n${formatAltDates(altDates)}`
         } else {
-          replyText = `ご希望の${formatDate(extracted.date)}は満員です。\n別の日程でご連絡ください。`
+          replyText = `ご希望の${formatDate(extracted.date!)}は満員です。\n別の日程でご連絡ください。`
         }
       } else {
-        replyText = `ご予約のリクエストを受け付けました。\n${formatDate(extracted.date)} ${extracted.count}名様\n船長が確認してご連絡します。`
+        replyText = `ご予約のリクエストを受け付けました。\n${formatDate(extracted.date!)} ${extracted.count}名様\n船長が確認してご連絡します。`
       }
 
       await replyToLine(replyToken, replyText)
