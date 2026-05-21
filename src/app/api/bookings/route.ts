@@ -109,6 +109,17 @@ export async function POST(req: NextRequest) {
       return inPeriod && (bin.days_of_week as number[]).includes(dow)
     })
 
+    let isBlacklistedCustomer = false
+    if (tel) {
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('id, is_blacklisted')
+        .eq('vessel_id', vessel_id)
+        .eq('tel', tel)
+        .maybeSingle()
+      isBlacklistedCustomer = Boolean(customer?.is_blacklisted)
+    }
+
     let confirmedCount = 0
     if (matchingBin) {
       const { data: existingBookings } = await supabase
@@ -145,7 +156,7 @@ export async function POST(req: NextRequest) {
     }
 
     const isCharter = Boolean(is_charter) || channel === 'charter'
-    const isImmediate = !isCharter && (vesselData?.auto_confirm ?? true) && confirmedCount === 0
+    const isImmediate = !isBlacklistedCustomer && !isCharter && (vesselData?.auto_confirm ?? true) && confirmedCount === 0
     const allowedStatuses = ['confirmed', 'rejected', 'pending']
     const status = allowedStatuses.includes(requestedStatus) ? requestedStatus : isImmediate ? 'confirmed' : 'pending'
     const resolvedDateTo = date_to || (isCharter ? date : null)
@@ -223,7 +234,7 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json()
-    const { id, status, contacted, date, date_to, bin_type, name, tel, count, fishing_style, message, is_charter } = body
+    const { id, status, contacted, date, date_to, bin_type, name, tel, count, fishing_style, message, is_charter, needs_call, needs_call_reason, call_attempts } = body
 
     const updatePayload: Record<string, unknown> = {}
     if (status != null) updatePayload.status = status
@@ -237,6 +248,9 @@ export async function PATCH(req: NextRequest) {
     if (fishing_style != null) updatePayload.fishing_style = fishing_style || null
     if (message != null) updatePayload.message = message || null
     if (is_charter != null) updatePayload.is_charter = Boolean(is_charter)
+    if (needs_call != null) updatePayload.needs_call = Boolean(needs_call)
+    if (needs_call_reason != null) updatePayload.needs_call_reason = needs_call_reason || ''
+    if (call_attempts != null) updatePayload.call_attempts = Number(call_attempts)
 
     if (!id || Object.keys(updatePayload).length === 0) {
       return NextResponse.json(
@@ -260,7 +274,7 @@ export async function PATCH(req: NextRequest) {
     const { data: previousBooking } = status === 'confirmed'
       ? await supabase
         .from('bookings')
-        .select('status, channel')
+        .select('status, channel, board_token')
         .eq('id', id)
         .maybeSingle()
       : { data: null }
