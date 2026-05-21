@@ -25,7 +25,7 @@ BEGIN
   ) THEN
     CREATE POLICY "vessel_owner_select"
       ON vessel_photos FOR SELECT
-      USING (vessel_id IN (SELECT id FROM vessels WHERE user_id = auth.uid()));
+      USING (vessel_id IN (SELECT id FROM vessels WHERE user_id = auth.uid()::text));
   END IF;
 END $$;
 
@@ -39,7 +39,7 @@ BEGIN
   ) THEN
     CREATE POLICY "vessel_owner_insert"
       ON vessel_photos FOR INSERT
-      WITH CHECK (vessel_id IN (SELECT id FROM vessels WHERE user_id = auth.uid()));
+      WITH CHECK (vessel_id IN (SELECT id FROM vessels WHERE user_id = auth.uid()::text));
   END IF;
 END $$;
 
@@ -53,7 +53,7 @@ BEGIN
   ) THEN
     CREATE POLICY "vessel_owner_delete"
       ON vessel_photos FOR DELETE
-      USING (vessel_id IN (SELECT id FROM vessels WHERE user_id = auth.uid()));
+      USING (vessel_id IN (SELECT id FROM vessels WHERE user_id = auth.uid()::text));
   END IF;
 END $$;
 
@@ -67,7 +67,7 @@ BEGIN
   ) THEN
     CREATE POLICY "vessel_owner_update"
       ON vessel_photos FOR UPDATE
-      USING (vessel_id IN (SELECT id FROM vessels WHERE user_id = auth.uid()));
+      USING (vessel_id IN (SELECT id FROM vessels WHERE user_id = auth.uid()::text));
   END IF;
 END $$;
 
