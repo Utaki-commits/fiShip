@@ -18,6 +18,9 @@ export async function POST(req: NextRequest) {
       channel = 'page',
       status: requestedStatus,
       is_charter,
+      board_token,
+      needs_call,
+      needs_call_reason,
     } = body
 
     if (!vessel_id || !date || !bin_type || !name || !count) {
@@ -105,6 +108,9 @@ export async function POST(req: NextRequest) {
         status,
         channel,
         is_charter: isCharter,
+        board_token: board_token || null,
+        needs_call: Boolean(needs_call),
+        needs_call_reason: needs_call_reason || '',
       }])
       .select()
       .single()
