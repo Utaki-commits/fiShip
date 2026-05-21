@@ -93,16 +93,22 @@ ${diff.slice(0, 12000)}
     callClaude(uxSystemPrompt, userPrompt),
   ])
 
+  // マークダウンコードブロック(```json ... ```)を除去してからパース
+  function extractJson(text) {
+    const match = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+    return match ? match[1].trim() : text.trim()
+  }
+
   let archResult, uxResult
   try {
-    archResult = JSON.parse(archResultRaw)
+    archResult = JSON.parse(extractJson(archResultRaw))
   } catch {
-    archResult = { verdict: 'yellow', summary: 'レスポースのパースに失敗', issues: [] }
+    archResult = { verdict: 'yellow', summary: `レスポンスのパースに失敗: ${archResultRaw.slice(0, 100)}`, issues: [] }
   }
   try {
-    uxResult = JSON.parse(uxResultRaw)
+    uxResult = JSON.parse(extractJson(uxResultRaw))
   } catch {
-    uxResult = { verdict: 'yellow', summary: 'レスポンスのパースに失敗', issues: [] }
+    uxResult = { verdict: 'yellow', summary: `レスポンスのパースに失敗: ${uxResultRaw.slice(0, 100)}`, issues: [] }
   }
 
   // 総合判定（redが1つでもあればred、yellowが1つでもあればyellow）
