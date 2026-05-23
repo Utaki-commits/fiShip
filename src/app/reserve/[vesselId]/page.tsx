@@ -323,17 +323,17 @@ export default function ReservePage() {
 
     let mark = '×'
     let label = '予約できません'
-    let bg = '#E5E7EB'
-    let color = '#57534E'
+    let bg = '#CDD3DC'
+    let color = '#5A6A78'
 
     if (isPast) {
-      bg = '#F3F4F6'
+      bg = '#F4F6F2'
       label = '過去日'
     } else if (!unavailable && lowRemaining) {
       mark = String(maxRemaining)
       label = '残りわずか'
       bg = '#FEE2E2'
-      color = '#B91C1C'
+      color = '#1E4D3A'
     } else if (!unavailable) {
       mark = '○'
       label = '空きあり'
@@ -348,9 +348,10 @@ export default function ReservePage() {
         onClick={() => handleDateSelect(year, month, day)}
         disabled={unavailable}
         style={{
-          minHeight: '68px',
+          minHeight: '52px',
+          width: '100%',
           borderRadius: '12px',
-          border: isSelected ? '0.5px solid #B91C1C' : '0.5px solid #E8DDD8',
+          border: isSelected ? '0.5px solid #1E4D3A' : '0.5px solid #CDD3DC',
           background: bg,
           color,
           padding: '8px 4px',
@@ -362,7 +363,7 @@ export default function ReservePage() {
         <div style={{
           fontSize: '15px',
           fontWeight: 500,
-          color: (holiday || cellDate.getDay() === 0) ? '#B91C1C' : cellDate.getDay() === 6 ? '#1E3A8A' : '#1C1917',
+          color: (holiday || cellDate.getDay() === 0) ? '#1E4D3A' : cellDate.getDay() === 6 ? '#1B2A4A' : '#1A2420',
           marginBottom: '3px',
         }}>
           {day}
@@ -370,7 +371,7 @@ export default function ReservePage() {
         <div style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1 }}>
           {mark}
         </div>
-        <div style={{ fontSize: '10px', fontWeight: 400, color: '#57534E', marginTop: '3px' }}>
+        <div style={{ fontSize: '10px', fontWeight: 400, color: '#5A6A78', marginTop: '3px' }}>
           {charterDate ? '貸切' : holiday ? holiday.name.slice(0, 4) : label}
         </div>
       </button>
@@ -492,18 +493,18 @@ export default function ReservePage() {
 
   if (loading) {
     return (
-      <main style={{ minHeight: '100vh', background: '#F7F2EF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#1C1917', fontSize: '18px' }}>読み込み中...</div>
+      <main style={{ minHeight: '100vh', background: '#F4F6F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#1A2420', fontSize: '18px' }}>読み込み中...</div>
       </main>
     )
   }
 
   if (!vessel) {
     return (
-      <main style={{ minHeight: '100vh', background: '#F7F2EF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'var(--font-sans)' }}>
+      <main style={{ minHeight: '100vh', background: '#F4F6F2', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'var(--font-sans)' }}>
         <div style={{ textAlign: 'center' }}>
           <img src={DEFAULT_ICON} alt="FiShip" style={{ width: '64px', height: '64px', borderRadius: '16px', objectFit: 'cover', marginBottom: '12px' }} />
-          <div style={{ fontSize: '18px', fontWeight: 500, color: '#1C1917' }}>{fetchError || '船の情報が見つかりません'}</div>
+          <div style={{ fontSize: '18px', fontWeight: 500, color: '#1A2420' }}>{fetchError || '船の情報が見つかりません'}</div>
         </div>
       </main>
     )
@@ -512,11 +513,9 @@ export default function ReservePage() {
   const maxCount = selectedBin?.actualRemaining || 1
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F7F2EF', fontFamily: 'var(--font-sans)', color: '#1C1917' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F4F6F2', fontFamily: 'var(--font-sans)', color: '#1A2420' }}>
       <header style={{
-        background: vessel.banner_url ? `url(${vessel.banner_url})` : '#7F1D1D',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        background: '#1B2A4A',
         padding: '20px 16px 18px',
       }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
@@ -538,10 +537,10 @@ export default function ReservePage() {
       <main style={{ padding: '14px 12px 24px' }}>
         {step === 'calendar' && (
           <>
-            <section style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
-              <div style={{ display: 'grid', gap: '8px', fontSize: '15px', color: '#57534E' }}>
-                <div>港: <span style={{ color: '#1C1917', fontWeight: 500 }}>{vessel.port_name}</span></div>
-                {vessel.price && <div>料金: <span style={{ color: '#1C1917', fontWeight: 500 }}>{formatPrice(vessel.price)}</span></div>}
+            <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
+              <div style={{ display: 'grid', gap: '8px', fontSize: '15px', color: '#5A6A78' }}>
+                <div>港: <span style={{ color: '#1A2420', fontWeight: 500 }}>{vessel.port_name}</span></div>
+                {vessel.price && <div>料金: <span style={{ color: '#1A2420', fontWeight: 500 }}>{formatPrice(vessel.price)}</span></div>}
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {hasText(vessel.facilities || {}, 'parking', 'free') && <span>駐車場あり</span>}
                   {hasFlag(vessel.facilities || {}, 'toilet') && <span>トイレあり</span>}
@@ -550,21 +549,21 @@ export default function ReservePage() {
               </div>
             </section>
 
-            <section style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px' }}>
+            <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <button type="button" onClick={() => setCalM(m => m === 0 ? (setCalYear(y => y - 1), 11) : m - 1)} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: 'transparent', color: '#57534E', fontWeight: 500 }}>前月</button>
+                <button type="button" onClick={() => setCalM(m => m === 0 ? (setCalYear(y => y - 1), 11) : m - 1)} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500 }}>前月</button>
                 <div style={{ fontSize: '20px', fontWeight: 500 }}>{calYear}年 {calM + 1}月</div>
-                <button type="button" onClick={() => setCalM(m => m === 11 ? (setCalYear(y => y + 1), 0) : m + 1)} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: 'transparent', color: '#57534E', fontWeight: 500 }}>次月</button>
+                <button type="button" onClick={() => setCalM(m => m === 11 ? (setCalYear(y => y + 1), 0) : m + 1)} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500 }}>次月</button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', marginBottom: '6px' }}>
                 {DAY_NAMES.map((d, i) => (
-                  <div key={d} style={{ textAlign: 'center', fontSize: '12px', color: i === 0 ? '#B91C1C' : i === 6 ? '#1E3A8A' : '#57534E' }}>{d}</div>
+                  <div key={d} style={{ textAlign: 'center', fontSize: '12px', color: i === 0 ? '#1E4D3A' : i === 6 ? '#1B2A4A' : '#5A6A78' }}>{d}</div>
                 ))}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px' }}>
                 {renderCalendarCells()}
               </div>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '14px', fontSize: '13px', color: '#57534E' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '14px', fontSize: '13px', color: '#5A6A78' }}>
                 <span>○ 空き</span>
                 <span>数字 残りわずか</span>
                 <span>× 予約できません</span>
@@ -575,31 +574,31 @@ export default function ReservePage() {
 
         {step === 'bin' && selectedDate && (
           <section style={{ display: 'grid', gap: '12px' }}>
-            <button type="button" onClick={() => setStep('calendar')} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: 'transparent', color: '#57534E', fontWeight: 500, fontFamily: 'inherit' }}>日付を選び直す</button>
+            <button type="button" onClick={() => setStep('calendar')} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500, fontFamily: 'inherit' }}>日付を選び直す</button>
             <div style={{ fontSize: '20px', fontWeight: 500 }}>{formatDate(selectedDate)} の空き</div>
             {selectedBins.map(bin => (
-              <article key={bin.setting.id} style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '16px' }}>
+              <article key={bin.setting.id} style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
                   <div>
                     <div style={{ fontSize: '21px', fontWeight: 500 }}>{getBinName(bin.setting)}</div>
-                    <div style={{ fontSize: '15px', color: '#57534E', marginTop: '4px' }}>{bin.setting.departure_time} 出船{bin.setting.end_time ? ` - ${bin.setting.end_time} 終了予定` : ''}</div>
+                    <div style={{ fontSize: '15px', color: '#5A6A78', marginTop: '4px' }}>{bin.setting.departure_time} 出船{bin.setting.end_time ? ` - ${bin.setting.end_time} 終了予定` : ''}</div>
                   </div>
-                  <div style={{ fontSize: '18px', fontWeight: 500, color: bin.actualRemaining <= 2 ? '#B91C1C' : '#059669' }}>残り {bin.actualRemaining}席</div>
+                  <div style={{ fontSize: '18px', fontWeight: 500, color: '#1E4D3A' }}>残り {bin.actualRemaining}名</div>
                 </div>
-                {bin.setting.note && <p style={{ fontSize: '14px', color: '#57534E', lineHeight: 1.7, margin: '8px 0' }}>{bin.setting.note}</p>}
+                {bin.setting.note && <p style={{ fontSize: '14px', color: '#5A6A78', lineHeight: 1.7, margin: '8px 0' }}>{bin.setting.note}</p>}
                 {bin.displayFacilities.length > 0 && (
                   <div style={{ display: 'grid', gap: '4px', margin: '10px 0 14px' }}>
-                    {bin.displayFacilities.map(label => <div key={label} style={{ fontSize: '14px', color: '#1C1917' }}>・{label}</div>)}
+                    {bin.displayFacilities.map(label => <div key={label} style={{ fontSize: '14px', color: '#1A2420' }}>・{label}</div>)}
                   </div>
                 )}
-                <button type="button" onClick={() => handleSelectBin(bin)} style={{ width: '100%', padding: '14px', borderRadius: '9px', border: 'none', background: '#B91C1C', color: '#FFFFFF', fontSize: '17px', fontWeight: 500, fontFamily: 'inherit' }}>
+                <button type="button" onClick={() => handleSelectBin(bin)} style={{ width: '100%', padding: '14px', borderRadius: '9px', border: 'none', background: '#1E4D3A', color: '#FFFFFF', fontSize: '17px', fontWeight: 500, fontFamily: 'inherit' }}>
                   この便を予約する
                 </button>
               </article>
             ))}
             {vessel.charter_accepted && (
-              <button type="button" onClick={() => setShowCharter(v => !v)} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #FCA5A5', background: '#FEF2F2', color: '#B91C1C', fontWeight: 500, fontFamily: 'inherit' }}>
-                貸切でのご利用はこちら
+              <button type="button" onClick={() => setShowCharter(v => !v)} style={{ padding: '14px', border: 'none', background: 'transparent', color: '#1B2A4A', fontWeight: 500, fontFamily: 'inherit', textAlign: 'center' }}>
+                貸切でのご利用はこちら →
               </button>
             )}
             {showCharter && (
@@ -610,23 +609,23 @@ export default function ReservePage() {
 
         {step === 'form' && selectedDate && selectedBin && (
           <section style={{ display: 'grid', gap: '12px' }}>
-            <button type="button" onClick={() => selectedBins.length > 1 ? setStep('bin') : setStep('calendar')} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: 'transparent', color: '#57534E', fontWeight: 500, fontFamily: 'inherit' }}>戻る</button>
-            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px' }}>
+            <button type="button" onClick={() => selectedBins.length > 1 ? setStep('bin') : setStep('calendar')} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500, fontFamily: 'inherit' }}>戻る</button>
+            <div style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
               <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '4px' }}>予約内容</div>
-              <div style={{ color: '#57534E', fontSize: '15px' }}>{formatDate(selectedDate)}　{getBinName(selectedBin.setting)}</div>
+              <div style={{ color: '#5A6A78', fontSize: '15px' }}>{formatDate(selectedDate)}　{getBinName(selectedBin.setting)}</div>
             </div>
-            {formError && <div style={{ background: '#FEE2E2', border: '0.5px solid #FCA5A5', borderRadius: '12px', padding: '14px', color: '#B91C1C', fontWeight: 500 }}>{formError}</div>}
+            {formError && <div style={{ background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px', color: '#1A2420', fontWeight: 500 }}>{formError}</div>}
             <FormField label="お名前" required>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="例：山田 太郎" style={inputStyle} />
             </FormField>
             <FormField label="電話番号" required>
               <input type="tel" value={form.tel} onChange={e => setForm(f => ({ ...f, tel: e.target.value }))} placeholder="例：090-1234-5678" style={inputStyle} />
             </FormField>
-            <div style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px' }}>
+            <div style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
               <div style={{ fontSize: '16px', fontWeight: 500, marginBottom: '10px' }}>人数</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                 {[1, 2, 3, 4].map(n => (
-                  <button key={n} disabled={n > maxCount} onClick={() => setForm(f => ({ ...f, count: n }))} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: form.count === n ? '#B91C1C' : '#FFFFFF', color: form.count === n ? '#FFFFFF' : '#1C1917', opacity: n > maxCount ? 0.4 : 1, fontWeight: 500, fontFamily: 'inherit' }}>{n}名</button>
+                  <button key={n} disabled={n > maxCount} onClick={() => setForm(f => ({ ...f, count: n }))} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #CDD3DC', background: form.count === n ? '#1E4D3A' : '#FFFFFF', color: form.count === n ? '#FFFFFF' : '#1A2420', opacity: n > maxCount ? 0.4 : 1, fontWeight: 500, fontSize: '16px', fontFamily: 'inherit' }}>{n}名</button>
                 ))}
               </div>
               {maxCount >= 5 && (
@@ -641,24 +640,30 @@ export default function ReservePage() {
             <FormField label="メッセージ">
               <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} placeholder="質問や希望があれば入力してください" style={{ ...inputStyle, minHeight: '92px', resize: 'none' }} />
             </FormField>
-            <button type="button" disabled={submitting} onClick={submitBooking} style={{ width: '100%', minHeight: '64px', padding: '16px', borderRadius: '9px', border: 'none', background: submitting ? '#E8DDD8' : '#B91C1C', color: submitting ? '#57534E' : '#FFFFFF', fontSize: '19px', fontWeight: 500, fontFamily: 'inherit' }}>
+            <button type="button" disabled={submitting} onClick={submitBooking} style={{ width: '100%', minHeight: '64px', padding: '16px', borderRadius: '9px', border: 'none', background: submitting ? '#CDD3DC' : '#1E4D3A', color: submitting ? '#5A6A78' : '#FFFFFF', fontSize: '19px', fontWeight: 500, fontFamily: 'inherit' }}>
               {submitting ? '送信中...' : '予約を申し込む'}
             </button>
-            <p style={{ fontSize: '13px', color: '#57534E', lineHeight: 1.7, margin: 0 }}>申し込み後、船長から確認の連絡が届きます。</p>
+            <p style={{ fontSize: '13px', color: '#5A6A78', lineHeight: 1.7, margin: 0 }}>申し込み後、船長から確認の連絡が届きます。</p>
           </section>
         )}
 
         {step === 'complete' && (
-          <section style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '24px 16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '28px', fontWeight: 500, color: '#059669', marginBottom: '10px' }}>申し込みを受け付けました</div>
-            <div style={{ fontSize: '16px', color: '#57534E', lineHeight: 1.8, marginBottom: '18px' }}>
-              {selectedDate && selectedBin ? `${formatDate(selectedDate)} ${getBinName(selectedBin.setting)}` : '貸切のご相談'}<br />
+          <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '28px 16px', textAlign: 'center' }}>
+            <div style={{ width: '88px', height: '88px', borderRadius: '50%', border: '0.5px solid #1E4D3A', color: '#1E4D3A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '56px', fontWeight: 500, margin: '0 auto 18px' }}>✓</div>
+            <div style={{ fontSize: '24px', fontWeight: 500, color: '#1A2420', marginBottom: '14px' }}>申し込みを受け付けました</div>
+            <div style={{ fontSize: '16px', color: '#5A6A78', lineHeight: 1.8, marginBottom: '18px' }}>
               船長から確認の連絡が届きます。しばらくお待ちください。
             </div>
-            <button type="button" onClick={() => { setStep('calendar'); setSelectedDate(null); setSelectedBin(null); setSelectedBins([]); setCompletedImmediate(false) }} style={{ padding: '14px 24px', borderRadius: '9px', border: '0.5px solid #E8DDD8', background: 'transparent', color: '#57534E', fontWeight: 500, fontFamily: 'inherit' }}>
+            <div style={{ background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px', textAlign: 'left', marginBottom: '18px', display: 'grid', gap: '8px' }}>
+              <SummaryRow label="日付" value={selectedDate ? formatDate(selectedDate) : charter.preferred_date ? formatDate(charter.preferred_date) : '貸切のご相談'} />
+              <SummaryRow label="便" value={selectedBin ? getBinName(selectedBin.setting) : '貸切'} />
+              <SummaryRow label="名前" value={selectedBin ? form.name : charter.name} />
+              <SummaryRow label="人数" value={selectedBin ? `${form.count}名` : charter.count ? `${charter.count}名` : '未定'} />
+            </div>
+            <button type="button" onClick={() => { setStep('calendar'); setSelectedDate(null); setSelectedBin(null); setSelectedBins([]); setCompletedImmediate(false) }} style={{ width: '100%', padding: '14px 24px', borderRadius: '9px', border: 'none', background: '#1E4D3A', color: '#FFFFFF', fontSize: '17px', fontWeight: 500, fontFamily: 'inherit' }}>
               別の日を探す
             </button>
-            {completedImmediate && <div style={{ fontSize: '13px', color: '#059669', marginTop: '12px' }}>この予約は自動で承認されました。</div>}
+            {completedImmediate && <div style={{ fontSize: '13px', color: '#1E4D3A', marginTop: '12px' }}>この予約は自動で承認されました。</div>}
           </section>
         )}
       </main>
@@ -670,19 +675,28 @@ const inputStyle = {
   width: '100%',
   padding: '14px',
   fontSize: '17px',
-  border: '0.5px solid #E8DDD8',
+  border: '0.5px solid #CDD3DC',
   borderRadius: '8px',
   background: '#FFFFFF',
-  color: '#1C1917',
+  color: '#1A2420',
   fontFamily: 'inherit',
   boxSizing: 'border-box' as const,
 }
 
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', gap: '12px', fontSize: '15px' }}>
+      <span style={{ color: '#5A6A78', minWidth: '48px' }}>{label}</span>
+      <span style={{ color: '#1A2420', fontWeight: 500 }}>{value}</span>
+    </div>
+  )
+}
+
 function FormField({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
   return (
-    <label style={{ display: 'grid', gap: '6px', background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px' }}>
-      <span style={{ fontSize: '16px', fontWeight: 500, color: '#1C1917' }}>
-        {label}{required && <span style={{ color: '#B91C1C', marginLeft: '6px', fontSize: '13px' }}>必須</span>}
+    <label style={{ display: 'grid', gap: '6px', background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
+      <span style={{ fontSize: '16px', fontWeight: 500, color: '#1A2420' }}>
+        {label}{required && <span style={{ color: '#1E4D3A', marginLeft: '6px', fontSize: '13px' }}>必須</span>}
       </span>
       {children}
     </label>
@@ -703,18 +717,18 @@ function CharterForm({
   onSubmit: () => void
 }) {
   return (
-    <div style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px', display: 'grid', gap: '10px' }}>
+    <div style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px', display: 'grid', gap: '10px' }}>
       <div style={{ fontSize: '20px', fontWeight: 500 }}>貸切のご相談</div>
-      {error && <div style={{ color: '#B91C1C', fontSize: '14px' }}>{error}</div>}
+      {error && <div style={{ color: '#1A2420', fontSize: '14px' }}>{error}</div>}
       <input style={inputStyle} value={charter.name} onChange={e => setCharter(c => ({ ...c, name: e.target.value }))} placeholder="お名前" />
       <input style={inputStyle} value={charter.tel} onChange={e => setCharter(c => ({ ...c, tel: e.target.value }))} placeholder="電話番号" type="tel" />
       <input style={inputStyle} value={charter.preferred_date} onChange={e => setCharter(c => ({ ...c, preferred_date: e.target.value }))} type="date" />
       <input style={inputStyle} value={charter.count} onChange={e => setCharter(c => ({ ...c, count: e.target.value }))} placeholder="人数（任意）" inputMode="numeric" />
       <textarea style={{ ...inputStyle, minHeight: '90px', resize: 'none' }} value={charter.message} onChange={e => setCharter(c => ({ ...c, message: e.target.value }))} placeholder="ご希望があれば入力してください" />
-      <button type="button" onClick={onSubmit} disabled={submitting} style={{ padding: '14px', border: 'none', borderRadius: '9px', background: submitting ? '#E8DDD8' : '#B91C1C', color: submitting ? '#57534E' : '#FFFFFF', fontWeight: 500, fontFamily: 'inherit' }}>
+      <button type="button" onClick={onSubmit} disabled={submitting} style={{ padding: '14px', border: 'none', borderRadius: '9px', background: submitting ? '#CDD3DC' : '#1E4D3A', color: submitting ? '#5A6A78' : '#FFFFFF', fontWeight: 500, fontSize: '16px', fontFamily: 'inherit' }}>
         {submitting ? '送信中...' : '問い合わせを送る'}
       </button>
-      <div style={{ fontSize: '13px', color: '#57534E', lineHeight: 1.7 }}>送信後、船長より電話にてご連絡いたします。</div>
+      <div style={{ fontSize: '13px', color: '#5A6A78', lineHeight: 1.7 }}>送信後、船長より電話にてご連絡いたします。</div>
     </div>
   )
 }

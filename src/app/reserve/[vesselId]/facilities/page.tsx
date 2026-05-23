@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-const DEFAULT_ICON = 'https://whnpkellpiauxovxtpnz.supabase.co/storage/v1/object/public/vessel-images/Fiship_icon.png'
-
 type JsonObject = Record<string, unknown>
 
 type Vessel = {
@@ -67,7 +65,6 @@ const buildCategories = (facilities: JsonObject): FacilityCategory[] => {
     {
       title: '設備',
       items: [
-        { label: '駐車場', enabled: enabledByValue(facilities.parking), detail: valueLabel(facilities.parking) },
         { label: 'トイレ', enabled: enabledByValue(facilities.toilet), detail: valueLabel(facilities.toilet) },
         { label: 'クーラーボックス', enabled: enabledByValue(facilities.cooler), detail: valueLabel(facilities.cooler) },
         { label: '生け簀', enabled: enabledByValue(facilities.live_well), detail: valueLabel(facilities.live_well) },
@@ -139,16 +136,16 @@ export default function FacilitiesPage() {
 
   if (loading) {
     return (
-      <main style={{ minHeight: '100vh', background: '#F7F2EF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: '18px', color: '#1C1917' }}>読み込み中...</div>
+      <main style={{ minHeight: '100vh', background: '#F4F6F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '18px', color: '#1A2420' }}>読み込み中...</div>
       </main>
     )
   }
 
   if (!vessel) {
     return (
-      <main style={{ minHeight: '100vh', background: '#F7F2EF', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-        <div style={{ fontSize: '18px', color: '#1C1917' }}>船の情報が見つかりません</div>
+      <main style={{ minHeight: '100vh', background: '#F4F6F2', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div style={{ fontSize: '18px', color: '#1A2420' }}>船の情報が見つかりません</div>
       </main>
     )
   }
@@ -156,39 +153,32 @@ export default function FacilitiesPage() {
   const categories = buildCategories(vessel.facilities || {})
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F7F2EF', fontFamily: 'var(--font-sans)', color: '#1C1917' }}>
-      <header style={{ background: '#7F1D1D', padding: '18px 16px', color: '#FFFFFF' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F4F6F2', fontFamily: 'var(--font-sans)', color: '#1A2420' }}>
+      <header style={{ background: '#1B2A4A', padding: '18px 16px', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button
           type="button"
           onClick={() => router.push(`/reserve/${vesselId}`)}
-          style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid rgba(255,255,255,.65)', background: 'transparent', color: '#FFFFFF', fontWeight: 500, fontFamily: 'inherit', marginBottom: '14px' }}
+          style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid rgba(255,255,255,.65)', background: 'transparent', color: '#FFFFFF', fontWeight: 500, fontFamily: 'inherit' }}
         >
-          予約ページへ戻る
+          ←
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src={vessel.logo_url || DEFAULT_ICON} alt={`${vessel.name} ロゴ`} style={{ width: '52px', height: '52px', objectFit: 'cover', borderRadius: '12px' }} />
-          <div>
-            <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>{vessel.name}</h1>
-            <div style={{ fontSize: '14px', marginTop: '3px' }}>設備の詳細</div>
-          </div>
-        </div>
+        <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>設備の詳細</h1>
       </header>
 
       <main style={{ padding: '14px 12px 24px', display: 'grid', gap: '12px' }}>
         {categories.map(category => {
-          const visible = category.title === 'こだわり設備'
-            ? category.items.some(item => item.enabled)
-            : true
+          const enabledItems = category.items.filter(item => item.enabled)
+          const visible = enabledItems.length > 0
           if (!visible) return null
 
           return (
-            <section key={category.title} style={{ background: '#FFFFFF', border: '0.5px solid #E8DDD8', borderRadius: '12px', padding: '14px' }}>
+            <section key={category.title} style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 500, margin: '0 0 10px' }}>{category.title}</h2>
               <div style={{ display: 'grid', gap: '8px' }}>
-                {category.items.map(item => (
-                  <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', padding: '10px 0', borderBottom: '0.5px solid #E8DDD8', opacity: item.enabled ? 1 : 0.45 }}>
+                {enabledItems.map(item => (
+                  <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', padding: '10px 0', borderBottom: '0.5px solid #CDD3DC' }}>
                     <span style={{ fontSize: '15px', fontWeight: 500 }}>{item.label}</span>
-                    <span style={{ fontSize: '14px', color: item.enabled ? '#059669' : '#57534E', fontWeight: 500 }}>{item.enabled ? item.detail || 'あり' : 'なし'}</span>
+                    <span style={{ fontSize: '14px', color: '#1E4D3A', fontWeight: 500 }}>{item.detail || 'あり'}</span>
                   </div>
                 ))}
               </div>
