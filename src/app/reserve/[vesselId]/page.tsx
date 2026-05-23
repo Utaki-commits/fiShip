@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import type { Dispatch, ReactNode, SetStateAction } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { getHolidayInfo } from '@/lib/holidays'
 
 const DEFAULT_ICON = 'https://whnpkellpiauxovxtpnz.supabase.co/storage/v1/object/public/vessel-images/Fiship_icon.png'
 
@@ -175,7 +174,6 @@ const detectNeedsCall = (message: string) => {
 
 export default function ReservePage() {
   const params = useParams()
-  const router = useRouter()
   const vesselId = params.vesselId as string
 
   const [step, setStep] = useState<Step>('calendar')
@@ -313,33 +311,11 @@ export default function ReservePage() {
     const isPast = cellDate < today
     const isSelected = selectedDate === dateStr
     const charterDate = isCharterDate(dateStr)
-    const holiday = getHolidayInfo(cellDate)
     const bins = isPast || charterDate ? [] : getBinsForDate(year, month, day)
     const availableBins = bins.filter(b => !b.isFull && !b.isConfirmedFull)
-    const maxRemaining = availableBins.reduce((max, b) => Math.max(max, b.actualRemaining), 0)
-    const minCapacity = bins.length ? Math.min(...bins.map(b => b.setting.max_capacity)) : 0
-    const lowRemaining = maxRemaining > 0 && minCapacity > 0 && maxRemaining < Math.ceil(minCapacity / 2)
     const unavailable = isPast || charterDate || bins.length === 0 || availableBins.length === 0
-
-    let mark = '×'
-    let label = '予約できません'
-    let bg = '#CDD3DC'
-    let color = '#5A6A78'
-
-    if (isPast) {
-      bg = '#F4F6F2'
-      label = '過去日'
-    } else if (!unavailable && lowRemaining) {
-      mark = String(maxRemaining)
-      label = '残りわずか'
-      bg = '#FEE2E2'
-      color = '#1E4D3A'
-    } else if (!unavailable) {
-      mark = '○'
-      label = '空きあり'
-      bg = '#FFFFFF'
-      color = '#059669'
-    }
+    const cellBg = unavailable ? '#F3F4F6' : '#FFFFFF'
+    const dateColor = unavailable ? '#9CA3AF' : cellDate.getDay() === 6 ? '#1B2A4A' : '#1A2420'
 
     return (
       <button
@@ -352,28 +328,27 @@ export default function ReservePage() {
           width: '100%',
           borderRadius: '12px',
           border: isSelected ? '0.5px solid #1E4D3A' : '0.5px solid #CDD3DC',
-          background: bg,
-          color,
+          background: cellBg,
+          color: unavailable ? '#9CA3AF' : '#1E4D3A',
           padding: '8px 4px',
           cursor: unavailable ? 'not-allowed' : 'pointer',
-          opacity: isPast ? 0.55 : 1,
+          opacity: 1,
           fontFamily: 'inherit',
         }}
       >
         <div style={{
           fontSize: '15px',
           fontWeight: 500,
-          color: (holiday || cellDate.getDay() === 0) ? '#1E4D3A' : cellDate.getDay() === 6 ? '#1B2A4A' : '#1A2420',
+          color: dateColor,
           marginBottom: '3px',
         }}>
           {day}
         </div>
-        <div style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1 }}>
-          {mark}
-        </div>
-        <div style={{ fontSize: '10px', fontWeight: 400, color: '#5A6A78', marginTop: '3px' }}>
-          {charterDate ? '貸切' : holiday ? holiday.name.slice(0, 4) : label}
-        </div>
+        {!unavailable && (
+          <div style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1, color: '#1E4D3A' }}>
+            ○
+          </div>
+        )}
       </button>
     )
   }
@@ -516,22 +491,20 @@ export default function ReservePage() {
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F4F6F2', fontFamily: 'var(--font-sans)', color: '#1A2420' }}>
       <header style={{
         background: '#1B2A4A',
-        padding: '20px 16px 18px',
+        padding: '12px',
       }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
-          <img src={vessel.logo_url || DEFAULT_ICON} alt={`${vessel.name} ロゴ`} style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover' }} />
-          <div style={{ minWidth: 0 }}>
-            <h1 style={{ fontSize: '24px', lineHeight: 1.25, fontWeight: 500, color: '#FFFFFF', margin: 0 }}>{vessel.name}</h1>
-            <div style={{ fontSize: '15px', fontWeight: 400, color: '#FFFFFF', marginTop: '4px' }}>{vessel.captain_name} 船長</div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: '#FFFFFF', borderRadius: '12px', padding: '12px', border: '0.5px solid #CDD3DC' }}>
+          <img src={vessel.logo_url || DEFAULT_ICON} alt={`${vessel.name} ロゴ`} style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '18px', fontWeight: 500, color: '#1A2420', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vessel.name}</div>
+              <div style={{ fontSize: '13px', color: '#5A6A78', fontWeight: 400, marginTop: '3px' }}>船長 {vessel.captain_name}</div>
+            </div>
+            <a href={`/reserve/${vesselId}/facilities`} style={{ fontSize: '12px', color: '#1B2A4A', textDecoration: 'none', flexShrink: 0 }}>
+              設備を見る →
+            </a>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => router.push(`/reserve/${vesselId}/facilities`)}
-          style={{ width: '100%', padding: '14px', borderRadius: '9px', border: '0.5px solid rgba(255,255,255,.65)', background: 'rgba(255,255,255,.12)', color: '#FFFFFF', fontSize: '16px', fontWeight: 500, fontFamily: 'inherit' }}
-        >
-          船の設備を見る
-        </button>
       </header>
 
       <main style={{ padding: '14px 12px 24px' }}>
@@ -564,9 +537,7 @@ export default function ReservePage() {
                 {renderCalendarCells()}
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '14px', fontSize: '13px', color: '#5A6A78' }}>
-                <span>○ 空き</span>
-                <span>数字 残りわずか</span>
-                <span>× 予約できません</span>
+                <span>○ 予約できます</span>
               </div>
             </section>
           </>
