@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getHolidayInfo } from '@/lib/holidays'
 
 const DEFAULT_ICON = 'https://whnpkellpiauxovxtpnz.supabase.co/storage/v1/object/public/vessel-images/Fiship_icon.png'
 
@@ -56,6 +57,7 @@ type BinSetting = {
   end_time?: string | null
   fish_types: string[]
   max_capacity: number
+  min_departure_count?: number | null
   note?: string | null
   facilities_override?: JsonObject | null
 }
@@ -79,6 +81,8 @@ type BinInfo = {
   displayFacilities: string[]
   fixedFishingStyle: string | null
 }
+
+type AvailabilityLevel = 'available' | 'half' | 'high' | 'full'
 
 type Form = {
   name: string
@@ -138,6 +142,37 @@ const getBinBorderColor = (binType: 'day' | 'night' | 'relay') => {
   return '#1E4D3A'
 }
 
+const getAvailabilityLevel = (bin: BinInfo): AvailabilityLevel => {
+  if (bin.isFull || bin.isConfirmedFull || bin.actualRemaining <= 0) return 'full'
+  const booked = bin.setting.max_capacity - bin.actualRemaining
+  const ratio = bin.setting.max_capacity > 0 ? booked / bin.setting.max_capacity : 0
+  if (ratio >= 0.8) return 'high'
+  if (ratio >= 0.5) return 'half'
+  return 'available'
+}
+
+const getAvailabilityColor = (bin: BinInfo) => {
+  const level = getAvailabilityLevel(bin)
+  if (level === 'high' || level === 'full') return '#B91C1C'
+  if (level === 'half') return '#F59E0B'
+  return '#1E4D3A'
+}
+
+const getCalendarMark = (bin: BinInfo) => {
+  const level = getAvailabilityLevel(bin)
+  if (level === 'full') return '―'
+  if (level === 'half' || level === 'high') return String(bin.actualRemaining)
+  return '○'
+}
+
+const hasReachedMinDeparture = (bin: BinInfo) =>
+  Boolean(bin.setting.min_departure_count && (bin.setting.max_capacity - bin.actualRemaining) >= bin.setting.min_departure_count)
+
+const getRemainingLabel = (bin: BinInfo) => {
+  if (getAvailabilityLevel(bin) === 'full') return '満船'
+  return `残り ${bin.actualRemaining}名`
+}
+
 const isValidTel = (tel: string): boolean => {
   const cleaned = tel.replace(/[-\s()]/g, '')
   return /^\d{10,11}$/.test(cleaned) || /^\+\d{7,15}$/.test(cleaned)
@@ -181,6 +216,29 @@ const getDisplayFacilities = (bin: BinSetting, vesselFacilities: JsonObject | nu
   add(hasFlag(f, 'rod_keeper'), 'ロッドキーパーあり')
 
   return labels.slice(0, 5)
+}
+
+const getFeatureItems = (facilities: JsonObject | null) => {
+  const f = facilities || {}
+  const items: { icon: string; label: string }[] = []
+
+  const add = (enabled: boolean, icon: string, label: string) => {
+    if (enabled) items.push({ icon, label })
+  }
+
+  add(hasText(f, 'parking', 'free') || hasText(f, 'parking', 'paid'), 'P', '駐車場')
+  add(hasFlag(f, 'toilet'), 'WC', 'トイレ')
+  add(hasText(f, 'tackle_rental', 'free') || hasText(f, 'tackle_rental', 'paid'), '竿', '道具貸出')
+  add(hasFlag(f, 'life_jacket') || enabledByValue(f.life_jacket_rental), '救', '救命胴衣')
+  add(hasFlag(f, 'cooler'), '冷', 'クーラー')
+  add(hasFlag(f, 'live_well'), '活', '生け簀')
+  add(hasFlag(f, 'electric_reel_power'), '電', '電源')
+  add(hasFlag(f, 'rod_keeper'), '置', '竿受け')
+  add(hasFlag(f, 'bloodletting'), '処', '血抜き')
+  add(hasFlag(f, 'ike_jime'), '締', '神経締め')
+  add(hasFlag(f, 'roof'), '屋', '屋根')
+
+  return items
 }
 
 const detectNeedsCall = (message: string) => {
@@ -310,17 +368,18 @@ export default function ReservePage() {
     today.setHours(0, 0, 0, 0)
     if (new Date(year, month, day) < today || isCharterDate(dateStr)) return
 
-    const bins = getBinsForDate(year, month, day).filter(b => !b.isFull && !b.isConfirmedFull)
-    if (bins.length === 0) return
+    const bins = getBinsForDate(year, month, day)
+    const availableBins = bins.filter(b => !b.isFull && !b.isConfirmedFull)
+    if (availableBins.length === 0) return
 
     setSelectedDate(dateStr)
     setSelectedBins(bins)
-    setSelectedBin(bins.length === 1 ? bins[0] : null)
+    setSelectedBin(availableBins.length === 1 ? availableBins[0] : null)
     setForm({ name: '', tel: '', count: 1, fishing_style: '', message: '' })
     setFormError('')
     setShowCharter(false)
     setCharter(c => ({ ...c, preferred_date: dateStr }))
-    setStep(bins.length === 1 ? 'form' : 'bin')
+    setStep(availableBins.length === 1 && bins.length === 1 ? 'form' : 'bin')
   }
 
   const renderCell = (year: number, month: number, day: number) => {
@@ -328,17 +387,24 @@ export default function ReservePage() {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const cellDate = new Date(year, month, day)
+    const holiday = getHolidayInfo(cellDate)
     const isPast = cellDate < today
     const isSelected = selectedDate === dateStr
     const charterDate = isCharterDate(dateStr)
     const bins = isPast || charterDate ? [] : getBinsForDate(year, month, day)
     const availableBins = bins.filter(b => !b.isFull && !b.isConfirmedFull)
-    const maxRemaining = availableBins.reduce((max, b) => Math.max(max, b.actualRemaining), 0)
-    const minCapacity = bins.length ? Math.min(...bins.map(b => b.setting.max_capacity)) : 0
-    const lowRemaining = maxRemaining > 0 && minCapacity > 0 && maxRemaining < Math.ceil(minCapacity / 2)
     const unavailable = isPast || charterDate || bins.length === 0 || availableBins.length === 0
     const cellBg = unavailable ? '#F3F4F6' : '#FFFFFF'
-    const dateColor = unavailable ? '#9CA3AF' : cellDate.getDay() === 6 ? '#1B2A4A' : '#1A2420'
+    const dateColor = unavailable
+      ? '#9CA3AF'
+      : holiday || cellDate.getDay() === 0
+        ? '#B91C1C'
+        : cellDate.getDay() === 6
+          ? '#2563EB'
+          : '#1A2420'
+    const dayBin = bins.find(b => b.setting.bin_type === 'day')
+    const nightBin = bins.find(b => b.setting.bin_type === 'night')
+    const hasDayNight = Boolean(dayBin && nightBin)
 
     return (
       <button
@@ -347,7 +413,7 @@ export default function ReservePage() {
         onClick={() => handleDateSelect(year, month, day)}
         disabled={unavailable}
         style={{
-          minHeight: '52px',
+          minHeight: hasDayNight ? '72px' : '52px',
           width: '100%',
           borderRadius: '12px',
           border: isSelected ? '0.5px solid #1E4D3A' : '0.5px solid #CDD3DC',
@@ -357,6 +423,10 @@ export default function ReservePage() {
           cursor: unavailable ? 'not-allowed' : 'pointer',
           opacity: 1,
           fontFamily: 'inherit',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: hasDayNight ? 'space-between' : 'center',
         }}
       >
         <div style={{
@@ -367,9 +437,15 @@ export default function ReservePage() {
         }}>
           {day}
         </div>
-        {!unavailable && (
+        {!unavailable && hasDayNight && dayBin && nightBin && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px', width: '100%', fontSize: '10px', fontWeight: 500, lineHeight: 1.2 }}>
+            <div style={{ color: getAvailabilityColor(dayBin), textAlign: 'center' }}>昼 {getCalendarMark(dayBin)}</div>
+            <div style={{ color: getAvailabilityColor(nightBin), textAlign: 'center' }}>夜 {getCalendarMark(nightBin)}</div>
+          </div>
+        )}
+        {!unavailable && !hasDayNight && (
           <div style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1, color: '#1E4D3A', marginBottom: 0 }}>
-            {lowRemaining ? maxRemaining : '○'}
+            {getCalendarMark(availableBins[0])}
           </div>
         )}
       </button>
@@ -386,7 +462,7 @@ export default function ReservePage() {
   }
 
   const handleSelectBin = (bin: BinInfo) => {
-    if (bin.isFull) return
+    if (bin.isFull || bin.isConfirmedFull) return
     setSelectedBin(bin)
     setForm(f => ({ ...f, count: Math.min(f.count, bin.actualRemaining || 1) }))
     setFormError('')
@@ -526,18 +602,11 @@ export default function ReservePage() {
   }
 
   const maxCount = selectedBin?.actualRemaining || 1
+  const featureItems = getFeatureItems(vessel.facilities)
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F4F6F2', fontFamily: 'var(--font-sans)', color: '#1A2420' }}>
       <header>
-        <div style={{ height: '52px', background: '#1B2A4A', padding: '12px 16px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="4" stroke="#FFFFFF" strokeWidth="1.8" />
-            <circle cx="12" cy="12" r="9" stroke="#FFFFFF" strokeWidth="1.8" />
-            <path d="M12 2v5M12 17v5M2 12h5M17 12h5M4.9 4.9l3.5 3.5M15.6 15.6l3.5 3.5M19.1 4.9l-3.5 3.5M8.4 15.6l-3.5 3.5" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-          <div style={{ fontSize: '16px', fontWeight: 500, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vessel.name}</div>
-        </div>
         <div style={{
           position: 'relative',
           height: '200px',
@@ -556,13 +625,14 @@ export default function ReservePage() {
           </a>
         </div>
       </header>
+      {step !== 'complete' && <StepIndicator step={step} />}
 
       <main style={{ padding: '14px 12px 24px' }}>
         {step === 'calendar' && (
           <>
             <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
               <div style={{ display: 'grid', gap: '8px', fontSize: '15px', color: '#5A6A78' }}>
-                <div>港: <span style={{ color: '#1A2420', fontWeight: 500 }}>{vessel.port_name}</span></div>
+                <div>出船場所: <span style={{ color: '#1A2420', fontWeight: 500 }}>{vessel.port_name}</span></div>
                 {vessel.price && <div>料金: <span style={{ color: '#1A2420', fontWeight: 500 }}>{formatPrice(vessel.price)}</span></div>}
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {hasText(vessel.facilities || {}, 'parking', 'free') && <span>駐車場あり</span>}
@@ -580,7 +650,7 @@ export default function ReservePage() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', marginBottom: '6px' }}>
                 {DAY_NAMES.map((d, i) => (
-                  <div key={d} style={{ textAlign: 'center', fontSize: '12px', color: i === 0 ? '#1E4D3A' : i === 6 ? '#1B2A4A' : '#5A6A78' }}>{d}</div>
+                  <div key={d} style={{ textAlign: 'center', fontSize: '12px', color: i === 0 ? '#B91C1C' : i === 6 ? '#2563EB' : '#1A2420' }}>{d}</div>
                 ))}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px' }}>
@@ -592,26 +662,73 @@ export default function ReservePage() {
                 <span>― 予約不可</span>
               </div>
             </section>
+            {featureItems.length > 0 && (
+              <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '12px 2px 2px', marginBottom: '4px' }}>
+                {featureItems.map(item => (
+                  <div key={`${item.icon}-${item.label}`} style={{ minWidth: '66px', color: '#1E4D3A', textAlign: 'center' }}>
+                    <div style={{ width: '38px', height: '38px', borderRadius: '50%', border: '0.5px solid #CDD3DC', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 5px', fontSize: '14px', fontWeight: 500 }}>{item.icon}</div>
+                    <div style={{ fontSize: '12px', lineHeight: 1.3, whiteSpace: 'nowrap' }}>{item.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 
         {step === 'bin' && selectedDate && (
-          <section style={{ display: 'grid', gap: '12px' }}>
+          <section style={{ display: 'grid', gap: '12px', background: 'linear-gradient(to bottom, #F0F4F8, #F4F6F2)', margin: '-14px -12px -24px', padding: '14px 12px 24px' }}>
             <button type="button" onClick={() => setStep('calendar')} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '0.5px solid #CDD3DC', background: '#F4F6F2', color: '#1B2A4A', fontWeight: 500, fontFamily: 'inherit', textAlign: 'center' }}>← 日付を選び直す</button>
             <div style={{ fontSize: '20px', fontWeight: 500 }}>{formatDate(selectedDate)} の空き</div>
-            {selectedBins.map(bin => {
+            <div style={{ display: 'grid', gap: '6px', background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '12px' }}>
+              {selectedBins.slice(0, 3).map(bin => {
+                const badge = getBinBadge(bin.setting.bin_type)
+                const color = getAvailabilityColor(bin)
+                return (
+                  <div key={`summary-${bin.setting.id}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
+                    <span style={{ minWidth: '64px', color: badge.color, fontWeight: 500 }}>{badge.label}</span>
+                    <span style={{ color, fontWeight: 500 }}>{getCalendarMark(bin)}</span>
+                    <span style={{ color, fontWeight: 500 }}>{getRemainingLabel(bin)}</span>
+                  </div>
+                )
+              })}
+            </div>
+            {(() => {
+              const seenTypes = new Set<string>()
+              const decoratedBins = selectedBins.map(bin => {
+                const hasConfirmedType = bookings.some(b => b.date === selectedDate && b.bin_type === bin.setting.bin_type && b.status === 'confirmed')
+                const typeAlreadySeen = seenTypes.has(bin.setting.bin_type)
+                seenTypes.add(bin.setting.bin_type)
+                const unavailableByConflict = hasConfirmedType && typeAlreadySeen
+                const full = bin.isFull || bin.isConfirmedFull
+                return {
+                  bin,
+                  unavailableByConflict,
+                  full,
+                  sort: unavailableByConflict ? 2 : full ? 1 : 0,
+                }
+              }).sort((a, b) => a.sort - b.sort)
+
+              return decoratedBins.map(({ bin, unavailableByConflict, full }) => {
               const badge = getBinBadge(bin.setting.bin_type)
               const binBorderColor = getBinBorderColor(bin.setting.bin_type)
+              const availabilityColor = getAvailabilityColor(bin)
+              const confirmed = hasReachedMinDeparture(bin)
+              const disabled = full || unavailableByConflict
               return (
-              <article key={bin.setting.id} style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderLeft: `4px solid ${binBorderColor}`, borderRadius: '12px', padding: '16px' }}>
+              <article key={bin.setting.id} style={{ background: unavailableByConflict ? '#F3F4F6' : '#FFFFFF', border: '0.5px solid #CDD3DC', borderLeft: `4px solid ${binBorderColor}`, borderRadius: '12px', padding: '16px', opacity: unavailableByConflict ? 0.62 : 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px', alignItems: 'flex-start' }}>
                   <div>
                     <span style={{ display: 'inline-block', background: badge.bg, color: badge.color, borderRadius: '20px', padding: '4px 10px', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>{badge.label}</span>
                     <div style={{ fontSize: '21px', fontWeight: 500 }}>{getBinName(bin.setting)}</div>
                     <div style={{ fontSize: '15px', color: '#5A6A78', marginTop: '4px' }}>{bin.setting.departure_time} 出船{bin.setting.end_time ? ` - ${bin.setting.end_time} 終了予定` : ''}</div>
                   </div>
-                  <div style={{ fontSize: '18px', fontWeight: 500, color: '#1E4D3A' }}>残り {bin.actualRemaining}名</div>
+                  <div style={{ display: 'grid', justifyItems: 'end', gap: '6px' }}>
+                    {full && <span style={{ background: '#B91C1C', color: '#FFFFFF', borderRadius: '4px', padding: '3px 8px', fontSize: '12px', fontWeight: 500 }}>満船</span>}
+                    {!full && confirmed && <span style={{ background: '#1B2A4A', color: '#FFFFFF', borderRadius: '4px', padding: '3px 8px', fontSize: '12px', fontWeight: 500 }}>出船確定</span>}
+                    {!full && <div style={{ fontSize: '18px', fontWeight: 500, color: availabilityColor }}>残り {bin.actualRemaining}名</div>}
+                  </div>
                 </div>
+                {unavailableByConflict && <div style={{ color: '#5A6A78', fontSize: '14px', margin: '8px 0' }}>同じ便種別で受付中の便があります</div>}
                 {bin.setting.note && <p style={{ fontSize: '14px', color: '#5A6A78', lineHeight: 1.7, margin: '8px 0' }}>{bin.setting.note}</p>}
                 {bin.setting.fish_types.length > 0 && (
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '10px 0' }}>
@@ -628,12 +745,13 @@ export default function ReservePage() {
                     {bin.displayFacilities.map(label => <div key={label} style={{ fontSize: '14px', color: '#1A2420' }}>・{label}</div>)}
                   </div>
                 )}
-                <button type="button" onClick={() => handleSelectBin(bin)} style={{ width: '100%', padding: '14px', borderRadius: '9px', border: 'none', background: '#1E4D3A', color: '#FFFFFF', fontSize: '17px', fontWeight: 500, fontFamily: 'inherit' }}>
-                  この便を予約する
+                <button type="button" disabled={disabled} onClick={() => handleSelectBin(bin)} style={{ width: '100%', padding: '14px', borderRadius: '9px', border: 'none', background: disabled ? '#CDD3DC' : '#1E4D3A', color: disabled ? '#5A6A78' : '#FFFFFF', fontSize: '17px', fontWeight: 500, fontFamily: 'inherit' }}>
+                  {full ? '満船' : unavailableByConflict ? '選択できません' : 'この便を予約する'}
                 </button>
               </article>
               )
-            })}
+              })
+            })()}
             {vessel.charter_accepted && (
               <button type="button" onClick={() => setShowCharter(v => !v)} style={{ width: '100%', padding: '12px', border: '0.5px solid #CDD3DC', borderRadius: '8px', background: 'transparent', color: '#1B2A4A', fontWeight: 500, fontFamily: 'inherit', textAlign: 'center' }}>
                 🚢 貸切・チャーターのご相談 {showCharter ? '▲' : '▼'}
@@ -667,7 +785,11 @@ export default function ReservePage() {
                 ))}
               </div>
               {maxCount >= 5 && (
-                <input type="number" min={5} max={maxCount} value={form.count >= 5 ? form.count : ''} onChange={e => setForm(f => ({ ...f, count: Math.min(maxCount, Math.max(5, Number(e.target.value) || 5)) }))} placeholder={`5名から${maxCount}名まで`} style={{ ...inputStyle, marginTop: '8px' }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '10px' }}>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, count: f.count <= 5 ? 4 : f.count - 1 }))} style={{ width: '44px', height: '44px', background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '8px', color: '#1A2420', fontSize: '20px', fontWeight: 500, fontFamily: 'inherit' }}>−</button>
+                  <div style={{ fontSize: '16px', fontWeight: 500, minWidth: '60px', textAlign: 'center', color: '#1A2420' }}>{form.count >= 5 ? form.count : 5}名</div>
+                  <button type="button" disabled={(form.count >= 5 ? form.count : 5) >= maxCount} onClick={() => setForm(f => ({ ...f, count: f.count < 5 ? 5 : Math.min(maxCount, f.count + 1) }))} style={{ width: '44px', height: '44px', background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '8px', color: '#1A2420', fontSize: '20px', fontWeight: 500, fontFamily: 'inherit', opacity: (form.count >= 5 ? form.count : 5) >= maxCount ? 0.4 : 1 }}>＋</button>
+                </div>
               )}
             </div>
             {selectedBin.setting.fish_types.length === 0 && selectedBin.fixedFishingStyle && (
@@ -748,11 +870,33 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   )
 }
 
+function StepIndicator({ step }: { step: Step }) {
+  const activeIndex = step === 'calendar' ? 0 : step === 'bin' ? 1 : 2
+  const labels = ['日付を選ぶ', '便を選ぶ', '予約情報入力']
+
+  return (
+    <div style={{ background: '#FFFFFF', padding: '12px 16px', borderBottom: '0.5px solid #CDD3DC', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+      {labels.map((label, index) => {
+        const active = index === activeIndex
+        return (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: active ? '#1B2A4A' : '#E5E7EB', color: active ? '#FFFFFF' : '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 500 }}>{index + 1}</span>
+              {active && <span style={{ color: '#1B2A4A', fontSize: '13px', fontWeight: 500, whiteSpace: 'nowrap' }}>{label}</span>}
+            </div>
+            {index < labels.length - 1 && <span style={{ color: '#CDD3DC', fontSize: '12px' }}>→</span>}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function FormField({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
   return (
     <label style={{ display: 'grid', gap: '6px', background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
       <span style={{ fontSize: '16px', fontWeight: 500, color: '#1A2420' }}>
-        {label}{required && <span style={{ color: '#1E4D3A', marginLeft: '6px', fontSize: '13px' }}>必須</span>}
+        {label}{required && <span style={{ background: '#B91C1C', color: '#FFFFFF', marginLeft: '6px', fontSize: '10px', padding: '2px 6px', borderRadius: '3px', verticalAlign: 'middle' }}>必須</span>}
       </span>
       {children}
     </label>
