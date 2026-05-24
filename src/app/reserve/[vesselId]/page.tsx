@@ -27,6 +27,7 @@ type Vessel = {
   banner_url: string
   map_embed_url: string
   facilities: JsonObject | null
+  auto_confirm: boolean | null
 }
 
 type Booking = {
@@ -131,6 +132,12 @@ const getBinBadge = (binType: 'day' | 'night' | 'relay') => {
   return { label: '🔄 昼夜便', bg: '#F0FDF4', color: '#1E4D3A' }
 }
 
+const getBinBorderColor = (binType: 'day' | 'night' | 'relay') => {
+  if (binType === 'day') return '#F59E0B'
+  if (binType === 'night') return '#6366F1'
+  return '#1E4D3A'
+}
+
 const isValidTel = (tel: string): boolean => {
   const cleaned = tel.replace(/[-\s()]/g, '')
   return /^\d{10,11}$/.test(cleaned) || /^\+\d{7,15}$/.test(cleaned)
@@ -202,7 +209,6 @@ export default function ReservePage() {
   const [showCharter, setShowCharter] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
-  const [completedImmediate, setCompletedImmediate] = useState(false)
   const [completeKind, setCompleteKind] = useState<'booking' | 'charter'>('booking')
 
   useEffect(() => {
@@ -429,7 +435,6 @@ export default function ReservePage() {
     }
 
     setSubmitting(false)
-    setCompletedImmediate(false)
     setCompleteKind('charter')
     setStep('complete')
   }
@@ -492,7 +497,6 @@ export default function ReservePage() {
         .eq('vessel_id', vesselId)
         .neq('status', 'rejected')
       setBookings((bk || []) as Booking[])
-      setCompletedImmediate(Boolean(data.isImmediate))
       setCompleteKind('booking')
       setStep('complete')
     } catch {
@@ -597,8 +601,9 @@ export default function ReservePage() {
             <div style={{ fontSize: '20px', fontWeight: 500 }}>{formatDate(selectedDate)} の空き</div>
             {selectedBins.map(bin => {
               const badge = getBinBadge(bin.setting.bin_type)
+              const binBorderColor = getBinBorderColor(bin.setting.bin_type)
               return (
-              <article key={bin.setting.id} style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '16px' }}>
+              <article key={bin.setting.id} style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderLeft: `4px solid ${binBorderColor}`, borderRadius: '12px', padding: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px', alignItems: 'flex-start' }}>
                   <div>
                     <span style={{ display: 'inline-block', background: badge.bg, color: badge.color, borderRadius: '20px', padding: '4px 10px', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>{badge.label}</span>
@@ -688,20 +693,22 @@ export default function ReservePage() {
 
         {step === 'complete' && (
           <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '28px 16px', textAlign: 'center' }}>
-            <div style={{ width: '88px', height: '88px', borderRadius: '50%', border: '0.5px solid #1E4D3A', color: '#1E4D3A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '56px', fontWeight: 500, margin: '0 auto 18px' }}>✅</div>
+            <div style={{ width: '112px', height: '112px', borderRadius: '50%', border: '0.5px solid #1E4D3A', color: '#1E4D3A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '100px', fontWeight: 500, margin: '0 auto 18px' }}>✓</div>
             {completeKind === 'charter' ? (
               <>
                 <div style={{ fontSize: '20px', fontWeight: 500, color: '#1A2420', marginBottom: '10px' }}>お問い合わせを送信しました</div>
-                <div style={{ fontSize: '14px', color: '#5A6A78', lineHeight: 1.8, marginBottom: '18px' }}>
+                <div style={{ fontSize: '15px', color: '#5A6A78', lineHeight: 1.8, marginBottom: '18px' }}>
                   船長より折り返しお電話いたします
                 </div>
               </>
             ) : (
               <>
-                <div style={{ fontSize: '24px', fontWeight: 500, color: '#1A2420', marginBottom: '14px' }}>申し込みを受け付けました</div>
-                <div style={{ fontSize: '16px', color: '#5A6A78', lineHeight: 1.8, marginBottom: '18px' }}>
-                  船長から確認の連絡が届きます。しばらくお待ちください。
-                </div>
+                <div style={{ fontSize: '24px', fontWeight: 500, color: '#1A2420', marginBottom: vessel.auto_confirm === false ? '14px' : '18px' }}>申し込みを受け付けました</div>
+                {vessel.auto_confirm === false && (
+                  <div style={{ fontSize: '15px', color: '#5A6A78', lineHeight: 1.8, marginBottom: '18px' }}>
+                    船長から確認の連絡が届きます。しばらくお待ちください。
+                  </div>
+                )}
                 <div style={{ background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px', textAlign: 'left', marginBottom: '18px', display: 'grid', gap: '8px' }}>
                   <SummaryRow label="日付" value={selectedDate ? formatDate(selectedDate) : charter.preferred_date ? formatDate(charter.preferred_date) : '貸切のご相談'} />
                   <SummaryRow label="便" value={selectedBin ? getBinName(selectedBin.setting) : '貸切'} />
@@ -710,10 +717,9 @@ export default function ReservePage() {
                 </div>
               </>
             )}
-            <button type="button" onClick={() => { setStep('calendar'); setSelectedDate(null); setSelectedBin(null); setSelectedBins([]); setCompletedImmediate(false) }} style={{ width: '100%', padding: '14px 24px', borderRadius: '9px', border: 'none', background: '#1E4D3A', color: '#FFFFFF', fontSize: '17px', fontWeight: 500, fontFamily: 'inherit' }}>
-              別の日を探す
+            <button type="button" onClick={() => { setStep('calendar'); setSelectedDate(null); setSelectedBin(null); setSelectedBins([]) }} style={{ width: '100%', padding: '16px', borderRadius: '9px', border: 'none', background: '#1E4D3A', color: '#FFFFFF', fontSize: '17px', fontWeight: 500, fontFamily: 'inherit' }}>
+              予約ホームに戻る
             </button>
-            {completeKind === 'booking' && completedImmediate && <div style={{ fontSize: '13px', color: '#1E4D3A', marginTop: '12px' }}>この予約は自動で承認されました。</div>}
           </section>
         )}
       </main>
@@ -735,7 +741,7 @@ const inputStyle = {
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', gap: '12px', fontSize: '15px' }}>
+    <div style={{ display: 'flex', gap: '12px', fontSize: '16px' }}>
       <span style={{ color: '#5A6A78', minWidth: '48px' }}>{label}</span>
       <span style={{ color: '#1A2420', fontWeight: 500 }}>{value}</span>
     </div>
