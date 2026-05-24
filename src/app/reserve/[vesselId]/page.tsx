@@ -37,6 +37,7 @@ type Booking = {
   count: number
   status: string
   is_charter: boolean
+  fishing_style: string | null
 }
 
 type BinSetting = {
@@ -75,6 +76,7 @@ type BinInfo = {
   isFull: boolean
   isConfirmedFull: boolean
   displayFacilities: string[]
+  fixedFishingStyle: string | null
 }
 
 type Form = {
@@ -95,6 +97,7 @@ type CharterInquiry = {
 
 const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土']
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const todayStr = () => new Date().toISOString().split('T')[0]
 
 const toDateStr = (year: number, month: number, day: number) =>
   `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -120,6 +123,12 @@ const getBinLabel = (binType: 'day' | 'night' | 'relay') => {
   if (binType === 'day') return '昼便'
   if (binType === 'relay') return '昼夜便'
   return '夜便'
+}
+
+const getBinBadge = (binType: 'day' | 'night' | 'relay') => {
+  if (binType === 'day') return { label: '🌅 昼便', bg: '#E8F4FD', color: '#1B2A4A' }
+  if (binType === 'night') return { label: '🌙 夜便', bg: '#EEF2FF', color: '#3730A3' }
+  return { label: '🔄 昼夜便', bg: '#F0FDF4', color: '#1E4D3A' }
 }
 
 const isValidTel = (tel: string): boolean => {
@@ -194,6 +203,7 @@ export default function ReservePage() {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [completedImmediate, setCompletedImmediate] = useState(false)
+  const [completeKind, setCompleteKind] = useState<'booking' | 'charter'>('booking')
 
   useEffect(() => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -226,7 +236,7 @@ export default function ReservePage() {
       setVessel(v as Vessel)
 
       const [{ data: bk }, { data: bs }, { data: bd }] = await Promise.all([
-        supabase.from('bookings').select('id, date, date_to, bin_type, count, status, is_charter').eq('vessel_id', vesselId).neq('status', 'rejected'),
+        supabase.from('bookings').select('id, date, date_to, bin_type, count, status, is_charter, fishing_style').eq('vessel_id', vesselId).neq('status', 'rejected'),
         supabase.from('bin_settings').select('*').eq('vessel_id', vesselId).eq('enabled', true),
         supabase.from('blocked_dates').select('*').eq('vessel_id', vesselId),
       ])
@@ -266,6 +276,9 @@ export default function ReservePage() {
         const pendingUsed = bookings
           .filter(b => b.date === dateStr && b.bin_type === bin.bin_type && b.status === 'pending')
           .reduce((sum, b) => sum + b.count, 0)
+        const fixedFishingStyle = bin.fish_types.length > 0
+          ? null
+          : bookings.find(b => b.date === dateStr && b.bin_type === bin.bin_type && b.status === 'confirmed' && b.fishing_style)?.fishing_style || null
         const confirmedRemaining = bin.max_capacity - confirmedUsed
         const actualRemaining = bin.max_capacity - confirmedUsed - pendingUsed
 
@@ -277,6 +290,7 @@ export default function ReservePage() {
           isFull: actualRemaining <= 0,
           isConfirmedFull: confirmedRemaining <= 0,
           displayFacilities: getDisplayFacilities(bin, vessel?.facilities || null),
+          fixedFishingStyle,
         }]
       })
   }
@@ -313,6 +327,9 @@ export default function ReservePage() {
     const charterDate = isCharterDate(dateStr)
     const bins = isPast || charterDate ? [] : getBinsForDate(year, month, day)
     const availableBins = bins.filter(b => !b.isFull && !b.isConfirmedFull)
+    const maxRemaining = availableBins.reduce((max, b) => Math.max(max, b.actualRemaining), 0)
+    const minCapacity = bins.length ? Math.min(...bins.map(b => b.setting.max_capacity)) : 0
+    const lowRemaining = maxRemaining > 0 && minCapacity > 0 && maxRemaining < Math.ceil(minCapacity / 2)
     const unavailable = isPast || charterDate || bins.length === 0 || availableBins.length === 0
     const cellBg = unavailable ? '#F3F4F6' : '#FFFFFF'
     const dateColor = unavailable ? '#9CA3AF' : cellDate.getDay() === 6 ? '#1B2A4A' : '#1A2420'
@@ -345,8 +362,8 @@ export default function ReservePage() {
           {day}
         </div>
         {!unavailable && (
-          <div style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1, color: '#1E4D3A' }}>
-            ○
+          <div style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1, color: '#1E4D3A', marginBottom: 0 }}>
+            {lowRemaining ? maxRemaining : '○'}
           </div>
         )}
       </button>
@@ -375,6 +392,10 @@ export default function ReservePage() {
       setFormError('お名前、電話番号、希望日を入力してください')
       return
     }
+    if (charter.preferred_date < todayStr()) {
+      setFormError('過去の日付は選択できません')
+      return
+    }
     if (!isValidTel(charter.tel)) {
       setFormError('電話番号を正しく入力してください')
       return
@@ -388,21 +409,28 @@ export default function ReservePage() {
       charter.message ? `メッセージ: ${charter.message}` : '',
     ].filter(Boolean).join('\n')
 
-    const { error } = await supabase.from('contacts').insert([{
-      vessel_id: vesselId,
-      name: charter.name.trim(),
-      message,
-      is_charter: true,
-      preferred_date: charter.preferred_date,
-    }])
-    setSubmitting(false)
-
-    if (error) {
-      setFormError('送信できませんでした。時間をおいてもう一度お試しください')
+    try {
+      const res = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vessel_id: vesselId,
+          name: charter.name.trim(),
+          message,
+          is_charter: true,
+          preferred_date: charter.preferred_date,
+        }),
+      })
+      if (!res.ok) throw new Error('failed')
+    } catch {
+      setFormError('送信に失敗しました。もう一度お試しください。')
+      setSubmitting(false)
       return
     }
 
+    setSubmitting(false)
     setCompletedImmediate(false)
+    setCompleteKind('charter')
     setStep('complete')
   }
 
@@ -418,6 +446,13 @@ export default function ReservePage() {
     }
     if (form.count < 1 || form.count > selectedBin.actualRemaining) {
       setFormError(`人数は1名から${selectedBin.actualRemaining}名までで選んでください`)
+      return
+    }
+    const resolvedFishingStyle = selectedBin.setting.fish_types.length > 0
+      ? null
+      : selectedBin.fixedFishingStyle || form.fishing_style.trim() || null
+    if (selectedBin.fixedFishingStyle && form.fishing_style.trim() && form.fishing_style.trim() !== selectedBin.fixedFishingStyle) {
+      setFormError(`この便はすでに${selectedBin.fixedFishingStyle}での予約が入っています`)
       return
     }
 
@@ -437,7 +472,7 @@ export default function ReservePage() {
           name: form.name.trim(),
           tel: form.tel.trim(),
           count: form.count,
-          fishing_style: form.fishing_style || null,
+          fishing_style: resolvedFishingStyle,
           message: form.message || null,
           channel: 'page',
           board_token: boardToken,
@@ -453,11 +488,12 @@ export default function ReservePage() {
 
       const { data: bk } = await supabase
         .from('bookings')
-        .select('id, date, date_to, bin_type, count, status, is_charter')
+        .select('id, date, date_to, bin_type, count, status, is_charter, fishing_style')
         .eq('vessel_id', vesselId)
         .neq('status', 'rejected')
       setBookings((bk || []) as Booking[])
       setCompletedImmediate(Boolean(data.isImmediate))
+      setCompleteKind('booking')
       setStep('complete')
     } catch {
       setFormError('通信エラーが発生しました。電波の状態を確認してください')
@@ -489,21 +525,31 @@ export default function ReservePage() {
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F4F6F2', fontFamily: 'var(--font-sans)', color: '#1A2420' }}>
-      <header style={{
-        background: '#1B2A4A',
-        padding: '12px',
-      }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: '#FFFFFF', borderRadius: '12px', padding: '12px', border: '0.5px solid #CDD3DC' }}>
-          <img src={vessel.logo_url || DEFAULT_ICON} alt={`${vessel.name} ロゴ`} style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '18px', fontWeight: 500, color: '#1A2420', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vessel.name}</div>
-              <div style={{ fontSize: '13px', color: '#5A6A78', fontWeight: 400, marginTop: '3px' }}>船長 {vessel.captain_name}</div>
-            </div>
-            <a href={`/reserve/${vesselId}/facilities`} style={{ fontSize: '12px', color: '#1B2A4A', textDecoration: 'none', flexShrink: 0 }}>
-              設備を見る →
-            </a>
+      <header>
+        <div style={{ height: '52px', background: '#1B2A4A', padding: '12px 16px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" stroke="#FFFFFF" strokeWidth="1.8" />
+            <circle cx="12" cy="12" r="9" stroke="#FFFFFF" strokeWidth="1.8" />
+            <path d="M12 2v5M12 17v5M2 12h5M17 12h5M4.9 4.9l3.5 3.5M15.6 15.6l3.5 3.5M19.1 4.9l-3.5 3.5M8.4 15.6l-3.5 3.5" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          <div style={{ fontSize: '16px', fontWeight: 500, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vessel.name}</div>
+        </div>
+        <div style={{
+          position: 'relative',
+          height: '200px',
+          background: vessel.banner_url ? '#1B2A4A' : '#1B2A4A',
+          overflow: 'hidden',
+        }}>
+          {vessel.banner_url && (
+            <img src={vessel.banner_url} alt={`${vessel.name} バナー`} style={{ width: '100%', height: '200px', objectFit: 'cover', display: 'block' }} />
+          )}
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '18px 16px', background: vessel.banner_url ? 'rgba(0,0,0,.5)' : 'transparent' }}>
+            <div style={{ fontSize: '22px', fontWeight: 500, color: '#FFFFFF', lineHeight: 1.25 }}>{vessel.name}</div>
+            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,.86)', marginTop: '4px' }}>船長 {vessel.captain_name}</div>
           </div>
+          <a href={`/reserve/${vesselId}/facilities`} style={{ position: 'absolute', right: '12px', bottom: '14px', background: 'rgba(0,0,0,0.5)', color: '#FFFFFF', fontSize: '12px', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none' }}>
+            設備を見る
+          </a>
         </div>
       </header>
 
@@ -524,9 +570,9 @@ export default function ReservePage() {
 
             <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <button type="button" onClick={() => setCalM(m => m === 0 ? (setCalYear(y => y - 1), 11) : m - 1)} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500 }}>前月</button>
+                <button type="button" onClick={() => setCalM(m => m === 0 ? (setCalYear(y => y - 1), 11) : m - 1)} style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500 }}>前月</button>
                 <div style={{ fontSize: '20px', fontWeight: 500 }}>{calYear}年 {calM + 1}月</div>
-                <button type="button" onClick={() => setCalM(m => m === 11 ? (setCalYear(y => y + 1), 0) : m + 1)} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500 }}>次月</button>
+                <button type="button" onClick={() => setCalM(m => m === 11 ? (setCalYear(y => y + 1), 0) : m + 1)} style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500 }}>次月</button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', marginBottom: '6px' }}>
                 {DAY_NAMES.map((d, i) => (
@@ -538,6 +584,8 @@ export default function ReservePage() {
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '14px', fontSize: '13px', color: '#5A6A78' }}>
                 <span>○ 予約できます</span>
+                <span>数字 残りわずか</span>
+                <span>― 予約不可</span>
               </div>
             </section>
           </>
@@ -545,18 +593,31 @@ export default function ReservePage() {
 
         {step === 'bin' && selectedDate && (
           <section style={{ display: 'grid', gap: '12px' }}>
-            <button type="button" onClick={() => setStep('calendar')} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500, fontFamily: 'inherit' }}>日付を選び直す</button>
+            <button type="button" onClick={() => setStep('calendar')} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '0.5px solid #CDD3DC', background: '#F4F6F2', color: '#1B2A4A', fontWeight: 500, fontFamily: 'inherit', textAlign: 'center' }}>← 日付を選び直す</button>
             <div style={{ fontSize: '20px', fontWeight: 500 }}>{formatDate(selectedDate)} の空き</div>
-            {selectedBins.map(bin => (
+            {selectedBins.map(bin => {
+              const badge = getBinBadge(bin.setting.bin_type)
+              return (
               <article key={bin.setting.id} style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px', alignItems: 'flex-start' }}>
                   <div>
+                    <span style={{ display: 'inline-block', background: badge.bg, color: badge.color, borderRadius: '20px', padding: '4px 10px', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>{badge.label}</span>
                     <div style={{ fontSize: '21px', fontWeight: 500 }}>{getBinName(bin.setting)}</div>
                     <div style={{ fontSize: '15px', color: '#5A6A78', marginTop: '4px' }}>{bin.setting.departure_time} 出船{bin.setting.end_time ? ` - ${bin.setting.end_time} 終了予定` : ''}</div>
                   </div>
                   <div style={{ fontSize: '18px', fontWeight: 500, color: '#1E4D3A' }}>残り {bin.actualRemaining}名</div>
                 </div>
                 {bin.setting.note && <p style={{ fontSize: '14px', color: '#5A6A78', lineHeight: 1.7, margin: '8px 0' }}>{bin.setting.note}</p>}
+                {bin.setting.fish_types.length > 0 && (
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '10px 0' }}>
+                    {bin.setting.fish_types.map(fish => <span key={fish} style={{ background: '#F4F6F2', color: '#1A2420', border: '0.5px solid #CDD3DC', borderRadius: '20px', padding: '4px 9px', fontSize: '13px', fontWeight: 500 }}>🎣 {fish}</span>)}
+                  </div>
+                )}
+                {bin.fixedFishingStyle && (
+                  <div style={{ background: '#F4F6F2', color: '#1A2420', border: '0.5px solid #CDD3DC', borderRadius: '8px', padding: '10px', fontSize: '14px', margin: '10px 0' }}>
+                    この便は「{bin.fixedFishingStyle}」で受付中です
+                  </div>
+                )}
                 {bin.displayFacilities.length > 0 && (
                   <div style={{ display: 'grid', gap: '4px', margin: '10px 0 14px' }}>
                     {bin.displayFacilities.map(label => <div key={label} style={{ fontSize: '14px', color: '#1A2420' }}>・{label}</div>)}
@@ -566,10 +627,11 @@ export default function ReservePage() {
                   この便を予約する
                 </button>
               </article>
-            ))}
+              )
+            })}
             {vessel.charter_accepted && (
-              <button type="button" onClick={() => setShowCharter(v => !v)} style={{ padding: '14px', border: 'none', background: 'transparent', color: '#1B2A4A', fontWeight: 500, fontFamily: 'inherit', textAlign: 'center' }}>
-                貸切でのご利用はこちら →
+              <button type="button" onClick={() => setShowCharter(v => !v)} style={{ width: '100%', padding: '12px', border: '0.5px solid #CDD3DC', borderRadius: '8px', background: 'transparent', color: '#1B2A4A', fontWeight: 500, fontFamily: 'inherit', textAlign: 'center' }}>
+                🚢 貸切・チャーターのご相談 {showCharter ? '▲' : '▼'}
               </button>
             )}
             {showCharter && (
@@ -603,7 +665,13 @@ export default function ReservePage() {
                 <input type="number" min={5} max={maxCount} value={form.count >= 5 ? form.count : ''} onChange={e => setForm(f => ({ ...f, count: Math.min(maxCount, Math.max(5, Number(e.target.value) || 5)) }))} placeholder={`5名から${maxCount}名まで`} style={{ ...inputStyle, marginTop: '8px' }} />
               )}
             </div>
-            {selectedBin.setting.fish_types.length === 0 && (
+            {selectedBin.setting.fish_types.length === 0 && selectedBin.fixedFishingStyle && (
+              <div style={{ background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
+                <div style={{ fontSize: '16px', fontWeight: 500, marginBottom: '6px' }}>釣り方</div>
+                <div style={{ fontSize: '16px', color: '#1A2420' }}>{selectedBin.fixedFishingStyle}</div>
+              </div>
+            )}
+            {selectedBin.setting.fish_types.length === 0 && !selectedBin.fixedFishingStyle && (
               <FormField label="釣り方">
                 <input value={form.fishing_style} onChange={e => setForm(f => ({ ...f, fishing_style: e.target.value }))} placeholder="例：ルアー、エサ、どちらでも" style={inputStyle} />
               </FormField>
@@ -620,21 +688,32 @@ export default function ReservePage() {
 
         {step === 'complete' && (
           <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '28px 16px', textAlign: 'center' }}>
-            <div style={{ width: '88px', height: '88px', borderRadius: '50%', border: '0.5px solid #1E4D3A', color: '#1E4D3A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '56px', fontWeight: 500, margin: '0 auto 18px' }}>✓</div>
-            <div style={{ fontSize: '24px', fontWeight: 500, color: '#1A2420', marginBottom: '14px' }}>申し込みを受け付けました</div>
-            <div style={{ fontSize: '16px', color: '#5A6A78', lineHeight: 1.8, marginBottom: '18px' }}>
-              船長から確認の連絡が届きます。しばらくお待ちください。
-            </div>
-            <div style={{ background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px', textAlign: 'left', marginBottom: '18px', display: 'grid', gap: '8px' }}>
-              <SummaryRow label="日付" value={selectedDate ? formatDate(selectedDate) : charter.preferred_date ? formatDate(charter.preferred_date) : '貸切のご相談'} />
-              <SummaryRow label="便" value={selectedBin ? getBinName(selectedBin.setting) : '貸切'} />
-              <SummaryRow label="名前" value={selectedBin ? form.name : charter.name} />
-              <SummaryRow label="人数" value={selectedBin ? `${form.count}名` : charter.count ? `${charter.count}名` : '未定'} />
-            </div>
+            <div style={{ width: '88px', height: '88px', borderRadius: '50%', border: '0.5px solid #1E4D3A', color: '#1E4D3A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '56px', fontWeight: 500, margin: '0 auto 18px' }}>✅</div>
+            {completeKind === 'charter' ? (
+              <>
+                <div style={{ fontSize: '20px', fontWeight: 500, color: '#1A2420', marginBottom: '10px' }}>お問い合わせを送信しました</div>
+                <div style={{ fontSize: '14px', color: '#5A6A78', lineHeight: 1.8, marginBottom: '18px' }}>
+                  船長より折り返しお電話いたします
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: '24px', fontWeight: 500, color: '#1A2420', marginBottom: '14px' }}>申し込みを受け付けました</div>
+                <div style={{ fontSize: '16px', color: '#5A6A78', lineHeight: 1.8, marginBottom: '18px' }}>
+                  船長から確認の連絡が届きます。しばらくお待ちください。
+                </div>
+                <div style={{ background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px', textAlign: 'left', marginBottom: '18px', display: 'grid', gap: '8px' }}>
+                  <SummaryRow label="日付" value={selectedDate ? formatDate(selectedDate) : charter.preferred_date ? formatDate(charter.preferred_date) : '貸切のご相談'} />
+                  <SummaryRow label="便" value={selectedBin ? getBinName(selectedBin.setting) : '貸切'} />
+                  <SummaryRow label="名前" value={selectedBin ? form.name : charter.name} />
+                  <SummaryRow label="人数" value={selectedBin ? `${form.count}名` : charter.count ? `${charter.count}名` : '未定'} />
+                </div>
+              </>
+            )}
             <button type="button" onClick={() => { setStep('calendar'); setSelectedDate(null); setSelectedBin(null); setSelectedBins([]); setCompletedImmediate(false) }} style={{ width: '100%', padding: '14px 24px', borderRadius: '9px', border: 'none', background: '#1E4D3A', color: '#FFFFFF', fontSize: '17px', fontWeight: 500, fontFamily: 'inherit' }}>
               別の日を探す
             </button>
-            {completedImmediate && <div style={{ fontSize: '13px', color: '#1E4D3A', marginTop: '12px' }}>この予約は自動で承認されました。</div>}
+            {completeKind === 'booking' && completedImmediate && <div style={{ fontSize: '13px', color: '#1E4D3A', marginTop: '12px' }}>この予約は自動で承認されました。</div>}
           </section>
         )}
       </main>
@@ -693,7 +772,7 @@ function CharterForm({
       {error && <div style={{ color: '#1A2420', fontSize: '14px' }}>{error}</div>}
       <input style={inputStyle} value={charter.name} onChange={e => setCharter(c => ({ ...c, name: e.target.value }))} placeholder="お名前" />
       <input style={inputStyle} value={charter.tel} onChange={e => setCharter(c => ({ ...c, tel: e.target.value }))} placeholder="電話番号" type="tel" />
-      <input style={inputStyle} value={charter.preferred_date} onChange={e => setCharter(c => ({ ...c, preferred_date: e.target.value }))} type="date" />
+      <input style={inputStyle} value={charter.preferred_date} onChange={e => setCharter(c => ({ ...c, preferred_date: e.target.value }))} type="date" min={todayStr()} />
       <input style={inputStyle} value={charter.count} onChange={e => setCharter(c => ({ ...c, count: e.target.value }))} placeholder="人数（任意）" inputMode="numeric" />
       <textarea style={{ ...inputStyle, minHeight: '90px', resize: 'none' }} value={charter.message} onChange={e => setCharter(c => ({ ...c, message: e.target.value }))} placeholder="ご希望があれば入力してください" />
       <button type="button" onClick={onSubmit} disabled={submitting} style={{ padding: '14px', border: 'none', borderRadius: '9px', background: submitting ? '#CDD3DC' : '#1E4D3A', color: submitting ? '#5A6A78' : '#FFFFFF', fontWeight: 500, fontSize: '16px', fontFamily: 'inherit' }}>
