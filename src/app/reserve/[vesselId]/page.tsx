@@ -83,6 +83,7 @@ type BinInfo = {
 }
 
 type AvailabilityLevel = 'available' | 'half' | 'high' | 'full'
+type CalendarBinType = 'day' | 'night' | 'relay'
 
 type Form = {
   name: string
@@ -113,7 +114,8 @@ const formatDate = (dateStr: string) => {
 }
 
 const formatPrice = (price: string): string => {
-  if (/^\d+$/.test(price.trim())) return `${Number(price.trim()).toLocaleString('ja-JP')}円`
+  const normalized = price.trim().replace(/,/g, '')
+  if (/^\d+$/.test(normalized)) return `${Number(normalized).toLocaleString('ja-JP')}円`
   return price
 }
 
@@ -128,6 +130,12 @@ const getBinLabel = (binType: 'day' | 'night' | 'relay') => {
   if (binType === 'day') return '昼便'
   if (binType === 'relay') return '昼夜便'
   return '夜便'
+}
+
+const getTabLabel = (binType: CalendarBinType) => {
+  if (binType === 'day') return '🌅 昼便'
+  if (binType === 'night') return '🌙 夜便'
+  return '✦ 特別便'
 }
 
 const getBinBadge = (binType: 'day' | 'night' | 'relay') => {
@@ -171,6 +179,53 @@ const hasReachedMinDeparture = (bin: BinInfo) =>
 const getRemainingLabel = (bin: BinInfo) => {
   if (getAvailabilityLevel(bin) === 'full') return '満船'
   return `残り ${bin.actualRemaining}名`
+}
+
+const isBinActiveInMonth = (bin: BinSetting, year: number, month: number) => {
+  if (bin.period_type === 'date' && bin.start_date && bin.end_date) {
+    const monthStart = toDateStr(year, month, 1)
+    const monthEnd = toDateStr(year, month, new Date(year, month + 1, 0).getDate())
+    return bin.start_date <= monthEnd && monthStart <= bin.end_date
+  }
+
+  return bin.start_month <= bin.end_month
+    ? bin.start_month <= month && month <= bin.end_month
+    : month >= bin.start_month || month <= bin.end_month
+}
+
+const getCalendarTabOptions = (settings: BinSetting[], year: number, month: number): CalendarBinType[] => {
+  const active = settings.filter(bin => isBinActiveInMonth(bin, year, month))
+  const options: CalendarBinType[] = []
+  if (active.some(bin => bin.bin_type === 'day')) options.push('day')
+  if (active.some(bin => bin.bin_type === 'night')) options.push('night')
+  if (active.some(bin => bin.bin_type === 'relay')) options.push('relay')
+  return options
+}
+
+const getDefaultCalendarBinType = (settings: BinSetting[], year: number, month: number): CalendarBinType => {
+  const active = settings.filter(bin => isBinActiveInMonth(bin, year, month))
+  const dayCount = active.filter(bin => bin.bin_type === 'day').length
+  const nightCount = active.filter(bin => bin.bin_type === 'night').length
+  const relayCount = active.filter(bin => bin.bin_type === 'relay').length
+
+  if (dayCount === 0 && nightCount === 0 && relayCount > 0) return 'relay'
+  if (nightCount > dayCount) return 'night'
+  if (dayCount > 0) return 'day'
+  if (nightCount > 0) return 'night'
+  return 'relay'
+}
+
+const getRepresentativeBinsByType = (bins: BinInfo[]) => {
+  const map = new Map<CalendarBinType, BinInfo>()
+  bins.forEach(bin => {
+    const current = map.get(bin.setting.bin_type)
+    if (!current || bin.actualRemaining > current.actualRemaining) {
+      map.set(bin.setting.bin_type, bin)
+    }
+  })
+  return (['day', 'night', 'relay'] as CalendarBinType[])
+    .map(type => map.get(type))
+    .filter((bin): bin is BinInfo => Boolean(bin))
 }
 
 const isValidTel = (tel: string): boolean => {
@@ -259,6 +314,7 @@ export default function ReservePage() {
   const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([])
   const [calYear, setCalYear] = useState(new Date().getFullYear())
   const [calM, setCalM] = useState(new Date().getMonth())
+  const [calendarBinType, setCalendarBinType] = useState<CalendarBinType>('day')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedBins, setSelectedBins] = useState<BinInfo[]>([])
   const [selectedBin, setSelectedBin] = useState<BinInfo | null>(null)
@@ -311,6 +367,10 @@ export default function ReservePage() {
     }
     init()
   }, [vesselId])
+
+  useEffect(() => {
+    setCalendarBinType(getDefaultCalendarBinType(binSettings, calYear, calM))
+  }, [binSettings, calYear, calM])
 
   const getBinsForDate = (year: number, month: number, day: number): BinInfo[] => {
     const dateStr = toDateStr(year, month, day)
@@ -368,7 +428,7 @@ export default function ReservePage() {
     today.setHours(0, 0, 0, 0)
     if (new Date(year, month, day) < today || isCharterDate(dateStr)) return
 
-    const bins = getBinsForDate(year, month, day)
+    const bins = getBinsForDate(year, month, day).filter(b => b.setting.bin_type === calendarBinType)
     const availableBins = bins.filter(b => !b.isFull && !b.isConfirmedFull)
     if (availableBins.length === 0) return
 
@@ -391,7 +451,7 @@ export default function ReservePage() {
     const isPast = cellDate < today
     const isSelected = selectedDate === dateStr
     const charterDate = isCharterDate(dateStr)
-    const bins = isPast || charterDate ? [] : getBinsForDate(year, month, day)
+    const bins = isPast || charterDate ? [] : getBinsForDate(year, month, day).filter(b => b.setting.bin_type === calendarBinType)
     const availableBins = bins.filter(b => !b.isFull && !b.isConfirmedFull)
     const unavailable = isPast || charterDate || bins.length === 0 || availableBins.length === 0
     const cellBg = unavailable ? '#F3F4F6' : '#FFFFFF'
@@ -402,9 +462,6 @@ export default function ReservePage() {
         : cellDate.getDay() === 6
           ? '#2563EB'
           : '#1A2420'
-    const dayBin = bins.find(b => b.setting.bin_type === 'day')
-    const nightBin = bins.find(b => b.setting.bin_type === 'night')
-    const hasDayNight = Boolean(dayBin && nightBin)
 
     return (
       <button
@@ -413,7 +470,7 @@ export default function ReservePage() {
         onClick={() => handleDateSelect(year, month, day)}
         disabled={unavailable}
         style={{
-          minHeight: hasDayNight ? '72px' : '52px',
+          minHeight: '52px',
           width: '100%',
           borderRadius: '12px',
           border: isSelected ? '0.5px solid #1E4D3A' : '0.5px solid #CDD3DC',
@@ -426,7 +483,7 @@ export default function ReservePage() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: hasDayNight ? 'space-between' : 'center',
+          justifyContent: 'center',
         }}
       >
         <div style={{
@@ -437,15 +494,14 @@ export default function ReservePage() {
         }}>
           {day}
         </div>
-        {!unavailable && hasDayNight && dayBin && nightBin && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px', width: '100%', fontSize: '10px', fontWeight: 500, lineHeight: 1.2 }}>
-            <div style={{ color: getAvailabilityColor(dayBin), textAlign: 'center' }}>昼 {getCalendarMark(dayBin)}</div>
-            <div style={{ color: getAvailabilityColor(nightBin), textAlign: 'center' }}>夜 {getCalendarMark(nightBin)}</div>
+        {!unavailable && (
+          <div style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1, color: getAvailabilityColor(availableBins[0]), marginBottom: 0 }}>
+            {getCalendarMark(availableBins[0])}
           </div>
         )}
-        {!unavailable && !hasDayNight && (
-          <div style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1, color: '#1E4D3A', marginBottom: 0 }}>
-            {getCalendarMark(availableBins[0])}
+        {unavailable && (
+          <div style={{ fontSize: '18px', fontWeight: 500, lineHeight: 1, color: '#9CA3AF', marginBottom: 0 }}>
+            ×
           </div>
         )}
       </button>
@@ -603,6 +659,7 @@ export default function ReservePage() {
 
   const maxCount = selectedBin?.actualRemaining || 1
   const featureItems = getFeatureItems(vessel.facilities)
+  const calendarTabs = getCalendarTabOptions(binSettings, calYear, calM)
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F4F6F2', fontFamily: 'var(--font-sans)', color: '#1A2420' }}>
@@ -630,10 +687,10 @@ export default function ReservePage() {
       <main style={{ padding: '14px 12px 24px' }}>
         {step === 'calendar' && (
           <>
-            <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px', marginBottom: '12px' }}>
+            <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '8px 16px', marginBottom: '12px' }}>
               <div style={{ display: 'grid', gap: '8px', fontSize: '15px', color: '#5A6A78' }}>
                 <div>出船場所: <span style={{ color: '#1A2420', fontWeight: 500 }}>{vessel.port_name}</span></div>
-                {vessel.price && <div>料金: <span style={{ color: '#1A2420', fontWeight: 500 }}>{formatPrice(vessel.price)}</span></div>}
+                {vessel.price && <div>料金　<span style={{ color: '#1A2420', fontWeight: 500 }}>{formatPrice(vessel.price)}</span></div>}
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {hasText(vessel.facilities || {}, 'parking', 'free') && <span>駐車場あり</span>}
                   {hasFlag(vessel.facilities || {}, 'toilet') && <span>トイレあり</span>}
@@ -648,6 +705,18 @@ export default function ReservePage() {
                 <div style={{ fontSize: '20px', fontWeight: 500 }}>{calYear}年 {calM + 1}月</div>
                 <button type="button" onClick={() => setCalM(m => m === 11 ? (setCalYear(y => y + 1), 0) : m + 1)} style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500 }}>次月</button>
               </div>
+              {calendarTabs.length > 1 && (
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${calendarTabs.length}, 1fr)`, gap: '4px', background: '#F4F6F2', borderRadius: '10px', padding: '4px', marginBottom: '12px' }}>
+                  {calendarTabs.map(tab => {
+                    const active = tab === calendarBinType
+                    return (
+                      <button key={tab} type="button" onClick={() => setCalendarBinType(tab)} style={{ padding: '10px 8px', border: active ? 'none' : '0.5px solid #CDD3DC', borderRadius: '8px', background: active ? tab === 'relay' ? '#1E4D3A' : '#1B2A4A' : '#F4F6F2', color: active ? '#FFFFFF' : '#5A6A78', fontSize: '14px', fontWeight: 500, fontFamily: 'inherit' }}>
+                        {getTabLabel(tab)}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', marginBottom: '6px' }}>
                 {DAY_NAMES.map((d, i) => (
                   <div key={d} style={{ textAlign: 'center', fontSize: '12px', color: i === 0 ? '#B91C1C' : i === 6 ? '#2563EB' : '#1A2420' }}>{d}</div>
@@ -656,10 +725,10 @@ export default function ReservePage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px' }}>
                 {renderCalendarCells()}
               </div>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '14px', fontSize: '13px', color: '#5A6A78' }}>
-                <span>○ 予約できます</span>
-                <span>数字 残りわずか</span>
-                <span>― 予約不可</span>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '14px', fontSize: '13px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#1E4D3A' }}><span>○</span><span>空きあり</span></span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#B91C1C' }}><span>数字</span><span>残りわずか</span></span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#9CA3AF' }}><span>×</span><span>満席・受付不可</span></span>
               </div>
             </section>
             {featureItems.length > 0 && (
@@ -680,7 +749,7 @@ export default function ReservePage() {
             <button type="button" onClick={() => setStep('calendar')} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '0.5px solid #CDD3DC', background: '#F4F6F2', color: '#1B2A4A', fontWeight: 500, fontFamily: 'inherit', textAlign: 'center' }}>← 日付を選び直す</button>
             <div style={{ fontSize: '20px', fontWeight: 500 }}>{formatDate(selectedDate)} の空き</div>
             <div style={{ display: 'grid', gap: '6px', background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '12px' }}>
-              {selectedBins.slice(0, 3).map(bin => {
+              {getRepresentativeBinsByType(selectedBins).slice(0, 3).map(bin => {
                 const badge = getBinBadge(bin.setting.bin_type)
                 const color = getAvailabilityColor(bin)
                 return (
@@ -765,7 +834,7 @@ export default function ReservePage() {
 
         {step === 'form' && selectedDate && selectedBin && (
           <section style={{ display: 'grid', gap: '12px' }}>
-            <button type="button" onClick={() => selectedBins.length > 1 ? setStep('bin') : setStep('calendar')} style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500, fontFamily: 'inherit' }}>戻る</button>
+            <button type="button" onClick={() => selectedBins.length > 1 ? setStep('bin') : setStep('calendar')} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '0.5px solid #CDD3DC', background: '#F4F6F2', color: '#1B2A4A', fontWeight: 500, fontFamily: 'inherit', textAlign: 'center' }}>← 便を選び直す</button>
             <div style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
               <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '4px' }}>予約内容</div>
               <div style={{ color: '#5A6A78', fontSize: '15px' }}>{formatDate(selectedDate)}　{getBinName(selectedBin.setting)}</div>
