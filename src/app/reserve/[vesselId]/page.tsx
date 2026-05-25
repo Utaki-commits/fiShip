@@ -150,6 +150,12 @@ const getBinBorderColor = (binType: 'day' | 'night' | 'relay') => {
   return '#1E4D3A'
 }
 
+const getCalendarTabActiveColor = (binType: CalendarBinType) => {
+  if (binType === 'day') return '#D97706'
+  if (binType === 'night') return '#1B2A4A'
+  return '#1E4D3A'
+}
+
 const getAvailabilityLevel = (bin: BinInfo): AvailabilityLevel => {
   if (bin.isFull || bin.isConfirmedFull || bin.actualRemaining <= 0) return 'full'
   const booked = bin.setting.max_capacity - bin.actualRemaining
@@ -705,7 +711,7 @@ export default function ReservePage() {
                   {calendarTabs.map(tab => {
                     const active = tab === calendarBinType
                     return (
-                      <button key={tab} type="button" onClick={() => setCalendarBinType(tab)} style={{ padding: '10px 8px', border: active ? 'none' : '0.5px solid #CDD3DC', borderRadius: '8px', background: active ? tab === 'night' ? '#6366F1' : tab === 'relay' ? '#1E4D3A' : '#1B2A4A' : '#F4F6F2', color: active ? '#FFFFFF' : '#5A6A78', fontSize: '14px', fontWeight: 500, fontFamily: 'inherit' }}>
+                      <button key={tab} type="button" onClick={() => setCalendarBinType(tab)} style={{ padding: '10px 8px', border: active ? 'none' : '0.5px solid #CDD3DC', borderRadius: '8px', background: active ? getCalendarTabActiveColor(tab) : '#F4F6F2', color: active ? '#FFFFFF' : '#5A6A78', fontSize: '14px', fontWeight: 500, fontFamily: 'inherit' }}>
                         {getTabLabel(tab)}
                       </button>
                     )
@@ -838,7 +844,12 @@ export default function ReservePage() {
               <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '4px' }}>予約内容</div>
               <div style={{ color: '#5A6A78', fontSize: '15px' }}>{formatDate(selectedDate)}　{getBinName(selectedBin.setting)}</div>
             </div>
-            {formError && <div style={{ background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px', color: '#1A2420', fontWeight: 500 }}>{formError}</div>}
+            {formError && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#FEE2E2', color: '#B91C1C', border: '0.5px solid #FCA5A5', borderRadius: '8px', padding: '12px 16px', fontSize: '14px' }}>
+                <span aria-hidden="true">⚠️</span>
+                <span>{formError}</span>
+              </div>
+            )}
             <FormField label="お名前" required>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="例：山田 太郎" style={inputStyle} />
             </FormField>
@@ -856,9 +867,12 @@ export default function ReservePage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '10px' }}>
                   <button type="button" onClick={() => setForm(f => ({ ...f, count: f.count <= 5 ? 4 : f.count - 1 }))} style={{ width: '44px', height: '44px', background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '8px', color: '#1A2420', fontSize: '20px', fontWeight: 500, fontFamily: 'inherit' }}>−</button>
                   <div style={{ fontSize: '16px', fontWeight: 500, minWidth: '60px', textAlign: 'center', color: '#1A2420' }}>{form.count >= 5 ? form.count : 5}名</div>
-                  <button type="button" disabled={(form.count >= 5 ? form.count : 5) >= maxCount} onClick={() => setForm(f => ({ ...f, count: f.count < 5 ? 5 : Math.min(maxCount, f.count + 1) }))} style={{ width: '44px', height: '44px', background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '8px', color: '#1A2420', fontSize: '20px', fontWeight: 500, fontFamily: 'inherit', opacity: (form.count >= 5 ? form.count : 5) >= maxCount ? 0.4 : 1 }}>＋</button>
+                  <button type="button" disabled={form.count >= 5 && form.count >= maxCount} onClick={() => setForm(f => ({ ...f, count: f.count < 5 ? 5 : Math.min(maxCount, f.count + 1) }))} style={{ width: '44px', height: '44px', background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '8px', color: '#1A2420', fontSize: '20px', fontWeight: 500, fontFamily: 'inherit', opacity: form.count >= 5 && form.count >= maxCount ? 0.4 : 1 }}>＋</button>
                 </div>
               )}
+              <div style={{ marginTop: '10px', fontSize: '13px', color: getAvailabilityLevel(selectedBin) === 'high' ? '#B91C1C' : '#5A6A78', fontWeight: getAvailabilityLevel(selectedBin) === 'high' ? 500 : 400 }}>
+                あと {selectedBin.actualRemaining}名まで乗船できます
+              </div>
             </div>
             {selectedBin.setting.fish_types.length === 0 && selectedBin.fixedFishingStyle && (
               <div style={{ background: '#F4F6F2', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>

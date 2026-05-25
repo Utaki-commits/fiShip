@@ -154,18 +154,30 @@ export default function FacilitiesPage() {
 
   return (
     <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F4F6F2', fontFamily: 'var(--font-sans)', color: '#1A2420' }}>
-      <header style={{ background: '#1B2A4A', padding: '18px 16px', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <header>
+        <div style={{ position: 'relative', height: '140px', background: '#1B2A4A', overflow: 'hidden' }}>
+          {vessel.banner_url && (
+            <img src={vessel.banner_url} alt={`${vessel.name} バナー`} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
+          )}
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '18px 16px', background: vessel.banner_url ? 'rgba(0,0,0,.5)' : 'transparent' }}>
+            <div style={{ fontSize: '22px', fontWeight: 500, color: '#FFFFFF', lineHeight: 1.25 }}>{vessel.name}</div>
+            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,.86)', marginTop: '4px' }}>船長 {vessel.captain_name}</div>
+          </div>
+        </div>
+      </header>
+
+      <div style={{ padding: '12px 12px 0' }}>
         <button
           type="button"
           onClick={() => router.push(`/reserve/${vesselId}`)}
-          style={{ padding: '14px', borderRadius: '9px', border: '0.5px solid rgba(255,255,255,.65)', background: 'transparent', color: '#FFFFFF', fontWeight: 500, fontFamily: 'inherit' }}
+          style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '0.5px solid #CDD3DC', background: '#FFFFFF', color: '#1B2A4A', fontWeight: 500, fontFamily: 'inherit', textAlign: 'center' }}
         >
-          ←
+          ← 予約ページに戻る
         </button>
-        <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>設備の詳細</h1>
-      </header>
+      </div>
 
       <main style={{ padding: '14px 12px 24px', display: 'grid', gap: '12px' }}>
+        <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>設備の詳細</h1>
         {categories.map(category => {
           const enabledItems = category.items.filter(item => item.enabled)
           const visible = enabledItems.length > 0
