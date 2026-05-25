@@ -456,7 +456,7 @@ export default function ReservePage() {
     const unavailable = isPast || charterDate || bins.length === 0 || availableBins.length === 0
     const cellBg = unavailable ? '#F3F4F6' : '#FFFFFF'
     const dateColor = unavailable
-      ? '#9CA3AF'
+      ? '#D1D5DB'
       : holiday || cellDate.getDay() === 0
         ? '#B91C1C'
         : cellDate.getDay() === 6
@@ -475,7 +475,7 @@ export default function ReservePage() {
           borderRadius: '12px',
           border: isSelected ? '0.5px solid #1E4D3A' : '0.5px solid #CDD3DC',
           background: cellBg,
-          color: unavailable ? '#9CA3AF' : '#1E4D3A',
+          color: unavailable ? '#D1D5DB' : '#1E4D3A',
           padding: '8px 4px',
           cursor: unavailable ? 'not-allowed' : 'pointer',
           opacity: 1,
@@ -497,11 +497,6 @@ export default function ReservePage() {
         {!unavailable && (
           <div style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1, color: getAvailabilityColor(availableBins[0]), marginBottom: 0 }}>
             {getCalendarMark(availableBins[0])}
-          </div>
-        )}
-        {unavailable && (
-          <div style={{ fontSize: '18px', fontWeight: 500, lineHeight: 1, color: '#9CA3AF', marginBottom: 0 }}>
-            ×
           </div>
         )}
       </button>
@@ -710,7 +705,7 @@ export default function ReservePage() {
                   {calendarTabs.map(tab => {
                     const active = tab === calendarBinType
                     return (
-                      <button key={tab} type="button" onClick={() => setCalendarBinType(tab)} style={{ padding: '10px 8px', border: active ? 'none' : '0.5px solid #CDD3DC', borderRadius: '8px', background: active ? tab === 'relay' ? '#1E4D3A' : '#1B2A4A' : '#F4F6F2', color: active ? '#FFFFFF' : '#5A6A78', fontSize: '14px', fontWeight: 500, fontFamily: 'inherit' }}>
+                      <button key={tab} type="button" onClick={() => setCalendarBinType(tab)} style={{ padding: '10px 8px', border: active ? 'none' : '0.5px solid #CDD3DC', borderRadius: '8px', background: active ? tab === 'night' ? '#6366F1' : tab === 'relay' ? '#1E4D3A' : '#1B2A4A' : '#F4F6F2', color: active ? '#FFFFFF' : '#5A6A78', fontSize: '14px', fontWeight: 500, fontFamily: 'inherit' }}>
                         {getTabLabel(tab)}
                       </button>
                     )
@@ -745,7 +740,7 @@ export default function ReservePage() {
         )}
 
         {step === 'bin' && selectedDate && (
-          <section style={{ display: 'grid', gap: '12px', background: 'linear-gradient(to bottom, #F0F4F8, #F4F6F2)', margin: '-14px -12px -24px', padding: '14px 12px 24px' }}>
+          <section style={{ display: 'grid', gap: '12px', background: 'linear-gradient(to bottom, #E8EEF4, #F4F6F2)', margin: '-14px -12px -24px', padding: '12px', borderRadius: '12px' }}>
             <button type="button" onClick={() => setStep('calendar')} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '0.5px solid #CDD3DC', background: '#F4F6F2', color: '#1B2A4A', fontWeight: 500, fontFamily: 'inherit', textAlign: 'center' }}>← 日付を選び直す</button>
             <div style={{ fontSize: '20px', fontWeight: 500 }}>{formatDate(selectedDate)} の空き</div>
             <div style={{ display: 'grid', gap: '6px', background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '12px' }}>
@@ -784,7 +779,7 @@ export default function ReservePage() {
               const confirmed = hasReachedMinDeparture(bin)
               const disabled = full || unavailableByConflict
               return (
-              <article key={bin.setting.id} style={{ background: unavailableByConflict ? '#F3F4F6' : '#FFFFFF', border: '0.5px solid #CDD3DC', borderLeft: `4px solid ${binBorderColor}`, borderRadius: '12px', padding: '16px', opacity: unavailableByConflict ? 0.62 : 1 }}>
+              <article key={bin.setting.id} style={{ background: unavailableByConflict ? '#F9FAFB' : '#FFFFFF', border: '0.5px solid #CDD3DC', borderLeft: `4px solid ${binBorderColor}`, borderRadius: '12px', padding: '16px', opacity: unavailableByConflict ? 0.7 : 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px', alignItems: 'flex-start' }}>
                   <div>
                     <span style={{ display: 'inline-block', background: badge.bg, color: badge.color, borderRadius: '20px', padding: '4px 10px', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>{badge.label}</span>
@@ -793,11 +788,11 @@ export default function ReservePage() {
                   </div>
                   <div style={{ display: 'grid', justifyItems: 'end', gap: '6px' }}>
                     {full && <span style={{ background: '#B91C1C', color: '#FFFFFF', borderRadius: '4px', padding: '3px 8px', fontSize: '12px', fontWeight: 500 }}>満船</span>}
+                    {unavailableByConflict && <span style={{ background: '#E5E7EB', color: '#6B7280', borderRadius: '3px', padding: '2px 6px', fontSize: '10px', fontWeight: 500 }}>受付停止</span>}
                     {!full && confirmed && <span style={{ background: '#1B2A4A', color: '#FFFFFF', borderRadius: '4px', padding: '3px 8px', fontSize: '12px', fontWeight: 500 }}>出船確定</span>}
                     {!full && <div style={{ fontSize: '18px', fontWeight: 500, color: availabilityColor }}>残り {bin.actualRemaining}名</div>}
                   </div>
                 </div>
-                {unavailableByConflict && <div style={{ color: '#5A6A78', fontSize: '14px', margin: '8px 0' }}>同じ便種別で受付中の便があります</div>}
                 {bin.setting.note && <p style={{ fontSize: '14px', color: '#5A6A78', lineHeight: 1.7, margin: '8px 0' }}>{bin.setting.note}</p>}
                 {bin.setting.fish_types.length > 0 && (
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '10px 0' }}>
@@ -814,9 +809,11 @@ export default function ReservePage() {
                     {bin.displayFacilities.map(label => <div key={label} style={{ fontSize: '14px', color: '#1A2420' }}>・{label}</div>)}
                   </div>
                 )}
-                <button type="button" disabled={disabled} onClick={() => handleSelectBin(bin)} style={{ width: '100%', padding: '14px', borderRadius: '9px', border: 'none', background: disabled ? '#CDD3DC' : '#1E4D3A', color: disabled ? '#5A6A78' : '#FFFFFF', fontSize: '17px', fontWeight: 500, fontFamily: 'inherit' }}>
-                  {full ? '満船' : unavailableByConflict ? '選択できません' : 'この便を予約する'}
-                </button>
+                {!unavailableByConflict && (
+                  <button type="button" disabled={disabled} onClick={() => handleSelectBin(bin)} style={{ width: '100%', padding: '14px', borderRadius: '9px', border: 'none', background: disabled ? '#CDD3DC' : '#1E4D3A', color: disabled ? '#5A6A78' : '#FFFFFF', fontSize: '17px', fontWeight: 500, fontFamily: 'inherit' }}>
+                    {full ? '満船' : 'この便を予約する'}
+                  </button>
+                )}
               </article>
               )
               })
