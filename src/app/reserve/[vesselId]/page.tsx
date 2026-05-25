@@ -661,12 +661,12 @@ export default function ReservePage() {
       <header>
         <div style={{
           position: 'relative',
-          height: '200px',
+          height: '140px',
           background: vessel.banner_url ? '#1B2A4A' : '#1B2A4A',
           overflow: 'hidden',
         }}>
           {vessel.banner_url && (
-            <img src={vessel.banner_url} alt={`${vessel.name} バナー`} style={{ width: '100%', height: '200px', objectFit: 'cover', display: 'block' }} />
+            <img src={vessel.banner_url} alt={`${vessel.name} バナー`} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
           )}
           <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '18px 16px', background: vessel.banner_url ? 'rgba(0,0,0,.5)' : 'transparent' }}>
             <div style={{ fontSize: '22px', fontWeight: 500, color: '#FFFFFF', lineHeight: 1.25 }}>{vessel.name}</div>
@@ -783,8 +783,10 @@ export default function ReservePage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px', alignItems: 'flex-start' }}>
                   <div>
                     <span style={{ display: 'inline-block', background: badge.bg, color: badge.color, borderRadius: '20px', padding: '4px 10px', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>{badge.label}</span>
-                    <div style={{ fontSize: '21px', fontWeight: 500 }}>{getBinName(bin.setting)}</div>
-                    <div style={{ fontSize: '15px', color: '#5A6A78', marginTop: '4px' }}>{bin.setting.departure_time} 出船{bin.setting.end_time ? ` - ${bin.setting.end_time} 終了予定` : ''}</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '16px', fontWeight: 500 }}>{getBinName(bin.setting)}</span>
+                      <span style={{ fontSize: '13px', color: '#5A6A78' }}>{bin.setting.departure_time}出船</span>
+                    </div>
                   </div>
                   <div style={{ display: 'grid', justifyItems: 'end', gap: '6px' }}>
                     {full && <span style={{ background: '#B91C1C', color: '#FFFFFF', borderRadius: '4px', padding: '3px 8px', fontSize: '12px', fontWeight: 500 }}>満船</span>}
@@ -830,7 +832,7 @@ export default function ReservePage() {
         )}
 
         {step === 'form' && selectedDate && selectedBin && (
-          <section style={{ display: 'grid', gap: '12px' }}>
+          <section style={{ display: 'grid', gap: '12px', paddingBottom: '80px' }}>
             <button type="button" onClick={() => selectedBins.length > 1 ? setStep('bin') : setStep('calendar')} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '0.5px solid #CDD3DC', background: '#F4F6F2', color: '#1B2A4A', fontWeight: 500, fontFamily: 'inherit', textAlign: 'center' }}>← 便を選び直す</button>
             <div style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
               <div style={{ fontSize: '18px', fontWeight: 500, marginBottom: '4px' }}>予約内容</div>
@@ -872,10 +874,14 @@ export default function ReservePage() {
             <FormField label="メッセージ">
               <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} placeholder="質問や希望があれば入力してください" style={{ ...inputStyle, minHeight: '92px', resize: 'none' }} />
             </FormField>
-            <button type="button" disabled={submitting} onClick={submitBooking} style={{ width: '100%', minHeight: '64px', padding: '16px', borderRadius: '9px', border: 'none', background: submitting ? '#CDD3DC' : '#1E4D3A', color: submitting ? '#5A6A78' : '#FFFFFF', fontSize: '19px', fontWeight: 500, fontFamily: 'inherit' }}>
-              {submitting ? '送信中...' : '予約を申し込む'}
-            </button>
             <p style={{ fontSize: '13px', color: '#5A6A78', lineHeight: 1.7, margin: 0 }}>申し込み後、船長から確認の連絡が届きます。</p>
+            <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '12px 16px', background: '#F4F6F2', borderTop: '0.5px solid #CDD3DC', zIndex: 50 }}>
+              <div style={{ maxWidth: '480px', margin: '0 auto' }}>
+                <button type="button" disabled={submitting} onClick={submitBooking} style={{ width: '100%', padding: '16px', borderRadius: '9px', border: 'none', background: submitting ? '#CDD3DC' : '#1E4D3A', color: submitting ? '#5A6A78' : '#FFFFFF', fontSize: '16px', fontWeight: 500, fontFamily: 'inherit' }}>
+                  {submitting ? '送信中...' : '予約を申し込む'}
+                </button>
+              </div>
+            </div>
           </section>
         )}
 
