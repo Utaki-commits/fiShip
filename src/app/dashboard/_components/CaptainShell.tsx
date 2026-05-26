@@ -1,16 +1,17 @@
 ﻿'use client'
 
 import type { CSSProperties, ReactNode } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export const colors = {
-  header: '#7F1D1D',
-  action: '#B91C1C',
-  page: '#F7F2EF',
+  header: '#1B2A4A',
+  action: '#1E4D3A',
+  page: '#F4F6F2',
   card: '#FFFFFF',
-  border: '#E8DDD8',
-  text: '#1C1917',
-  sub: '#57534E',
+  border: '#CDD3DC',
+  text: '#1A2420',
+  sub: '#5A6A78',
   weak: '#9CA3AF',
   amberBg: '#FEF3C7',
   amber: '#D97706',
@@ -87,7 +88,7 @@ export const dangerButtonStyle: CSSProperties = {
   border: `0.5px solid ${colors.redBorder}`,
   borderRadius: '9px',
   background: 'transparent',
-  color: colors.action,
+  color: '#B91C1C',
   fontSize: '15px',
   fontWeight: 500,
   fontFamily: 'inherit',
@@ -100,7 +101,7 @@ export const editButtonStyle: CSSProperties = {
   border: `0.5px solid ${colors.redBorder}`,
   borderRadius: '9px',
   background: colors.redBg,
-  color: colors.action,
+  color: '#1E4D3A',
   fontSize: '15px',
   fontWeight: 500,
   fontFamily: 'inherit',
@@ -144,26 +145,56 @@ export function LoadingScreen() {
   )
 }
 
-export function PageShell({ title, children, menu = true }: { title: string; children: ReactNode; menu?: boolean }) {
+const menuItems = [
+  { label: '顧客名簿', href: '/dashboard/customers' },
+  { label: '便設定', href: '/dashboard/bins' },
+  { label: '休船日', href: '/dashboard/blocked-dates' },
+  { label: '船情報', href: '/dashboard/vessel' },
+  { label: '設定', href: '/dashboard/account' },
+]
+
+export function PageShell({ title, children, menu = false, back = false }: { title: string; children: ReactNode; menu?: boolean; back?: boolean }) {
   const router = useRouter()
+  const [menuOpen, setMenuOpen] = useState(false)
   return (
     <div style={pageStyle}>
       <header style={{ background: colors.header, color: '#FFFFFF', padding: '18px 18px 16px', position: 'sticky', top: 0, zIndex: 30 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button
-            onClick={() => router.push('/dashboard')}
-            style={{ ...secondaryButtonStyle, minWidth: '52px', minHeight: '52px', color: '#FFFFFF', border: '0.5px solid rgba(255,255,255,0.35)' }}
-          >戻る</button>
+          {back && (
+            <button
+              aria-label="戻る"
+              onClick={() => router.push('/dashboard')}
+              style={{ ...secondaryButtonStyle, minWidth: '52px', minHeight: '52px', color: '#FFFFFF', border: '0.5px solid rgba(255,255,255,0.35)' }}
+            >←</button>
+          )}
           <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 500, lineHeight: 1.3, flex: 1 }}>{title}</h1>
           {menu && (
             <button
-              onClick={() => router.push('/dashboard/account')}
+              aria-label="メニュー"
+              onClick={() => setMenuOpen(true)}
               style={{ ...secondaryButtonStyle, minWidth: '52px', minHeight: '52px', color: '#FFFFFF', border: '0.5px solid rgba(255,255,255,0.35)' }}
-            >設定</button>
+            >≡</button>
           )}
         </div>
       </header>
       <main style={{ padding: '16px' }}>{children}</main>
+      {menuOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.35)', display: 'flex', justifyContent: 'flex-end' }} onClick={() => setMenuOpen(false)}>
+          <div style={{ width: '280px', maxWidth: '82vw', height: '100%', background: colors.card, borderLeft: `0.5px solid ${colors.border}`, padding: '20px 16px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ fontSize: '18px', fontWeight: 500, color: colors.text }}>メニュー</div>
+              <button onClick={() => setMenuOpen(false)} style={{ ...secondaryButtonStyle, minHeight: '44px' }}>閉じる</button>
+            </div>
+            <div style={{ display: 'grid', gap: '8px' }}>
+              {menuItems.map(item => (
+                <button key={item.href} onClick={() => { setMenuOpen(false); router.push(item.href) }} style={{ ...secondaryButtonStyle, width: '100%', textAlign: 'left' }}>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

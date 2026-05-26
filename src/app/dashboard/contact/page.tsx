@@ -38,13 +38,13 @@ export default function ContactPage() {
   }
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font-sans)' }}>
-      <div style={{ background: '#7F1D1D', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', minHeight: '80px' }}>
+    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F4F6F2', fontFamily: 'var(--font-sans)' }}>
+      <div style={{ background: '#1B2A4A', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', minHeight: '80px' }}>
         <button onClick={() => router.push('/dashboard/account')}
-          style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.3)', color: 'var(--surface)', fontSize: '22px', cursor: 'pointer' }}>
+          style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.3)', color: '#FFFFFF', fontSize: '22px', cursor: 'pointer' }}>
           ←
         </button>
-        <div style={{ fontSize: '24px', fontWeight: 500, color: 'var(--surface)' }}>お問い合わせ</div>
+        <div style={{ fontSize: '24px', fontWeight: 500, color: '#FFFFFF' }}>お問い合わせ</div>
       </div>
 
       <div style={{ padding: '16px' }}>
@@ -56,13 +56,13 @@ export default function ContactPage() {
               3〜5営業日以内にご連絡いたします。
             </div>
             <button onClick={() => router.push('/dashboard/account')}
-              style={{ marginTop: '24px', padding: '14px 28px', fontSize: '18px', fontWeight: 500, background: 'var(--ocean)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ marginTop: '24px', padding: '14px 28px', fontSize: '18px', fontWeight: 500, background: '#1E4D3A', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontFamily: 'inherit' }}>
               設定に戻る
             </button>
           </div>
         ) : (
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '18px', marginTop: '8px' }}>
-            <div style={{ fontSize: '16px', color: 'var(--fg-2)', lineHeight: 1.7, marginBottom: '20px' }}>
+          <div style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '14px', padding: '18px', marginTop: '8px' }}>
+            <div style={{ fontSize: '16px', color: '#5A6A78', lineHeight: 1.7, marginBottom: '20px' }}>
               ご不明な点やご要望がございましたらお気軽にお問い合わせください。
             </div>
 
@@ -72,18 +72,18 @@ export default function ContactPage() {
               </div>
             )}
 
-            <label style={{ fontSize: '16px', fontWeight: 500, color: 'var(--fg-2)', display: 'block', marginBottom: '8px' }}>
+            <label style={{ fontSize: '16px', fontWeight: 500, color: '#5A6A78', display: 'block', marginBottom: '8px' }}>
               お問い合わせ内容 <span style={{ background: 'var(--status-full-fg)', color: '#fff', fontSize: '12px', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px' }}>必須</span>
             </label>
             <textarea
               value={message}
               onChange={e => setMessage(e.target.value)}
               placeholder="例：予約の変更方法を教えてください"
-              style={{ width: '100%', padding: '14px', fontSize: '18px', border: '0.5px solid var(--border)', borderRadius: '10px', fontFamily: 'inherit', resize: 'none', height: '160px', boxSizing: 'border-box', color: 'var(--fg-1)', background: 'var(--surface)', marginBottom: '16px' }}
+              style={{ width: '100%', padding: '14px', fontSize: '18px', border: '0.5px solid #CDD3DC', borderRadius: '10px', fontFamily: 'inherit', resize: 'none', height: '160px', boxSizing: 'border-box', color: '#1A2420', background: '#FFFFFF', marginBottom: '16px' }}
             />
 
             <button onClick={handleSend} disabled={sending}
-              style={{ width: '100%', padding: '16px', fontSize: '20px', fontWeight: 500, background: sending ? 'var(--border)' : 'var(--ocean)', color: sending ? 'var(--fg-3)' : '#fff', border: 'none', borderRadius: '12px', cursor: sending ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+              style={{ width: '100%', padding: '16px', fontSize: '20px', fontWeight: 500, background: sending ? '#CDD3DC' : '#1E4D3A', color: sending ? '#5A6A78' : '#fff', border: 'none', borderRadius: '12px', cursor: sending ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
               {sending ? '送信中...' : '送信する'}
             </button>
           </div>

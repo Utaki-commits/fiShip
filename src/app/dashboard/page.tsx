@@ -132,7 +132,7 @@ export default function DashboardPage() {
   )
 
   return (
-    <PageShell title={vessel?.name || 'ダッシュボード'} menu={false}>
+    <PageShell title={vessel?.name || 'ダッシュボード'} menu>
       {notice && <div style={{ ...cardStyle, background: colors.greenBg, color: colors.green }}>{notice}</div>}
 
       <section style={{ marginBottom: '20px' }}>
@@ -179,18 +179,9 @@ export default function DashboardPage() {
       {todaysBookings.length === 0 && tomorrowBookings.length === 0 && nextBooking && (
         <section>
           <h2 style={{ fontSize: '18px', fontWeight: 500, margin: '0 0 10px' }}>直近の出船</h2>
-          <div style={cardStyle}>{formatDate(nextBooking.date)} の予約があります。<button onClick={() => router.push('/dashboard/bookings')} style={{ ...secondaryButtonStyle, marginTop: '12px', width: '100%' }}>予約一覧を見る</button></div>
-        </section>
+        <div style={cardStyle}>{formatDate(nextBooking.date)} の予約があります。<button onClick={() => router.push('/dashboard/bookings')} style={{ ...secondaryButtonStyle, marginTop: '12px', width: '100%' }}>予約一覧を見る</button></div>
+      </section>
       )}
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '20px' }}>
-        <button onClick={() => router.push('/dashboard/extract')} style={secondaryButtonStyle}>電話メモ</button>
-        <button onClick={() => router.push('/dashboard/customers')} style={secondaryButtonStyle}>顧客名簿</button>
-        <button onClick={() => router.push('/dashboard/bins')} style={secondaryButtonStyle}>便設定</button>
-        <button onClick={() => router.push('/dashboard/blocked-dates')} style={secondaryButtonStyle}>休船日</button>
-        <button onClick={() => router.push('/dashboard/vessel')} style={secondaryButtonStyle}>船情報</button>
-        <button onClick={() => router.push('/dashboard/account')} style={secondaryButtonStyle}>設定</button>
-      </div>
 
       {callTarget && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -208,7 +199,7 @@ export default function DashboardPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ ...cardStyle, maxWidth: '420px', width: '100%' }}>
             <h3 style={{ fontSize: '20px', fontWeight: 500, margin: '0 0 12px' }}>本日の出船を中止しますか？</h3>
-            <p style={{ color: colors.sub, lineHeight: 1.7 }}>確定済みの乗船客をキャンセルし、休船日に登録します。</p>
+            <p style={{ color: colors.sub, lineHeight: 1.7 }}>承認済みの乗船客をキャンセルし、休船日に登録します。</p>
             <div style={{ display: 'grid', gap: '8px' }}>
               <button disabled={saving} onClick={cancelToday} style={dangerButtonStyle}>{saving ? '処理中...' : '中止する'}</button>
               <button onClick={() => setCancelOpen(false)} style={secondaryButtonStyle}>キャンセル</button>
