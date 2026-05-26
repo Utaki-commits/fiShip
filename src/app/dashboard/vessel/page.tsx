@@ -54,6 +54,19 @@ const defaultFacilities = (value?: Facilities | null): Facilities => ({
   custom_facilities: value?.custom_facilities || [],
 })
 
+const ToggleRow = ({ label, checked, onToggle }: { label: string; checked: boolean; onToggle: () => void }) => (
+  <button
+    type="button"
+    onClick={onToggle}
+    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px', marginBottom: '8px', background: colors.card, border: `0.5px solid ${colors.border}`, borderRadius: '9px', color: colors.text, fontSize: '15px', fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer' }}
+  >
+    <span>{label}</span>
+    <span style={{ width: '46px', height: '26px', borderRadius: '13px', background: checked ? colors.action : '#D1D5DB', position: 'relative', transition: 'background .2s' }}>
+      <span style={{ position: 'absolute', top: '3px', left: checked ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+    </span>
+  </button>
+)
+
 export default function VesselPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -138,15 +151,18 @@ export default function VesselPage() {
   const reserveUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/reserve/${vessel.id}`
 
   return (
-    <PageShell title="船情報">
+    <PageShell title="船情報" back>
       {saved && <div style={{ ...cardStyle, background: saved.includes('でき') ? colors.redBg : colors.greenBg, color: saved.includes('でき') ? colors.action : colors.green }}>{saved}</div>}
       <div style={cardStyle}>
         <h2 style={{ fontSize: '20px', fontWeight: 500, margin: '0 0 14px' }}>基本情報</h2>
         {[
-          ['船名', 'name'], ['船長名', 'captain_name'], ['都道府県', 'prefecture'], ['出港場所', 'port_name'], ['アクセス', 'access'], ['出船時刻', 'departure_time'], ['乗船料', 'price'], ['地図URL', 'map_embed_url'],
+          ['船名', 'name'], ['船長名', 'captain_name'], ['都道府県', 'prefecture'], ['出港場所', 'port_name'], ['アクセス', 'access'], ['出船時刻', 'departure_time'], ['乗船料', 'price'], ['地図リンク', 'map_embed_url'],
         ].map(([label, key]) => <div key={key} style={{ marginBottom: '12px' }}><label>{label}</label><input value={String(vessel[key as keyof Vessel] || '')} onChange={e => update(key as keyof Vessel, e.target.value)} style={{ ...inputStyle, marginTop: '8px' }} /></div>)}
         <label>定員</label><input type="number" value={vessel.capacity || ''} onChange={e => update('capacity', Number(e.target.value))} style={{ ...inputStyle, margin: '8px 0 12px' }} />
         <label>1人あたり予約上限</label><input type="number" value={vessel.max_bookings_per_customer || 5} onChange={e => update('max_bookings_per_customer', Number(e.target.value))} style={{ ...inputStyle, margin: '8px 0 12px' }} />
+        <label>駐車場</label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', margin: '8px 0 12px' }}>{[{ key: 'free', label: '無料' }, { key: 'paid', label: '有料' }, { key: 'coin', label: '近隣コインパーキング' }].map(opt => <button key={opt.key} onClick={() => updateFacility('parking', opt.key)} style={facilities.parking === opt.key ? primaryButtonStyle : secondaryButtonStyle}>{opt.label}</button>)}</div>
+        {facilities.parking === 'paid' && <input placeholder="駐車料金" value={facilities.parking_price || ''} onChange={e => updateFacility('parking_price', e.target.value)} style={{ ...inputStyle, marginBottom: '12px' }} />}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           <button onClick={() => update('beginner_accepted', !vessel.beginner_accepted)} style={vessel.beginner_accepted ? primaryButtonStyle : secondaryButtonStyle}>初心者歓迎</button>
           <button onClick={() => update('charter_accepted', !vessel.charter_accepted)} style={vessel.charter_accepted ? primaryButtonStyle : secondaryButtonStyle}>貸切OK</button>
@@ -164,12 +180,9 @@ export default function VesselPage() {
 
       <div style={cardStyle}>
         <h2 style={{ fontSize: '20px', fontWeight: 500, margin: '0 0 14px' }}>設備</h2>
-        <label>駐車場</label>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', margin: '8px 0 12px' }}>{[{ key: 'free', label: '無料' }, { key: 'paid', label: '有料' }, { key: 'coin', label: '近隣コイン' }].map(opt => <button key={opt.key} onClick={() => updateFacility('parking', opt.key)} style={facilities.parking === opt.key ? primaryButtonStyle : secondaryButtonStyle}>{opt.label}</button>)}</div>
-        {facilities.parking === 'paid' && <input placeholder="駐車料金" value={facilities.parking_price || ''} onChange={e => updateFacility('parking_price', e.target.value)} style={{ ...inputStyle, marginBottom: '12px' }} />}
         {[
           ['電動リール用電源', 'electric_reel_power'], ['エアコン', 'air_conditioner'], ['ロッドキーパー', 'rod_keeper'], ['探見丸', 'tanken_maru'],
-        ].map(([label, key]) => <button key={key} onClick={() => updateFacility(key as keyof Facilities, !facilities[key as keyof Facilities])} style={{ ...(facilities[key as keyof Facilities] ? primaryButtonStyle : secondaryButtonStyle), width: '100%', marginBottom: '8px' }}>{label}</button>)}
+        ].map(([label, key]) => <ToggleRow key={key} label={label} checked={Boolean(facilities[key as keyof Facilities])} onToggle={() => updateFacility(key as keyof Facilities, !facilities[key as keyof Facilities])} />)}
         <label>集魚灯</label>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', margin: '8px 0 12px' }}>{[{ key: 'metal_halide', label: 'メタハラ' }, { key: 'led', label: 'LED' }, { key: 'none', label: 'なし' }].map(opt => <button key={opt.key} onClick={() => updateFacility('searchlight_type', opt.key)} style={facilities.searchlight_type === opt.key ? primaryButtonStyle : secondaryButtonStyle}>{opt.label}</button>)}</div>
         <label>ライフジャケット貸出</label>

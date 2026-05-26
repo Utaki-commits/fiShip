@@ -60,7 +60,7 @@ export default function BlockedDatesPage() {
   if (loading) return <LoadingScreen />
 
   return (
-    <PageShell title="休船日">
+    <PageShell title="休船日" back>
       <div style={cardStyle}>
         <h2 style={{ fontSize: '20px', fontWeight: 500, margin: '0 0 14px' }}>休船日を登録</h2>
         <label>期間</label>

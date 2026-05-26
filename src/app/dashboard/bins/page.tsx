@@ -145,7 +145,7 @@ export default function BinsPage() {
   if (loading) return <LoadingScreen />
 
   return (
-    <PageShell title="便設定">
+    <PageShell title="便設定" back>
       {!editing && (
         <>
           <div style={cardStyle}>

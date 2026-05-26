@@ -5,9 +5,10 @@ import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 
 const navItems = [
-  { label: 'ホーム', href: '/dashboard' },
-  { label: '予約', href: '/dashboard/bookings' },
-  { label: '名簿', href: '/dashboard/logs' },
+  { label: '🏠 ホーム', href: '/dashboard' },
+  { label: '📋 予約', href: '/dashboard/bookings' },
+  { label: '📒 名簿', href: '/dashboard/logs' },
+  { label: '📞 電話メモ', href: '/dashboard/extract' },
 ]
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -23,11 +24,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           left: 0,
           right: 0,
           height: '56px',
-          background: '#7F1D1D',
+          background: '#1B2A4A',
           borderTop: '0.5px solid rgba(255,255,255,0.2)',
           zIndex: 50,
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: 'repeat(4, 1fr)',
         }}
       >
         {navItems.map(item => {
@@ -43,7 +44,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 justifyContent: 'center',
                 color: '#FFFFFF',
                 opacity: active ? 1 : 0.58,
-                fontSize: '14px',
+                fontSize: '12px',
                 fontWeight: 500,
                 textDecoration: 'none',
                 fontFamily: 'var(--font-sans)',
