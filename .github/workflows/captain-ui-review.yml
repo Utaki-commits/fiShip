@@ -2,6 +2,14 @@ name: Captain UI Review
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/captain-ui-review.yml'
+
+permissions:
+  contents: write
 
 jobs:
   review:
