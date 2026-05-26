@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { PageShell, LoadingScreen, cardStyle, colors, primaryButtonStyle, secondaryButtonStyle, dangerButtonStyle, StatusPill, binBadgeStyle, binLabel, formatDate, toDateStr } from './_components/CaptainShell'
 
-type Vessel = { id: string; name: string; auto_confirm?: boolean }
+type Vessel = { id: string; name: string; auto_confirm?: boolean; setup_completed?: boolean }
 type Booking = {
   id: string
   vessel_id: string
@@ -45,8 +45,29 @@ export default function DashboardPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
 
-      const { data: v } = await supabase.from('vessels').select('id, name, auto_confirm').eq('user_id', session.user.id).single()
+      const { data: v } = await supabase.from('vessels').select('id, name, auto_confirm, setup_completed').eq('user_id', session.user.id).single()
       if (!v) { router.push('/register'); return }
+
+      if (!String(v.name || '').trim()) {
+        router.push('/dashboard/setup')
+        return
+      }
+
+      const { count: binCount } = await supabase
+        .from('bin_settings')
+        .select('id', { count: 'exact', head: true })
+        .eq('vessel_id', v.id)
+
+      if ((binCount || 0) === 0) {
+        router.push('/dashboard/setup?step=2')
+        return
+      }
+
+      if (!v.setup_completed) {
+        router.push('/dashboard/setup')
+        return
+      }
+
       setVessel(v as Vessel)
 
       const [{ data: bk }, { data: ct }] = await Promise.all([

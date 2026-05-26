@@ -116,6 +116,10 @@ export default function VesselPage() {
       facilities,
     }).eq('id', vessel.id)
     setSaving(false)
+    if (!error && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('setup') === 'true') {
+      router.push('/dashboard/setup?step=2')
+      return
+    }
     setSaved(error ? '保存できませんでした' : '保存しました')
     setTimeout(() => setSaved(''), 2500)
   }

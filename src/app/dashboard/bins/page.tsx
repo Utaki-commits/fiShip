@@ -126,6 +126,10 @@ export default function BinsPage() {
       const data = await res.json()
       if (!res.ok) { setError(data.error || '保存できませんでした'); return }
       setBins(prev => form.id ? prev.map(b => b.id === form.id ? data.setting : b) : [...prev, data.setting])
+      if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('setup') === 'true') {
+        router.push('/dashboard/setup?step=3')
+        return
+      }
       setEditing(false)
     } finally {
       setSaving(false)
