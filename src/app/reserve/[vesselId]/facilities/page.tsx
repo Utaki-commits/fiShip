@@ -10,6 +10,8 @@ type Vessel = {
   id: string
   name: string
   captain_name: string
+  port_name: string
+  price: string
   logo_url: string
   banner_url: string
   facilities: JsonObject | null
@@ -35,6 +37,12 @@ const valueLabel = (value: unknown) => {
   if (value === 'metal_halide') return 'メタルハライド'
   if (value === 'led') return 'LED'
   return String(value)
+}
+
+const formatPrice = (price: string): string => {
+  const normalized = price.trim().replace(/,/g, '')
+  if (/^\d+$/.test(normalized)) return `${Number(normalized).toLocaleString('ja-JP')}円`
+  return price
 }
 
 const enabledByValue = (value: unknown) => {
@@ -125,7 +133,7 @@ export default function FacilitiesPage() {
     const init = async () => {
       const { data } = await supabase
         .from('vessels')
-        .select('id, name, captain_name, logo_url, banner_url, facilities')
+        .select('id, name, captain_name, port_name, price, logo_url, banner_url, facilities')
         .eq('id', vesselId)
         .single()
       setVessel((data || null) as Vessel | null)
@@ -177,6 +185,21 @@ export default function FacilitiesPage() {
       </div>
 
       <main style={{ padding: '14px 12px 24px', display: 'grid', gap: '12px' }}>
+        <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
+          <h1 style={{ fontSize: '18px', fontWeight: 500, margin: '0 0 10px' }}>船の基本情報</h1>
+          <div style={{ display: 'grid', gap: '8px', fontSize: '15px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+              <span style={{ color: '#5A6A78' }}>出船場所</span>
+              <span style={{ color: '#1A2420', fontWeight: 500 }}>{vessel.port_name}</span>
+            </div>
+            {vessel.price && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+                <span style={{ color: '#5A6A78' }}>通常料金</span>
+                <span style={{ color: '#1A2420', fontWeight: 500 }}>{formatPrice(vessel.price)}〜/名</span>
+              </div>
+            )}
+          </div>
+        </section>
         <h1 style={{ fontSize: '22px', fontWeight: 500, margin: 0 }}>設備の詳細</h1>
         {categories.map(category => {
           const enabledItems = category.items.filter(item => item.enabled)

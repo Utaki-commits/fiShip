@@ -674,13 +674,15 @@ export default function ReservePage() {
           {vessel.banner_url && (
             <img src={vessel.banner_url} alt={`${vessel.name} バナー`} style={{ width: '100%', height: '140px', objectFit: 'cover', display: 'block' }} />
           )}
-          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '18px 16px', background: vessel.banner_url ? 'rgba(0,0,0,.5)' : 'transparent' }}>
-            <div style={{ fontSize: '22px', fontWeight: 500, color: '#FFFFFF', lineHeight: 1.25 }}>{vessel.name}</div>
-            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,.86)', marginTop: '4px' }}>船長 {vessel.captain_name}</div>
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '14px 16px', background: vessel.banner_url ? 'rgba(0,0,0,.5)' : 'transparent', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '16px', fontWeight: 500, color: '#FFFFFF', lineHeight: 1.25 }}>{vessel.name}</div>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,.85)', marginTop: '4px', lineHeight: 1.4 }}>船長 {vessel.captain_name}　📍 {vessel.port_name}</div>
+            </div>
+            <a href={`/reserve/${vesselId}/facilities`} style={{ flexShrink: 0, background: 'rgba(0,0,0,0.5)', color: '#FFFFFF', fontSize: '12px', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none' }}>
+              設備を見る
+            </a>
           </div>
-          <a href={`/reserve/${vesselId}/facilities`} style={{ position: 'absolute', right: '12px', bottom: '14px', background: 'rgba(0,0,0,0.5)', color: '#FFFFFF', fontSize: '12px', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none' }}>
-            設備を見る
-          </a>
         </div>
       </header>
       {step !== 'complete' && <StepIndicator step={step} />}
@@ -688,18 +690,6 @@ export default function ReservePage() {
       <main style={{ padding: '14px 12px 24px' }}>
         {step === 'calendar' && (
           <>
-            <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '8px 16px', marginBottom: '12px' }}>
-              <div style={{ display: 'grid', gap: '8px', fontSize: '15px', color: '#5A6A78' }}>
-                <div>出船場所: <span style={{ color: '#1A2420', fontWeight: 500 }}>{vessel.port_name}</span></div>
-                {vessel.price && <div>料金　<span style={{ color: '#1A2420', fontWeight: 500 }}>{formatPrice(vessel.price)}</span></div>}
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {hasText(vessel.facilities || {}, 'parking', 'free') && <span>駐車場あり</span>}
-                  {hasFlag(vessel.facilities || {}, 'toilet') && <span>トイレあり</span>}
-                  {(hasFlag(vessel.facilities || {}, 'life_jacket') || enabledByValue((vessel.facilities || {}).life_jacket_rental)) && <span>ライフジャケット貸出あり</span>}
-                </div>
-              </div>
-            </section>
-
             <section style={{ background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '12px', padding: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <button type="button" onClick={() => setCalM(m => m === 0 ? (setCalYear(y => y - 1), 11) : m - 1)} style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', border: '0.5px solid #CDD3DC', background: 'transparent', color: '#5A6A78', fontWeight: 500 }}>前月</button>
@@ -784,37 +774,40 @@ export default function ReservePage() {
               const availabilityColor = getAvailabilityColor(bin)
               const confirmed = hasReachedMinDeparture(bin)
               const disabled = full || unavailableByConflict
+              const textColor = unavailableByConflict ? '#9CA3AF' : '#1A2420'
+              const subTextColor = unavailableByConflict ? '#9CA3AF' : '#5A6A78'
               return (
-              <article key={bin.setting.id} style={{ background: unavailableByConflict ? '#F9FAFB' : '#FFFFFF', border: '0.5px solid #CDD3DC', borderLeft: `4px solid ${binBorderColor}`, borderRadius: '12px', padding: '16px', opacity: unavailableByConflict ? 0.7 : 1 }}>
+              <article key={bin.setting.id} style={{ background: unavailableByConflict ? '#F3F4F6' : '#FFFFFF', border: '0.5px solid #CDD3DC', borderLeft: `4px solid ${binBorderColor}`, borderRadius: '12px', padding: '16px', opacity: unavailableByConflict ? 0.6 : 1, color: textColor }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '8px', alignItems: 'flex-start' }}>
                   <div>
-                    <span style={{ display: 'inline-block', background: badge.bg, color: badge.color, borderRadius: '20px', padding: '4px 10px', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>{badge.label}</span>
+                    <span style={{ display: 'inline-block', background: unavailableByConflict ? '#E5E7EB' : badge.bg, color: unavailableByConflict ? '#9CA3AF' : badge.color, borderRadius: '20px', padding: '4px 10px', fontSize: '13px', fontWeight: 500, marginBottom: '8px' }}>{badge.label}</span>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '16px', fontWeight: 500 }}>{getBinName(bin.setting)}</span>
-                      <span style={{ fontSize: '13px', color: '#5A6A78' }}>{bin.setting.departure_time}出船</span>
+                      <span style={{ fontSize: '16px', fontWeight: 500, color: textColor }}>{getBinName(bin.setting)}</span>
+                      <span style={{ fontSize: '13px', color: subTextColor }}>{bin.setting.departure_time}出船</span>
                     </div>
+                    {bin.setting.price && <div style={{ fontSize: '13px', color: subTextColor, marginTop: '4px' }}>¥{formatPrice(bin.setting.price)}/名</div>}
                   </div>
                   <div style={{ display: 'grid', justifyItems: 'end', gap: '6px' }}>
                     {full && <span style={{ background: '#B91C1C', color: '#FFFFFF', borderRadius: '4px', padding: '3px 8px', fontSize: '12px', fontWeight: 500 }}>満船</span>}
                     {unavailableByConflict && <span style={{ background: '#E5E7EB', color: '#6B7280', borderRadius: '3px', padding: '2px 6px', fontSize: '10px', fontWeight: 500 }}>受付停止</span>}
                     {!full && confirmed && <span style={{ background: '#1B2A4A', color: '#FFFFFF', borderRadius: '4px', padding: '3px 8px', fontSize: '12px', fontWeight: 500 }}>出船確定</span>}
-                    {!full && <div style={{ fontSize: '18px', fontWeight: 500, color: availabilityColor }}>残り {bin.actualRemaining}名</div>}
+                    {!full && <div style={{ fontSize: '18px', fontWeight: 500, color: unavailableByConflict ? '#9CA3AF' : availabilityColor }}>残り {bin.actualRemaining}名</div>}
                   </div>
                 </div>
-                {bin.setting.note && <p style={{ fontSize: '14px', color: '#5A6A78', lineHeight: 1.7, margin: '8px 0' }}>{bin.setting.note}</p>}
+                {bin.setting.note && <p style={{ fontSize: '14px', color: subTextColor, lineHeight: 1.7, margin: '8px 0' }}>{bin.setting.note}</p>}
                 {bin.setting.fish_types.length > 0 && (
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', margin: '10px 0' }}>
-                    {bin.setting.fish_types.map(fish => <span key={fish} style={{ background: '#F4F6F2', color: '#1A2420', border: '0.5px solid #CDD3DC', borderRadius: '20px', padding: '4px 9px', fontSize: '13px', fontWeight: 500 }}>🎣 {fish}</span>)}
+                    {bin.setting.fish_types.map(fish => <span key={fish} style={{ background: unavailableByConflict ? '#E5E7EB' : '#F4F6F2', color: textColor, border: '0.5px solid #CDD3DC', borderRadius: '20px', padding: '4px 9px', fontSize: '13px', fontWeight: 500 }}>🎣 {fish}</span>)}
                   </div>
                 )}
                 {bin.fixedFishingStyle && (
-                  <div style={{ background: '#F4F6F2', color: '#1A2420', border: '0.5px solid #CDD3DC', borderRadius: '8px', padding: '10px', fontSize: '14px', margin: '10px 0' }}>
+                  <div style={{ background: unavailableByConflict ? '#E5E7EB' : '#F4F6F2', color: textColor, border: '0.5px solid #CDD3DC', borderRadius: '8px', padding: '10px', fontSize: '14px', margin: '10px 0' }}>
                     この便は「{bin.fixedFishingStyle}」で受付中です
                   </div>
                 )}
                 {bin.displayFacilities.length > 0 && (
                   <div style={{ display: 'grid', gap: '4px', margin: '10px 0 14px' }}>
-                    {bin.displayFacilities.map(label => <div key={label} style={{ fontSize: '14px', color: '#1A2420' }}>・{label}</div>)}
+                    {bin.displayFacilities.map(label => <div key={label} style={{ fontSize: '14px', color: textColor }}>・{label}</div>)}
                   </div>
                 )}
                 {!unavailableByConflict && (
