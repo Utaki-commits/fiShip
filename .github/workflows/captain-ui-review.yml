@@ -8,20 +8,23 @@ on:
     paths:
       - '.github/workflows/captain-ui-review.yml'
 
-permissions:
-  contents: write
-
 jobs:
   review:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: UIレビュー実行
+      - name: Download screenshots
+        run: |
+          mkdir -p docs/ai-reports/screenshots/captain
+          for name in dashboard bookings bins blocked-dates vessel account customers logs extract; do
+            curl -fsSL "https://raw.githubusercontent.com/Utaki-commits/fiShip/main/docs/ai-reports/screenshots/captain/${name}.png" \
+              -o "docs/ai-reports/screenshots/captain/${name}.png"
+          done
+
+      - name: Run UI review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
@@ -29,13 +32,21 @@ jobs:
           const fs = require('fs')
           const path = require('path')
 
+          if (!process.env.ANTHROPIC_API_KEY) {
+            throw new Error('ANTHROPIC_API_KEY is not set')
+          }
+
           const files = ['dashboard','bookings','bins','blocked-dates','vessel','account','customers','logs','extract']
 
           async function reviewAll() {
             const results = []
             for (const name of files) {
               const imgPath = path.join('docs/ai-reports/screenshots/captain', name + '.png')
-              if (!fs.existsSync(imgPath)) { results.push({ name, review: 'ファイルなし' }); continue }
+              if (!fs.existsSync(imgPath)) {
+                results.push({ name, review: 'ファイルなし' })
+                continue
+              }
+
               const img = fs.readFileSync(imgPath).toString('base64')
               const res = await fetch('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
@@ -45,7 +56,7 @@ jobs:
                   'anthropic-version': '2023-06-01'
                 },
                 body: JSON.stringify({
-                  model: 'claude-sonnet-4-20250514',
+                  model: 'claude-sonnet-4-5',
                   max_tokens: 800,
                   messages: [{
                     role: 'user',
@@ -56,21 +67,27 @@ jobs:
                   }]
                 })
               })
+
               const data = await res.json()
-              results.push({ name, review: data.content[0].text })
+              if (!res.ok) {
+                throw new Error(name + ': ' + res.status + ' ' + JSON.stringify(data))
+              }
+
+              results.push({ name, review: data.content?.[0]?.text || 'レビュー結果なし' })
               console.log('完了:', name)
             }
+
             const report = results.map(r => '## ' + r.name + '\n\n' + r.review).join('\n\n---\n\n')
+            fs.mkdirSync('docs/ai-reports', { recursive: true })
             fs.writeFileSync('docs/ai-reports/captain-ui-review.md', report)
           }
 
           reviewAll().catch(e => { console.error(e); process.exit(1) })
           "
 
-      - name: レポートをコミット
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/ai-reports/captain-ui-review.md
-          git diff --cached --quiet || git commit -m "report: 船長UI自動レビュー結果"
-          git push origin main
+      - name: Upload review report
+        uses: actions/upload-artifact@v4
+        with:
+          name: captain-ui-review
+          path: docs/ai-reports/captain-ui-review.md
+          retention-days: 7
