@@ -60,6 +60,32 @@ Captain UI 共通パーツ完全分離フェーズ
 
 ---
 
+## Codex 確認結果
+
+### 2026-05-28 再確認
+
+- [x] `src/components/captain-ui/` 配下に `style={{` が存在しない
+  - 確認コマンド：`rg "style=\{\{" src/components/captain-ui`
+  - 結果：該当なし
+- [x] CSS Moduleが使用されている
+  - `CaptainButton.tsx` → `CaptainButton.module.css`
+  - `CaptainCard.tsx` → `CaptainCard.module.css`
+  - `CaptainInput.tsx` → `CaptainInput.module.css`
+- [x] `CaptainButton`, `CaptainCard`, `CaptainInput` が存在する
+- [x] `index.ts` から3コンポーネントがexportされている
+  - `export { CaptainButton } from './CaptainButton'`
+  - `export { CaptainCard } from './CaptainCard'`
+  - `export { CaptainInput } from './CaptainInput'`
+- [x] TypeScript / lint の結果
+  - `npm.cmd run lint` 成功
+  - `npm.cmd run build` 成功
+  - 既存警告のみ。今回追加した `captain-ui` 起因の警告・エラーなし
+- [x] 既存画面への不要な影響がない
+  - 今回の変更は `src/components/captain-ui/` と `PROGRESS_BOARD.md` の追加・更新のみ
+  - 既存画面ファイルは変更していない
+
+---
+
 ## 申し送りログ
 
 ### Codex 初回実装ログ
@@ -88,6 +114,13 @@ Captain UI 共通パーツ完全分離フェーズ
 ### ChatGPT レビューログ
 
 未記入
+
+### Codex 確認追記ログ
+
+- 2026-05-28:
+  - `style={{` 非存在、CSS Module使用、3コンポーネント存在、index exportを再確認。
+  - `npm.cmd run lint` と `npm.cmd run build` が成功。
+  - 既存画面への不要な変更なし。
 
 ---
 
