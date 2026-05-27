@@ -1,43 +1,98 @@
-# PROGRESS BOARD - fiShip AI Orchestration
+# AI Orchestration Progress Board
 
-## Overall Status
-UX_REVIEW_PENDING
+## 総合ステータス
 
-## Current Phase
-- Phase: captain-ui base component separation
-- Date: 2026-05-28
-- Owner: Codex
+PENDING_REVIEW
 
-## Scope
-- Create reusable captain UI primitives under `src/components/captain-ui/`.
-- Base visual rules on the existing captain UI style currently used in dashboard screens.
-- Do not migrate existing dashboard screens in this phase.
+---
 
-## Task Checklist
-- [x] `CaptainButton` implemented
-- [x] `CaptainCard` implemented
-- [x] `CaptainInput` implemented
-- [x] CSS Modules used
-- [x] No inline `style={{ ... }}` in `src/components/captain-ui/`
-- [x] `index.ts` exports components and types
-- [x] No business logic included in UI primitives
-- [x] Existing screens not modified
-- [x] `npm.cmd run lint` passed with existing warnings only
-- [x] `npm.cmd run build` passed with existing warnings only
+## 現在のフェーズ
 
-## Implementation Notes
-- `CaptainButton` supports `primary`, `secondary`, and `ghost` variants.
-- `CaptainButton` supports `sm`, `md`, and `lg` sizes.
-- `CaptainCard` supports `default`, `outlined`, and `elevated` variants.
-- `CaptainCard` keeps shadow-free styling; `elevated` uses border emphasis instead of shadow.
-- `CaptainInput` supports label, helper text, error text, and ARIA attributes.
-- Input font size is 16px to prevent iPhone automatic zoom.
+Captain UI 共通パーツ完全分離フェーズ
 
-## Review Handoff
-- ChatGPT or Claude should review component structure and UX rule compliance.
-- This phase only creates common captain UI primitives.
-- If review passes, update `Overall Status` to `UX_PASSED`.
-- If review fails, update `Overall Status` to `UX_REJECTED（要修正）` and append the required fixes to the log.
+---
 
-## Log
-- 2026-05-28 Codex: Created captain-ui base components and completed lint/build verification.
+## 今回の実装対象
+
+- [x] CaptainButton
+- [x] CaptainCard
+- [x] CaptainInput
+- [x] captain-ui index export
+- [x] PROGRESS_BOARD.md 作成
+
+---
+
+## 実装チェック
+
+- [x] `src/components/captain-ui/CaptainButton.tsx`
+- [x] `src/components/captain-ui/CaptainButton.module.css`
+- [x] `src/components/captain-ui/CaptainCard.tsx`
+- [x] `src/components/captain-ui/CaptainCard.module.css`
+- [x] `src/components/captain-ui/CaptainInput.tsx`
+- [x] `src/components/captain-ui/CaptainInput.module.css`
+- [x] `src/components/captain-ui/index.ts`
+
+---
+
+## UI分離ルールチェック
+
+- [x] `captain-ui` 配下に `style={{ ... }}` が存在しない
+- [x] CSS Moduleでスタイル管理している
+- [x] CaptainShell.tsx のスタイル思想を参照している
+- [x] 別UIライブラリ思想を混ぜていない
+- [x] 業務ロジックを含めていない
+- [x] 固有文言を含めていない
+
+---
+
+## 品質チェック
+
+- [x] TypeScriptエラーなし
+- [x] lintエラーなし
+- [x] 不要なファイル変更なし
+- [x] 既存画面への破壊的影響なし
+
+---
+
+## ChatGPT Orchestrator レビュー結果
+
+未レビュー
+
+---
+
+## 申し送りログ
+
+### Codex 初回実装ログ
+
+- 実装内容：
+  - `CaptainButton`, `CaptainCard`, `CaptainInput` を `src/components/captain-ui/` 配下に作成済み。
+  - 各コンポーネントはCSS Moduleでスタイル管理する方針。
+  - `index.ts` から共通export済み。
+
+- 参照した既存スタイル：
+  - `CaptainShell.tsx` の見た目・余白・角丸・色・影・フォント感を参照。
+
+- 注意点：
+  - ChatGPT OrchestratorによるUXレビュー前のため、総合ステータスは `PENDING_REVIEW`。
+  - レビュー後、Codexがこのファイルの総合ステータスを `UX_PASSED` または `UX_REJECTED（要修正）` に更新する。
+
+- 型・lint結果：
+  - `npm.cmd run lint` 成功。
+  - `npm.cmd run build` 成功。
+  - 既存の `<img>` / font / hooks dependency 警告は残存するが、今回追加した `captain-ui` 起因のエラーはなし。
+
+- 既存画面への影響：
+  - 既存画面のコードは変更していない。
+  - 共通パーツ追加のみのため、既存画面への表示影響はなし。
+
+### ChatGPT レビューログ
+
+未記入
+
+---
+
+## 次回エージェントへの申し送り
+
+- Claude復帰後、このボードを参照して現在フェーズ、レビュー結果、残作業を確認すること。
+- ChatGPTレビュー結果が `UX_PASSED` の場合は次フェーズへ進行可能。
+- ChatGPTレビュー結果が `UX_REJECTED（要修正）` の場合は、レビューログの指摘を優先して修正すること。
