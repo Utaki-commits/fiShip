@@ -2,6 +2,11 @@ name: Captain UI Review
 
 on:
   workflow_dispatch:
+    inputs:
+      screenshots_dir:
+        description: 'Directory containing screenshot PNG files'
+        required: false
+        default: 'docs/ai-reports/screenshots/captain'
   push:
     branches:
       - main
@@ -17,16 +22,24 @@ jobs:
           node-version: '20'
 
       - name: Download screenshots
+        env:
+          SCREENSHOTS_DIR: ${{ github.event.inputs.screenshots_dir || 'docs/ai-reports/screenshots/captain' }}
         run: |
-          mkdir -p docs/ai-reports/screenshots/captain
-          for name in dashboard bookings bins blocked-dates vessel account customers logs extract; do
-            curl -fsSL "https://raw.githubusercontent.com/Utaki-commits/fiShip/main/docs/ai-reports/screenshots/captain/${name}.png" \
-              -o "docs/ai-reports/screenshots/captain/${name}.png"
+          mkdir -p "$SCREENSHOTS_DIR"
+          if [ "$SCREENSHOTS_DIR" = "docs/ai-reports/screenshots/setup" ]; then
+            files="login step1 step2 step3 step4"
+          else
+            files="dashboard bookings bins blocked-dates vessel account customers logs extract"
+          fi
+          for name in $files; do
+            curl -fsSL "https://raw.githubusercontent.com/Utaki-commits/fiShip/main/${SCREENSHOTS_DIR}/${name}.png" \
+              -o "${SCREENSHOTS_DIR}/${name}.png"
           done
 
       - name: Run UI review
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SCREENSHOTS_DIR: ${{ github.event.inputs.screenshots_dir || 'docs/ai-reports/screenshots/captain' }}
         run: |
           node -e "
           const fs = require('fs')
@@ -36,12 +49,15 @@ jobs:
             throw new Error('ANTHROPIC_API_KEY is not set')
           }
 
-          const files = ['dashboard','bookings','bins','blocked-dates','vessel','account','customers','logs','extract']
+          const screenshotsDir = process.env.SCREENSHOTS_DIR || 'docs/ai-reports/screenshots/captain'
+          const files = screenshotsDir.endsWith('/setup')
+            ? ['login','step1','step2','step3','step4']
+            : ['dashboard','bookings','bins','blocked-dates','vessel','account','customers','logs','extract']
 
           async function reviewAll() {
             const results = []
             for (const name of files) {
-              const imgPath = path.join('docs/ai-reports/screenshots/captain', name + '.png')
+              const imgPath = path.join(screenshotsDir, name + '.png')
               if (!fs.existsSync(imgPath)) {
                 results.push({ name, review: 'ファイルなし' })
                 continue
@@ -79,7 +95,10 @@ jobs:
 
             const report = results.map(r => '## ' + r.name + '\n\n' + r.review).join('\n\n---\n\n')
             fs.mkdirSync('docs/ai-reports', { recursive: true })
-            fs.writeFileSync('docs/ai-reports/captain-ui-review.md', report)
+            const reportPath = screenshotsDir.endsWith('/setup')
+              ? 'docs/ai-reports/setup-ui-review.md'
+              : 'docs/ai-reports/captain-ui-review.md'
+            fs.writeFileSync(reportPath, report)
           }
 
           reviewAll().catch(e => { console.error(e); process.exit(1) })
@@ -89,5 +108,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: captain-ui-review
-          path: docs/ai-reports/captain-ui-review.md
+          path: docs/ai-reports/*-ui-review.md
           retention-days: 7
