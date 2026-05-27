@@ -2,7 +2,7 @@
 
 ## 総合ステータス
 
-UX_PASSED
+PHASE2_PENDING_REVIEW
 
 ---
 
@@ -143,3 +143,51 @@ UX_PASSED
 - Claude復帰後、このボードを参照して現在フェーズ、レビュー結果、残作業を確認すること。
 - ChatGPTレビュー結果が `UX_PASSED` の場合は次フェーズへ進行可能。
 - ChatGPTレビュー結果が `UX_REJECTED（要修正）` の場合は、レビューログの指摘を優先して修正すること。
+
+---
+
+## フェーズ2 進捗
+
+### 2026-05-28 Codex 実装ログ
+
+対象範囲：
+
+- `src/app/dashboard/_components/CaptainShell.tsx`
+- `src/app/dashboard/page.tsx`
+- `src/components/captain-ui/CaptainButton.tsx`
+- `src/components/captain-ui/CaptainButton.module.css`
+- `src/app/dashboard/_components/CaptainShell.module.css`
+- `src/app/dashboard/DashboardPage.module.css`
+
+実施内容：
+
+- `CaptainShell.tsx` の JSX 内インラインスタイルを CSS Module 化。
+- `CaptainShell.tsx` の生 `button` を `CaptainButton` に置換。
+- `LoadingScreen` とドロワー内のパネルを `CaptainCard` に置換。
+- `StatusPill` を CSS Module 管理に変更。
+- `/dashboard` ホーム画面のカード/パネルを `CaptainCard` に置換。
+- `/dashboard` ホーム画面のボタンを `CaptainButton` に置換。
+- `CaptainButton` に `danger` / `edit` variant を追加。
+- 業務ロジック、routing、Supabase処理、API処理、表示条件ロジックは変更していない。
+
+確認結果：
+
+- [x] `src/app/dashboard/_components/CaptainShell.tsx` に `style={{` が存在しない
+- [x] `src/app/dashboard/page.tsx` に `style={{` が存在しない
+- [x] `src/app/dashboard/_components/CaptainShell.tsx` に生 `<button>` が存在しない
+- [x] `src/app/dashboard/page.tsx` に生 `<button>` が存在しない
+- [x] `npm.cmd run lint` 成功
+- [x] `npm.cmd run build` 成功
+
+残作業：
+
+- `/dashboard/bookings`
+- `/dashboard/bins`
+- `/dashboard/blocked-dates`
+- `/dashboard/vessel`
+- `/dashboard/customers`
+- `/dashboard/logs`
+- `/dashboard/extract`
+- `/dashboard/account`
+- `/dashboard/contact`
+- `/dashboard/setup`

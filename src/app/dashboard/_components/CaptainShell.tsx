@@ -3,6 +3,8 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { CaptainButton, CaptainCard } from '@/components/captain-ui'
+import styles from './CaptainShell.module.css'
 
 export const colors = {
   header: '#1B2A4A',
@@ -139,8 +141,8 @@ export const binBadgeStyle = (binType: string): CSSProperties => ({
 
 export function LoadingScreen() {
   return (
-    <main style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-      <div style={{ ...cardStyle, fontSize: '16px', color: colors.sub }}>読み込み中...</div>
+    <main className={`${styles.page} ${styles.loadingPage}`}>
+      <CaptainCard className={styles.loadingCard}>読み込み中...</CaptainCard>
     </main>
   )
 }
@@ -157,39 +159,43 @@ export function PageShell({ title, children, menu = false, back = false }: { tit
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
   return (
-    <div style={pageStyle}>
-      <header style={{ background: colors.header, color: '#FFFFFF', padding: '18px 18px 16px', position: 'sticky', top: 0, zIndex: 30 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <div className={styles.headerRow}>
           {back && (
-            <button
+            <CaptainButton
               aria-label="戻る"
+              className={styles.headerButton}
               onClick={() => router.push('/dashboard')}
-              style={{ ...secondaryButtonStyle, minWidth: '52px', minHeight: '52px', color: '#FFFFFF', border: '0.5px solid rgba(255,255,255,0.35)' }}
-            >←</button>
+              size="md"
+              variant="secondary"
+            >←</CaptainButton>
           )}
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 500, lineHeight: 1.3, flex: 1 }}>{title}</h1>
+          <h1 className={styles.headerTitle}>{title}</h1>
           {menu && (
-            <button
+            <CaptainButton
               aria-label="メニュー"
+              className={styles.headerButton}
               onClick={() => setMenuOpen(true)}
-              style={{ ...secondaryButtonStyle, minWidth: '52px', minHeight: '52px', color: '#FFFFFF', border: '0.5px solid rgba(255,255,255,0.35)' }}
-            >≡</button>
+              size="md"
+              variant="secondary"
+            >≡</CaptainButton>
           )}
         </div>
       </header>
-      <main style={{ padding: '16px' }}>{children}</main>
+      <main className={styles.content}>{children}</main>
       {menuOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(0,0,0,0.35)', display: 'flex', justifyContent: 'flex-end' }} onClick={() => setMenuOpen(false)}>
-          <div style={{ width: '280px', maxWidth: '82vw', height: '100%', background: colors.card, borderLeft: `0.5px solid ${colors.border}`, padding: '20px 16px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <div style={{ fontSize: '18px', fontWeight: 500, color: colors.text }}>メニュー</div>
-              <button onClick={() => setMenuOpen(false)} style={{ ...secondaryButtonStyle, minHeight: '44px' }}>閉じる</button>
+        <div className={styles.overlay} onClick={() => setMenuOpen(false)}>
+          <div className={styles.drawer} onClick={e => e.stopPropagation()}>
+            <div className={styles.drawerHeader}>
+              <div className={styles.drawerTitle}>メニュー</div>
+              <CaptainButton className={styles.drawerClose} onClick={() => setMenuOpen(false)} size="sm" variant="secondary">閉じる</CaptainButton>
             </div>
-            <div style={{ display: 'grid', gap: '8px' }}>
+            <div className={styles.drawerList}>
               {menuItems.map(item => (
-                <button key={item.href} onClick={() => { setMenuOpen(false); router.push(item.href) }} style={{ ...secondaryButtonStyle, width: '100%', textAlign: 'left' }}>
+                <CaptainButton className={styles.drawerItem} key={item.href} onClick={() => { setMenuOpen(false); router.push(item.href) }} variant="secondary">
                   {item.label}
-                </button>
+                </CaptainButton>
               ))}
             </div>
           </div>
@@ -200,12 +206,5 @@ export function PageShell({ title, children, menu = false, back = false }: { tit
 }
 
 export function StatusPill({ tone, children }: { tone: 'green' | 'amber' | 'red' | 'gray'; children: ReactNode }) {
-  const style = tone === 'green'
-    ? { background: colors.greenBg, color: colors.green }
-    : tone === 'amber'
-      ? { background: colors.amberBg, color: colors.amber }
-      : tone === 'red'
-        ? { background: colors.redBg, color: colors.action }
-        : { background: '#F5F5F5', color: colors.weak }
-  return <span style={{ ...style, borderRadius: '20px', padding: '4px 10px', fontSize: '13px', fontWeight: 500 }}>{children}</span>
+  return <span className={`${styles.statusPill} ${styles[tone]}`}>{children}</span>
 }

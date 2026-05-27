@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from 'react'
 import styles from './CaptainButton.module.css'
 
-export type CaptainButtonVariant = 'primary' | 'secondary' | 'ghost'
+export type CaptainButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'edit'
 export type CaptainButtonSize = 'sm' | 'md' | 'lg'
 
 export type CaptainButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
