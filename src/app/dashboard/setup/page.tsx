@@ -41,10 +41,6 @@ export default function SetupPage() {
 
   useEffect(() => {
     const init = async () => {
-      const params = new URLSearchParams(window.location.search)
-      const requestedStep = Number(params.get('step') || 1)
-      setStep(Number.isFinite(requestedStep) ? Math.min(Math.max(requestedStep, 1), totalSteps) : 1)
-
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
 
@@ -56,6 +52,21 @@ export default function SetupPage() {
 
       if (!data) { router.push('/register'); return }
       setVessel(data as Vessel)
+
+      const { count } = await supabase
+        .from('bin_settings')
+        .select('id', { count: 'exact', head: true })
+        .eq('vessel_id', data.id)
+
+      const params = new URLSearchParams(window.location.search)
+      const requestedStep = Number(params.get('step') || 1)
+      const nextStep = Number.isFinite(requestedStep) ? Math.min(Math.max(requestedStep, 1), totalSteps) : 1
+      if (nextStep >= 3 && (count || 0) === 0) {
+        setStep(2)
+        setNotice('便を1件以上保存すると次に進めます。')
+      } else {
+        setStep(nextStep)
+      }
       setLoading(false)
     }
     init()
