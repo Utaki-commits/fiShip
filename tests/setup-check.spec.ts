@@ -57,8 +57,7 @@ test('セットアップ画面確認', async ({ page }) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        headers: { 'content-range': '0-0/1' },
-        body: JSON.stringify([{ id: 'setup-preview-vessel', name: 'テスト丸' }]),
+        body: JSON.stringify({ id: 'setup-preview-vessel', name: 'テスト丸' }),
       })
     })
   }
