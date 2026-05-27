@@ -2,7 +2,7 @@
 
 ## 総合ステータス
 
-PHASE2_PENDING_REVIEW
+PHASE2_IN_PROGRESS
 
 ---
 
@@ -147,6 +147,56 @@ UX_PASSED
 ---
 
 ## フェーズ2 進捗
+
+## フェーズ2：既存画面の共通パーツ適用
+
+### 対象スコープ
+
+- [x] `/dashboard` 以下の既存画面スキャン
+- [x] `CaptainShell.tsx` 周辺のUIスキャン
+- [ ] ボタンの `CaptainButton` 置き換え
+- [ ] カード/パネルの `CaptainCard` 置き換え
+- [ ] 入力欄の `CaptainInput` 置き換え
+- [ ] `style={{ ... }}` 残存確認
+- [x] TypeScript / lint確認
+- [x] build確認
+- [x] 既存画面への破壊的影響確認
+
+### フェーズ2ログ
+
+- 着手日：2026-05-28
+- ChatGPT Orchestrator判定：UX_PASSED を受けてフェーズ2へ移行
+- 作業方針：
+  - 既存UXを維持したまま、画面直書きUIを captain-ui 共通パーツへ段階的に置き換える。
+  - 業務ロジック、routing、Supabase、APIには触れない。
+
+### Codex フェーズ2完了ログ
+
+- 置き換えた画面：
+  - `/dashboard`
+  - `CaptainShell.tsx` 周辺
+- 置き換えたUI：
+  - `CaptainShell.tsx` の戻る/メニュー/ドロワーボタンを `CaptainButton` に置き換え。
+  - `CaptainShell.tsx` の読み込みカード/ドロワーパネルを `CaptainCard` に置き換え。
+  - `/dashboard` ホーム画面の予約カード/問い合わせカード/空状態/モーダルを `CaptainCard` に置き換え。
+  - `/dashboard` ホーム画面の電話/承認/キャンセル/詳細ボタンを `CaptainButton` に置き換え。
+- 残した箇所と理由：
+  - `/dashboard/bookings`, `/dashboard/bins`, `/dashboard/blocked-dates`, `/dashboard/vessel`, `/dashboard/customers`, `/dashboard/logs`, `/dashboard/extract`, `/dashboard/account`, `/dashboard/contact`, `/dashboard/setup` は未置換。
+  - フェーズ2は段階的置き換え方針のため、初回は `CaptainShell.tsx` 周辺と `/dashboard` ホーム画面に限定した。
+  - `CaptainInput` 置き換えは、初回対象範囲に入力欄がないため未実施。
+- `style={{ ... }}` 検索結果：
+  - `src/app/dashboard/_components/CaptainShell.tsx`：該当なし
+  - `src/app/dashboard/page.tsx`：該当なし
+  - `/dashboard` 配下全体には未置換画面の `style={{ ... }}` が残存。
+- lint結果：
+  - `npm.cmd run lint` 成功。
+  - 既存警告のみ。今回変更起因のlintエラーなし。
+- build結果：
+  - `npm.cmd run build` 成功。
+  - 既存警告のみ。今回変更起因のTypeScript/buildエラーなし。
+- 既存画面への影響：
+  - 業務ロジック、routing、Supabase、API、表示条件ロジックは変更なし。
+  - 既存UXを維持した構造置き換えのみ。
 
 ### 2026-05-28 Codex 実装ログ
 
