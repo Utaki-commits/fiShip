@@ -226,7 +226,7 @@ export default function BinsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', margin: '8px 0 12px' }}>{['日','月','火','水','木','金','土'].map((d, i) => <button key={d} onClick={() => toggleDay(i)} style={form.days_of_week.includes(i) ? primaryButtonStyle : secondaryButtonStyle}>{d}</button>)}</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <div><label>出発時刻</label><input type="time" value={form.departure_time} onChange={e => setForm(f => ({ ...f, departure_time: e.target.value }))} style={{ ...inputStyle, marginTop: '8px' }} /></div>
-            <div><label>終了予定</label><input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} style={{ ...inputStyle, marginTop: '8px' }} /></div>
+            <div><label>終了予定時刻</label><input type="time" placeholder="例：13:00" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} style={{ ...inputStyle, marginTop: '8px', fontSize: '16px' }} /></div>
           </div>
           <label style={{ display: 'block', marginTop: '12px' }}>定員</label><input type="number" value={form.max_capacity} onChange={e => setForm(f => ({ ...f, max_capacity: e.target.value }))} style={{ ...inputStyle, margin: '8px 0 12px' }} />
           <label>料金</label><input value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} style={{ ...inputStyle, margin: '8px 0 12px' }} />
