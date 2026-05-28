@@ -38,13 +38,12 @@ type FormState = {
   max_capacity: string
   price: string
   note: string
-  facilities_override_text: string
   period_type: 'monthly' | 'date'
   start_date: string
   end_date: string
 }
 
-const emptyForm = (): FormState => ({ id: '', name: '', bin_type: 'day', start_month: 0, end_month: 11, days_of_week: [0,1,2,3,4,5,6], departure_time: '06:00', end_time: '', max_capacity: '10', price: '', note: '', facilities_override_text: '', period_type: 'monthly', start_date: '', end_date: '' })
+const emptyForm = (): FormState => ({ id: '', name: '', bin_type: 'day', start_month: 0, end_month: 11, days_of_week: [0,1,2,3,4,5,6], departure_time: '06:00', end_time: '', max_capacity: '10', price: '', note: '', period_type: 'monthly', start_date: '', end_date: '' })
 
 export default function BinsPage() {
   const router = useRouter()
@@ -88,7 +87,6 @@ export default function BinsPage() {
       max_capacity: String(bin.max_capacity || 10),
       price: bin.price || '',
       note: bin.note || '',
-      facilities_override_text: bin.facilities_override ? JSON.stringify(bin.facilities_override) : '',
       period_type: bin.period_type || 'monthly',
       start_date: bin.start_date || '',
       end_date: bin.end_date || '',
@@ -102,7 +100,7 @@ export default function BinsPage() {
     setSaving(true)
     setError('')
     try {
-      const facilitiesOverride = form.facilities_override_text.trim() ? { note: form.facilities_override_text.trim() } : null
+      const isExisting = Boolean(form.id)
       const resolvedName = form.name.trim() || (form.bin_type === 'relay' ? '昼夜便' : form.bin_type === 'night' ? '夜便' : '昼便')
       const payload = {
         vessel_id: vesselId,
@@ -117,15 +115,19 @@ export default function BinsPage() {
         max_capacity: Number(form.max_capacity),
         price: form.price,
         note: form.note,
-        facilities_override: facilitiesOverride,
+        facilities_override: null,
         period_type: form.period_type,
         start_date: form.period_type === 'date' ? form.start_date || null : null,
         end_date: form.period_type === 'date' ? form.end_date || form.start_date || null : null,
       }
-      const res = await fetch('/api/bin-settings', { method: form.id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form.id ? { id: form.id, ...payload } : payload) })
+      const res = await fetch('/api/bin-settings', { method: isExisting ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(isExisting ? { id: form.id, ...payload } : payload) })
       const data = await res.json()
       if (!res.ok) { setError(data.error || '保存できませんでした'); return }
-      setBins(prev => form.id ? prev.map(b => b.id === form.id ? data.setting : b) : [...prev, data.setting])
+      setBins(prev => isExisting ? prev.map(b => b.id === form.id ? data.setting : b) : [...prev, data.setting])
+      if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('setup') === 'true') {
+        router.push('/dashboard/setup?step=3')
+        return
+      }
       setEditing(false)
     } finally {
       setSaving(false)
@@ -145,23 +147,36 @@ export default function BinsPage() {
   if (loading) return <LoadingScreen />
 
   return (
-    <PageShell title="便設定">
+    <PageShell title="便設定" back>
       {!editing && (
         <>
-          <div style={cardStyle}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '3px', marginBottom: '10px', color: colors.sub, fontSize: '12px' }}>
-              {Array.from({ length: 12 }, (_, i) => <div key={i} style={{ textAlign: 'center' }}>{i + 1}</div>)}
-            </div>
-            {bins.map(bin => (
-              <div key={bin.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr) 64px', gap: '3px', alignItems: 'center', marginBottom: '8px' }}>
-                {Array.from({ length: 12 }, (_, i) => {
-                  const active = bin.start_month <= bin.end_month ? bin.start_month <= i && i <= bin.end_month : i >= bin.start_month || i <= bin.end_month
-                  return <div key={i} style={{ height: '12px', borderRadius: '8px', background: active ? colors.action : colors.border, opacity: bin.enabled ? 1 : 0.3 }} />
-                })}
-                <span style={{ fontSize: '12px', color: bin.enabled ? colors.text : colors.weak }}>{bin.name || binLabel(bin.bin_type)}</span>
+          {bins.length === 0 ? (
+            <div style={{ ...cardStyle, padding: '28px 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: 500, color: colors.text, marginBottom: '18px' }}>
+                まだ便が登録されていません
               </div>
-            ))}
-          </div>
+              <div style={{ fontSize: '15px', color: '#5A6A78', lineHeight: 1.8, marginBottom: '22px' }}>
+                出船する便を追加して<br />
+                予約を受け付けましょう
+              </div>
+              <button onClick={() => startEdit()} style={{ ...primaryButtonStyle, width: '100%', padding: '16px' }}>＋ 便を追加する</button>
+            </div>
+          ) : (
+            <div style={cardStyle}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '3px', marginBottom: '10px', color: colors.sub, fontSize: '12px' }}>
+                {Array.from({ length: 12 }, (_, i) => <div key={i} style={{ textAlign: 'center' }}>{i + 1}</div>)}
+              </div>
+              {bins.map(bin => (
+                <div key={bin.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr) 64px', gap: '3px', alignItems: 'center', marginBottom: '8px' }}>
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const active = bin.start_month <= bin.end_month ? bin.start_month <= i && i <= bin.end_month : i >= bin.start_month || i <= bin.end_month
+                    return <div key={i} style={{ height: '12px', borderRadius: '8px', background: active ? colors.action : colors.border, opacity: bin.enabled ? 1 : 0.3 }} />
+                  })}
+                  <span style={{ fontSize: '12px', color: bin.enabled ? colors.text : colors.weak }}>{bin.name || binLabel(bin.bin_type)}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {bins.map(bin => (
             <div key={bin.id} style={{ ...cardStyle, background: bin.enabled ? colors.card : '#F5F5F5', color: bin.enabled ? colors.text : colors.weak }}>
@@ -178,7 +193,7 @@ export default function BinsPage() {
               </div>
             </div>
           ))}
-          <button onClick={() => startEdit()} style={{ ...primaryButtonStyle, width: '100%' }}>便を追加する</button>
+          {bins.length > 0 && <button onClick={() => startEdit()} style={{ ...primaryButtonStyle, width: '100%' }}>便を追加する</button>}
         </>
       )}
 
@@ -215,8 +230,7 @@ export default function BinsPage() {
           </div>
           <label style={{ display: 'block', marginTop: '12px' }}>定員</label><input type="number" value={form.max_capacity} onChange={e => setForm(f => ({ ...f, max_capacity: e.target.value }))} style={{ ...inputStyle, margin: '8px 0 12px' }} />
           <label>料金</label><input value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} style={{ ...inputStyle, margin: '8px 0 12px' }} />
-          <label>案内テキスト・持ち物</label><textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} style={{ ...inputStyle, height: '88px', margin: '8px 0 12px' }} />
-          <label>設備の上書き</label><textarea value={form.facilities_override_text} onChange={e => setForm(f => ({ ...f, facilities_override_text: e.target.value }))} style={{ ...inputStyle, height: '72px', margin: '8px 0 12px' }} />
+          <label>乗船客への案内（持ち物・注意事項など）</label><textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="例：タイラバ・イカメタルをご持参ください" style={{ ...inputStyle, height: '88px', margin: '8px 0 12px' }} />
           <div style={{ display: 'grid', gap: '8px' }}>
             <button disabled={saving} onClick={save} style={primaryButtonStyle}>{saving ? '保存中...' : '保存する'}</button>
             <button onClick={() => setEditing(false)} style={secondaryButtonStyle}>戻る</button>

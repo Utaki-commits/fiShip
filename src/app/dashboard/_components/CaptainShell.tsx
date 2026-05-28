@@ -1,16 +1,19 @@
 ﻿'use client'
 
 import type { CSSProperties, ReactNode } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { CaptainButton, CaptainCard } from '@/components/captain-ui'
+import styles from './CaptainShell.module.css'
 
 export const colors = {
-  header: '#7F1D1D',
-  action: '#B91C1C',
-  page: '#F7F2EF',
+  header: '#1B2A4A',
+  action: '#1E4D3A',
+  page: '#F4F6F2',
   card: '#FFFFFF',
-  border: '#E8DDD8',
-  text: '#1C1917',
-  sub: '#57534E',
+  border: '#CDD3DC',
+  text: '#1A2420',
+  sub: '#5A6A78',
   weak: '#9CA3AF',
   amberBg: '#FEF3C7',
   amber: '#D97706',
@@ -32,7 +35,7 @@ export const pageStyle: CSSProperties = {
   background: colors.page,
   color: colors.text,
   fontFamily: 'var(--font-sans)',
-  paddingBottom: '92px',
+  paddingBottom: '0',
 }
 
 export const cardStyle: CSSProperties = {
@@ -87,7 +90,7 @@ export const dangerButtonStyle: CSSProperties = {
   border: `0.5px solid ${colors.redBorder}`,
   borderRadius: '9px',
   background: 'transparent',
-  color: colors.action,
+  color: '#B91C1C',
   fontSize: '15px',
   fontWeight: 500,
   fontFamily: 'inherit',
@@ -100,7 +103,7 @@ export const editButtonStyle: CSSProperties = {
   border: `0.5px solid ${colors.redBorder}`,
   borderRadius: '9px',
   background: colors.redBg,
-  color: colors.action,
+  color: '#1E4D3A',
   fontSize: '15px',
   fontWeight: 500,
   fontFamily: 'inherit',
@@ -138,52 +141,70 @@ export const binBadgeStyle = (binType: string): CSSProperties => ({
 
 export function LoadingScreen() {
   return (
-    <main style={{ ...pageStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-      <div style={{ ...cardStyle, fontSize: '16px', color: colors.sub }}>読み込み中...</div>
+    <main className={`${styles.page} ${styles.loadingPage}`}>
+      <CaptainCard className={styles.loadingCard}>読み込み中...</CaptainCard>
     </main>
   )
 }
 
-export function PageShell({ title, children, menu = true }: { title: string; children: ReactNode; menu?: boolean }) {
+const menuItems = [
+  { label: '顧客名簿', href: '/dashboard/customers' },
+  { label: '便設定', href: '/dashboard/bins' },
+  { label: '休船日', href: '/dashboard/blocked-dates' },
+  { label: '船情報', href: '/dashboard/vessel' },
+  { label: '設定', href: '/dashboard/account' },
+]
+
+export function PageShell({ title, children, menu = false, back = false }: { title: string; children: ReactNode; menu?: boolean; back?: boolean }) {
   const router = useRouter()
+  const [menuOpen, setMenuOpen] = useState(false)
   return (
-    <div style={pageStyle}>
-      <header style={{ background: colors.header, color: '#FFFFFF', padding: '18px 18px 16px', position: 'sticky', top: 0, zIndex: 30 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button
-            onClick={() => router.push('/dashboard')}
-            style={{ ...secondaryButtonStyle, minWidth: '52px', minHeight: '52px', color: '#FFFFFF', border: '0.5px solid rgba(255,255,255,0.35)' }}
-          >戻る</button>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 500, lineHeight: 1.3, flex: 1 }}>{title}</h1>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <div className={styles.headerRow}>
+          {back && (
+            <CaptainButton
+              aria-label="戻る"
+              className={styles.headerButton}
+              onClick={() => router.push('/dashboard')}
+              size="md"
+              variant="secondary"
+            >←</CaptainButton>
+          )}
+          <h1 className={styles.headerTitle}>{title}</h1>
           {menu && (
-            <button
-              onClick={() => router.push('/dashboard/account')}
-              style={{ ...secondaryButtonStyle, minWidth: '52px', minHeight: '52px', color: '#FFFFFF', border: '0.5px solid rgba(255,255,255,0.35)' }}
-            >設定</button>
+            <CaptainButton
+              aria-label="メニュー"
+              className={styles.headerButton}
+              onClick={() => setMenuOpen(true)}
+              size="md"
+              variant="secondary"
+            >≡</CaptainButton>
           )}
         </div>
       </header>
-      <main style={{ padding: '16px' }}>{children}</main>
-      <nav style={{ position: 'fixed', left: '50%', bottom: 0, transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: colors.card, borderTop: `0.5px solid ${colors.border}`, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', zIndex: 40 }}>
-        {[
-          { label: 'ホーム', path: '/dashboard' },
-          { label: '予約', path: '/dashboard/bookings' },
-          { label: '名簿', path: '/dashboard/logs' },
-        ].map(item => (
-          <button key={item.path} onClick={() => router.push(item.path)} style={{ minHeight: '64px', border: 'none', background: 'transparent', color: colors.text, fontSize: '15px', fontWeight: 500, fontFamily: 'inherit' }}>{item.label}</button>
-        ))}
-      </nav>
+      <main className={styles.content}>{children}</main>
+      {menuOpen && (
+        <div className={styles.overlay} onClick={() => setMenuOpen(false)}>
+          <div className={styles.drawer} onClick={e => e.stopPropagation()}>
+            <div className={styles.drawerHeader}>
+              <div className={styles.drawerTitle}>メニュー</div>
+              <CaptainButton className={styles.drawerClose} onClick={() => setMenuOpen(false)} size="sm" variant="secondary">閉じる</CaptainButton>
+            </div>
+            <div className={styles.drawerList}>
+              {menuItems.map(item => (
+                <CaptainButton className={styles.drawerItem} key={item.href} onClick={() => { setMenuOpen(false); router.push(item.href) }} variant="secondary">
+                  {item.label}
+                </CaptainButton>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 export function StatusPill({ tone, children }: { tone: 'green' | 'amber' | 'red' | 'gray'; children: ReactNode }) {
-  const style = tone === 'green'
-    ? { background: colors.greenBg, color: colors.green }
-    : tone === 'amber'
-      ? { background: colors.amberBg, color: colors.amber }
-      : tone === 'red'
-        ? { background: colors.redBg, color: colors.action }
-        : { background: '#F5F5F5', color: colors.weak }
-  return <span style={{ ...style, borderRadius: '20px', padding: '4px 10px', fontSize: '13px', fontWeight: 500 }}>{children}</span>
+  return <span className={`${styles.statusPill} ${styles[tone]}`}>{children}</span>
 }

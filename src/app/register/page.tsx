@@ -72,32 +72,29 @@ export default function RegisterPage() {
     }
   }
 
-  const oceanGradient =
-    'radial-gradient(120% 200% at 88% 110%, rgba(46,134,193,.45) 0%, transparent 55%),' +
-    'radial-gradient(80% 120% at 12% -20%, rgba(212,172,13,.18) 0%, transparent 60%),' +
-    'linear-gradient(180deg, var(--ocean) 0%, #0F4570 55%, #04192B 100%)'
+  const headerColor = '#1B2A4A'
 
   const requiredBadge = (
-    <span style={{ background: 'var(--status-full-fg)', color: 'var(--surface)', fontSize: '14px', fontWeight: 700, padding: '3px 10px', borderRadius: '6px', marginLeft: '8px' }}>
+    <span style={{ background: '#1E4D3A', color: '#FFFFFF', fontSize: '14px', fontWeight: 500, padding: '3px 10px', borderRadius: '6px', marginLeft: '8px' }}>
       必須
     </span>
   )
 
   const styles = {
-    shell: { minHeight:'100vh', background:'var(--bg)', fontFamily:'var(--font-sans)', maxWidth:'480px', margin:'0 auto' },
-    header: { background:oceanGradient, padding:'32px 22px 48px', position:'relative' as const, overflow:'hidden', isolation:'isolate' as const },
-    headerAfter: { position:'absolute' as const, bottom:'-16px', left:0, right:0, height:'32px', background:'var(--bg)', borderRadius:'50% 50% 0 0 / 100% 100% 0 0' },
-    title: { fontSize:'28px', fontWeight:700, color:'var(--surface)', marginBottom:'8px', lineHeight:1.25, position:'relative' as const, zIndex:3 },
-    sub: { fontSize:'16px', fontWeight:700, letterSpacing:'.08em', color:'rgba(242,199,68,.95)', position:'relative' as const, zIndex:3 },
+    shell: { minHeight:'100vh', background:'#F4F6F2', fontFamily:'var(--font-sans)', maxWidth:'480px', margin:'0 auto' },
+    header: { background:headerColor, padding:'32px 22px 48px', position:'relative' as const, overflow:'hidden', isolation:'isolate' as const },
+    headerAfter: { position:'absolute' as const, bottom:'-16px', left:0, right:0, height:'32px', background:'#F4F6F2', borderRadius:'50% 50% 0 0 / 100% 100% 0 0' },
+    title: { fontSize:'28px', fontWeight:500, color:'#FFFFFF', marginBottom:'8px', lineHeight:1.25, position:'relative' as const, zIndex:3 },
+    sub: { fontSize:'16px', fontWeight:500, letterSpacing:'.08em', color:'rgba(255,255,255,.78)', position:'relative' as const, zIndex:3 },
     body: { padding:'28px 22px' },
-    label: { fontSize:'20px', fontWeight:600, color:'var(--fg-1)', marginBottom:'10px', display:'block' },
-    input: { width:'100%', padding:'18px 16px', fontSize:'22px', border:'2px solid var(--border)', borderRadius:'12px', outline:'none', fontFamily:'inherit', marginBottom:'22px', minHeight:'64px', background:'var(--surface)', color:'var(--fg-1)' },
-    btn: { width:'100%', padding:'20px 26px', fontSize:'24px', fontWeight:600, background:'linear-gradient(180deg,var(--ocean) 0%,#164B73 100%)', color:'var(--surface)', border:'none', borderRadius:'14px', cursor:'pointer', fontFamily:'inherit', marginTop:'8px', minHeight:'64px', boxShadow:'inset 0 1px 0 rgba(255,255,255,.18), 0 2px 0 rgba(0,0,0,.18), 0 4px 12px rgba(15,69,112,.30)' },
-    capBtn: (active: boolean) => ({ flex:1, padding:'22px 8px', textAlign:'center' as const, background: active ? 'var(--ocean-pale)' : 'var(--surface)', border: active ? '3px solid var(--ocean)' : '2px solid var(--border)', borderRadius:'14px', cursor:'pointer', fontFamily:'inherit', fontSize:'22px', fontWeight:700, color: active ? 'var(--ocean)' : 'var(--fg-1)', minHeight:'80px' }),
-    togRow: (active: boolean) => ({ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'18px', padding:'22px', background: active ? '#FBF3D4' : 'var(--surface)', border: active ? '2px solid var(--gold)' : '2px solid var(--border)', borderRadius:'14px', cursor:'pointer', marginBottom:'14px', width:'100%', fontFamily:'inherit', textAlign:'left' as const }),
-    togLabel: (active: boolean) => ({ fontSize:'20px', fontWeight:700, color: active ? '#7A5800' : 'var(--fg-1)', lineHeight:1.35 }),
-    togSub: (active: boolean) => ({ fontSize:'18px', color: active ? '#7A5800' : 'var(--fg-2)', marginTop:'8px', lineHeight:1.5 }),
-    togSw: (active: boolean) => ({ width:'72px', height:'40px', borderRadius:'20px', background: active ? 'var(--gold)' : '#D1D5DB', position:'relative' as const, flexShrink:0 as const, transition:'background .2s' }),
+    label: { fontSize:'20px', fontWeight:500, color:'#1A2420', marginBottom:'10px', display:'block' },
+    input: { width:'100%', padding:'18px 16px', fontSize:'22px', border:'0.5px solid #CDD3DC', borderRadius:'12px', outline:'none', fontFamily:'inherit', marginBottom:'22px', minHeight:'64px', background:'#FFFFFF', color:'#1A2420' },
+    btn: { width:'100%', padding:'20px 26px', fontSize:'24px', fontWeight:500, background:'#1E4D3A', color:'#FFFFFF', border:'none', borderRadius:'14px', cursor:'pointer', fontFamily:'inherit', marginTop:'8px', minHeight:'64px' },
+    capBtn: (active: boolean) => ({ flex:1, padding:'22px 8px', textAlign:'center' as const, background: active ? '#F4F6F2' : '#FFFFFF', border: active ? '0.5px solid #1E4D3A' : '0.5px solid #CDD3DC', borderRadius:'14px', cursor:'pointer', fontFamily:'inherit', fontSize:'22px', fontWeight:500, color: active ? '#1E4D3A' : '#1A2420', minHeight:'80px' }),
+    togRow: (active: boolean) => ({ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'18px', padding:'22px', background: active ? '#F4F6F2' : '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius:'14px', cursor:'pointer', marginBottom:'14px', width:'100%', fontFamily:'inherit', textAlign:'left' as const }),
+    togLabel: (active: boolean) => ({ fontSize:'20px', fontWeight:500, color: active ? '#1E4D3A' : '#1A2420', lineHeight:1.35 }),
+    togSub: (active: boolean) => ({ fontSize:'18px', color: active ? '#1E4D3A' : '#5A6A78', marginTop:'8px', lineHeight:1.5 }),
+    togSw: (active: boolean) => ({ width:'72px', height:'40px', borderRadius:'20px', background: active ? '#1E4D3A' : '#D1D5DB', position:'relative' as const, flexShrink:0 as const, transition:'background .2s' }),
   }
 
   return (
@@ -105,7 +102,7 @@ export default function RegisterPage() {
       <div style={styles.header}>
         <div style={{
           position:'absolute', left:0, right:0, top:0, height:'1px', zIndex:2,
-          background:'linear-gradient(90deg,transparent 0%,rgba(242,199,68,.55) 30%,rgba(242,199,68,.85) 50%,rgba(242,199,68,.55) 70%,transparent 100%)',
+          background:'rgba(255,255,255,.22)',
         }} />
         <svg viewBox="0 0 700 44" preserveAspectRatio="none"
           style={{ position:'absolute', left:0, right:0, bottom:'-2px', width:'100%', height:'44px', opacity:0.55, pointerEvents:'none', zIndex:1 }}>
@@ -123,15 +120,15 @@ export default function RegisterPage() {
 
       <div style={styles.body}>
         {error && (
-          <div style={{ background:'var(--status-full-bg)', border:'2px solid var(--status-full-bd)', borderRadius:'12px', padding:'16px 18px', marginBottom:'22px', fontSize:'18px', fontWeight:700, color:'var(--status-full-fg)', lineHeight:1.6 }}>
+          <div style={{ background:'#FEE2E2', border:'0.5px solid #FCA5A5', borderRadius:'12px', padding:'16px 18px', marginBottom:'22px', fontSize:'18px', fontWeight:500, color:'#B91C1C', lineHeight:1.6 }}>
             {error}
           </div>
         )}
 
         {step === 1 && (
           <div>
-            <div style={{ fontSize:'28px', fontWeight:700, color:'var(--fg-1)', marginBottom:'10px', lineHeight:1.35 }}>船の名前を教えてください</div>
-            <div style={{ fontSize:'18px', color:'var(--fg-2)', marginBottom:'28px', lineHeight:1.6 }}>あとから変更できます</div>
+            <div style={{ fontSize:'28px', fontWeight:500, color:'#1A2420', marginBottom:'10px', lineHeight:1.35 }}>船の名前を教えてください</div>
+            <div style={{ fontSize:'18px', color:'#5A6A78', marginBottom:'28px', lineHeight:1.6 }}>あとから変更できます</div>
 
             <label style={styles.label}>船の名前 {requiredBadge}</label>
             <input style={styles.input} placeholder="例：海皇丸" value={form.name} onChange={e => update('name', e.target.value)} />
@@ -157,8 +154,8 @@ export default function RegisterPage() {
 
         {step === 2 && (
           <div>
-            <div style={{ fontSize:'28px', fontWeight:700, color:'var(--fg-1)', marginBottom:'10px', lineHeight:1.35 }}>どこから出船しますか？</div>
-            <div style={{ fontSize:'18px', color:'var(--fg-2)', marginBottom:'28px', lineHeight:1.6 }}>乗船客がアクセス方法を確認するために使います</div>
+            <div style={{ fontSize:'28px', fontWeight:500, color:'#1A2420', marginBottom:'10px', lineHeight:1.35 }}>どこから出船しますか？</div>
+            <div style={{ fontSize:'18px', color:'#5A6A78', marginBottom:'28px', lineHeight:1.6 }}>乗船客がアクセス方法を確認するために使います</div>
 
             <label style={styles.label}>都道府県 {requiredBadge}</label>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px', marginBottom:'12px' }}>
@@ -174,15 +171,15 @@ export default function RegisterPage() {
                     padding:'18px 6px',
                     minHeight:'72px',
                     fontSize:'17px',
-                    fontWeight:700,
+                    fontWeight:500,
                     fontFamily:'inherit',
                     lineHeight:1.4,
                     textAlign:'center',
-                    background: selectedArea === area ? 'var(--ocean)' : 'var(--surface)',
-                    border: selectedArea === area ? '3px solid var(--ocean)' : '2px solid var(--border)',
+                    background: selectedArea === area ? '#1E4D3A' : '#FFFFFF',
+                    border: selectedArea === area ? '0.5px solid #1E4D3A' : '0.5px solid #CDD3DC',
                     borderRadius:'12px',
                     cursor:'pointer',
-                    color: selectedArea === area ? '#fff' : 'var(--fg-1)',
+                    color: selectedArea === area ? '#fff' : '#1A2420',
                   }}
                 >
                   {area}
@@ -198,11 +195,11 @@ export default function RegisterPage() {
                   gap: '10px',
                   margin: '16px 0 12px',
                 }}>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
-                  <span style={{ fontSize: '14px', color: 'var(--fg-2)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  <div style={{ flex: 1, height: '1px', background: '#CDD3DC' }} />
+                  <span style={{ fontSize: '14px', color: '#5A6A78', fontWeight: 500, whiteSpace: 'nowrap' }}>
                     {selectedArea}の都道府県
                   </span>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+                  <div style={{ flex: 1, height: '1px', background: '#CDD3DC' }} />
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'6px', marginBottom:'22px' }}>
                   {AREA_PREFECTURES[selectedArea].map(prefecture => (
@@ -214,14 +211,14 @@ export default function RegisterPage() {
                         padding:'18px 4px',
                         minHeight:'72px',
                         fontSize:'17px',
-                        fontWeight:700,
+                        fontWeight:500,
                         fontFamily:'inherit',
                         textAlign:'center',
-                        background: form.prefecture === prefecture ? 'var(--ocean-pale)' : 'var(--surface)',
-                        border: form.prefecture === prefecture ? '3px solid var(--ocean)' : '2px solid var(--border)',
+                        background: form.prefecture === prefecture ? '#F4F6F2' : '#FFFFFF',
+                        border: form.prefecture === prefecture ? '0.5px solid #1E4D3A' : '0.5px solid #CDD3DC',
                         borderRadius:'10px',
                         cursor:'pointer',
-                        color: form.prefecture === prefecture ? 'var(--ocean)' : 'var(--fg-1)',
+                        color: form.prefecture === prefecture ? '#1E4D3A' : '#1A2420',
                       }}
                     >
                       {prefecture.replace('県','').replace('府','').replace('都','').replace('道','')}
@@ -238,7 +235,7 @@ export default function RegisterPage() {
             <input style={styles.input} placeholder="例：筑前前原駅から車で15分" value={form.access} onChange={e => update('access', e.target.value)} />
 
             <div style={{ display:'flex', gap:'8px' }}>
-              <button style={{ ...styles.btn, background:'transparent', color:'var(--fg-2)', border:'2px solid var(--border)' }} onClick={() => setStep(1)}>← 戻る</button>
+              <button style={{ ...styles.btn, background:'transparent', color:'#5A6A78', border:'0.5px solid #CDD3DC' }} onClick={() => setStep(1)}>← 戻る</button>
               <button style={styles.btn} onClick={() => {
                 if(!form.prefecture || !form.port_name) { setError('都道府県と出船場所を入力してください'); return }
                 setError(''); setStep(3)
@@ -249,8 +246,8 @@ export default function RegisterPage() {
 
         {step === 3 && (
           <div>
-            <div style={{ fontSize:'28px', fontWeight:700, color:'var(--fg-1)', marginBottom:'10px', lineHeight:1.35 }}>出船のスタイルを教えてください</div>
-            <div style={{ fontSize:'18px', color:'var(--fg-2)', marginBottom:'28px', lineHeight:1.6 }}>あとから変更できます</div>
+            <div style={{ fontSize:'28px', fontWeight:500, color:'#1A2420', marginBottom:'10px', lineHeight:1.35 }}>出船のスタイルを教えてください</div>
+            <div style={{ fontSize:'18px', color:'#5A6A78', marginBottom:'28px', lineHeight:1.6 }}>あとから変更できます</div>
 
             <button type="button" style={styles.togRow(form.charter_accepted)} onClick={() => update('charter_accepted', !form.charter_accepted)}>
               <div>
@@ -258,7 +255,7 @@ export default function RegisterPage() {
                 <div style={styles.togSub(form.charter_accepted)}>グループで船を借り切る予約です</div>
               </div>
               <div style={styles.togSw(form.charter_accepted)}>
-                <div style={{ position:'absolute', top:'4px', left: form.charter_accepted ? '36px' : '4px', width:'32px', height:'32px', borderRadius:'50%', background:'var(--surface)', boxShadow:'0 2px 6px rgba(0,0,0,.25)', transition:'left .2s' }}></div>
+                <div style={{ position:'absolute', top:'4px', left: form.charter_accepted ? '36px' : '4px', width:'32px', height:'32px', borderRadius:'50%', background:'#FFFFFF', transition:'left .2s' }}></div>
               </div>
             </button>
 
@@ -268,7 +265,7 @@ export default function RegisterPage() {
                 <div style={styles.togSub(form.beginner_accepted)}>「初心者歓迎」と案内に表示されます</div>
               </div>
               <div style={styles.togSw(form.beginner_accepted)}>
-                <div style={{ position:'absolute', top:'4px', left: form.beginner_accepted ? '36px' : '4px', width:'32px', height:'32px', borderRadius:'50%', background:'var(--surface)', boxShadow:'0 2px 6px rgba(0,0,0,.25)', transition:'left .2s' }}></div>
+                <div style={{ position:'absolute', top:'4px', left: form.beginner_accepted ? '36px' : '4px', width:'32px', height:'32px', borderRadius:'50%', background:'#FFFFFF', transition:'left .2s' }}></div>
               </div>
             </button>
 
@@ -276,8 +273,8 @@ export default function RegisterPage() {
             <input style={styles.input} placeholder="例：お一人様 15,000円（エサ・氷代込み）" value={form.price} onChange={e => update('price', e.target.value)} />
 
             <div style={{ display:'flex', gap:'8px' }}>
-              <button style={{ ...styles.btn, background:'transparent', color:'var(--fg-2)', border:'2px solid var(--border)' }} onClick={() => setStep(2)}>← 戻る</button>
-              <button style={{ ...styles.btn, background: loading ? 'var(--border)' : 'linear-gradient(180deg,#E6BD17 0%,#C9A20D 100%)', color: loading ? 'var(--fg-3)' : 'var(--ocean-deep)' }} onClick={handleSubmit} disabled={loading}>
+              <button style={{ ...styles.btn, background:'transparent', color:'#5A6A78', border:'0.5px solid #CDD3DC' }} onClick={() => setStep(2)}>← 戻る</button>
+              <button style={{ ...styles.btn, background: loading ? '#CDD3DC' : '#1E4D3A', color: loading ? '#5A6A78' : '#FFFFFF' }} onClick={handleSubmit} disabled={loading}>
                 {loading ? '登録中...' : '登録する　✓'}
               </button>
             </div>
@@ -289,22 +286,22 @@ export default function RegisterPage() {
             <div style={{ width:'64px', height:'64px', borderRadius:'16px', overflow:'hidden', margin:'0 auto 18px' }}>
               <img src={DEFAULT_ICON} alt="fiShip" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
             </div>
-            <div style={{ fontSize:'28px', fontWeight:700, color:'var(--fg-1)', marginBottom:'10px', lineHeight:1.35 }}>
+            <div style={{ fontSize:'28px', fontWeight:500, color:'#1A2420', marginBottom:'10px', lineHeight:1.35 }}>
               登録が完了しました！
             </div>
-            <div style={{ fontSize:'18px', color:'var(--fg-2)', lineHeight:1.7, marginBottom:'32px' }}>
+            <div style={{ fontSize:'18px', color:'#5A6A78', lineHeight:1.7, marginBottom:'32px' }}>
               次に出船スケジュールを設定してください。<br />
               昼便・夜便の運航日や定員を登録することで<br />
               予約を受け付けられるようになります。
             </div>
             <button
-              style={{ ...styles.btn, background:'linear-gradient(180deg,#E6BD17 0%,#C9A20D 100%)', color:'var(--ocean-deep)', marginBottom:'12px' }}
+              style={{ ...styles.btn, background:'#1E4D3A', color:'#FFFFFF', marginBottom:'12px' }}
               onClick={() => router.push('/dashboard/settings')}
             >
               出船スケジュールを設定する　→
             </button>
             <button
-              style={{ ...styles.btn, background:'transparent', color:'var(--fg-2)', border:'2px solid var(--border)' }}
+              style={{ ...styles.btn, background:'transparent', color:'#5A6A78', border:'0.5px solid #CDD3DC' }}
               onClick={() => router.push('/dashboard')}
             >
               あとで設定する

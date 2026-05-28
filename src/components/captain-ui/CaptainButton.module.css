@@ -1,0 +1,95 @@
+.button {
+  align-items: center;
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: inherit;
+  font-weight: 500;
+  justify-content: center;
+  line-height: 1.4;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    opacity 120ms ease;
+}
+
+.button:focus-visible {
+  outline: 2px solid #8a9bb5;
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.primary {
+  background: #1e4d3a;
+  border: none;
+  color: #ffffff;
+}
+
+.primary:not(:disabled):hover {
+  background: #183f30;
+}
+
+.secondary {
+  background: transparent;
+  border: 0.5px solid #cdd3dc;
+  color: #5a6a78;
+}
+
+.secondary:not(:disabled):hover {
+  background: #ffffff;
+  color: #1a2420;
+}
+
+.ghost {
+  background: transparent;
+  border: none;
+  color: #5a6a78;
+}
+
+.ghost:not(:disabled):hover {
+  background: #ffffff;
+  color: #1a2420;
+}
+
+.danger {
+  background: transparent;
+  border: 0.5px solid #fca5a5;
+  color: #b91c1c;
+}
+
+.danger:not(:disabled):hover {
+  background: #fef2f2;
+}
+
+.edit {
+  background: #fef2f2;
+  border: 0.5px solid #fca5a5;
+  color: #1e4d3a;
+}
+
+.edit:not(:disabled):hover {
+  background: #fee2e2;
+}
+
+.sm {
+  font-size: 14px;
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.md {
+  font-size: 15px;
+  min-height: 48px;
+  padding: 12px 14px;
+}
+
+.lg {
+  font-size: 16px;
+  min-height: 56px;
+  padding: 14px 16px;
+}

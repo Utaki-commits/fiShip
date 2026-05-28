@@ -1,0 +1,162 @@
+.notice {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0 0 10px;
+}
+
+.sectionHeader {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.passengerCard {
+  margin-bottom: 10px;
+}
+
+.passengerSummary {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.passengerName {
+  color: #1a2420;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.subText {
+  color: #5a6a78;
+}
+
+.row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.wrapRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.topGap {
+  margin-top: 12px;
+}
+
+.callButton {
+  margin-left: auto;
+}
+
+.contactCard {
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+
+.contactLabel {
+  color: #d97706;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.contactTitle {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.contactMessage {
+  color: #5a6a78;
+  line-height: 1.6;
+}
+
+.actionMeta {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.callAttempts {
+  color: #1e4d3a;
+  margin: 8px 0 0;
+}
+
+.nextBookingButton {
+  margin-top: 12px;
+  width: 100%;
+}
+
+.modalOverlay {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 60;
+}
+
+.modalCard {
+  max-width: 420px;
+  width: 100%;
+}
+
+.modalTitle {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0 0 12px;
+}
+
+.modalDescription {
+  color: #5a6a78;
+  line-height: 1.7;
+}
+
+.twoColumnActions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.stackActions {
+  display: grid;
+  gap: 8px;
+}
+
+.binBadge {
+  align-items: center;
+  border-radius: 20px;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 28px;
+  padding: 4px 10px;
+}
+
+.dayBadge {
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+
+.nightBadge {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.relayBadge {
+  background: #fce7f3;
+  color: #1e4d3a;
+}

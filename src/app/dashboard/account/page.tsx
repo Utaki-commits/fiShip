@@ -14,6 +14,22 @@ const expiry = (subscribedAt: string | null) => {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
 }
 
+const ToggleRow = ({ title, description, checked, onToggle }: { title: string; description: string; checked: boolean; onToggle: () => void }) => (
+  <button
+    type="button"
+    onClick={onToggle}
+    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', width: '100%', padding: '14px', marginBottom: '8px', background: '#FFFFFF', border: '0.5px solid #CDD3DC', borderRadius: '9px', color: '#1A2420', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}
+  >
+    <span>
+      <span style={{ display: 'block', fontSize: '15px', fontWeight: 500 }}>{title}</span>
+      <span style={{ display: 'block', fontSize: '13px', color: '#5A6A78', lineHeight: 1.5, marginTop: '2px' }}>{description}</span>
+    </span>
+    <span style={{ width: '46px', height: '26px', borderRadius: '13px', background: checked ? '#1E4D3A' : '#D1D5DB', position: 'relative', flexShrink: 0 }}>
+      <span style={{ position: 'absolute', top: '3px', left: checked ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+    </span>
+  </button>
+)
+
 export default function AccountPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -55,13 +71,14 @@ export default function AccountPage() {
   if (loading || !vessel) return <LoadingScreen />
 
   return (
-    <PageShell title="設定">
+    <PageShell title="設定" back>
       {saved && <div style={{ ...cardStyle, background: saved.includes('でき') ? colors.redBg : colors.greenBg, color: saved.includes('でき') ? colors.action : colors.green }}>{saved}</div>}
       <div style={cardStyle}>
         <h2 style={{ fontSize: '20px', fontWeight: 500, margin: '0 0 14px' }}>運営設定</h2>
-        <button onClick={() => setValue('notify_enabled', !(vessel.notify_enabled ?? true))} style={{ ...(vessel.notify_enabled ?? true ? primaryButtonStyle : secondaryButtonStyle), width: '100%', marginBottom: '8px' }}>通知 {vessel.notify_enabled ?? true ? 'ON' : 'OFF'}</button>
-        <button onClick={() => setValue('auto_confirm', !(vessel.auto_confirm ?? true))} style={{ ...(vessel.auto_confirm ?? true ? primaryButtonStyle : secondaryButtonStyle), width: '100%', marginBottom: '8px' }}>予約自動承認 {vessel.auto_confirm ?? true ? 'ON' : 'OFF'}</button>
+        <ToggleRow title="通知" description="予約の確定や連絡が必要な予約を知らせます。" checked={vessel.notify_enabled ?? true} onToggle={() => setValue('notify_enabled', !(vessel.notify_enabled ?? true))} />
+        <ToggleRow title="予約自動承認" description="予約申し込みを自動で承認します。" checked={vessel.auto_confirm ?? true} onToggle={() => setValue('auto_confirm', !(vessel.auto_confirm ?? true))} />
         <div style={{ color: colors.sub, marginTop: '10px' }}>通知時間帯の制限はありません。確定時に通知します。</div>
+        <button onClick={() => setDeleteOpen(true)} style={{ ...dangerButtonStyle, width: '100%', marginTop: '16px' }}>アカウント削除</button>
       </div>
 
       <div style={cardStyle}>
@@ -84,7 +101,6 @@ export default function AccountPage() {
 
       <div style={{ display: 'grid', gap: '8px' }}>
         <button disabled={saving} onClick={save} style={primaryButtonStyle}>{saving ? '保存中...' : '保存する'}</button>
-        <button onClick={() => setDeleteOpen(true)} style={dangerButtonStyle}>アカウント削除</button>
       </div>
 
       {deleteOpen && (

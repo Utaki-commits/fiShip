@@ -1,0 +1,134 @@
+.page {
+  background: #f4f6f2;
+  color: #1a2420;
+  font-family: var(--font-sans);
+  margin: 0 auto;
+  max-width: 480px;
+  min-height: 100vh;
+  padding-bottom: 0;
+}
+
+.loadingPage {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+.loadingCard {
+  color: #5a6a78;
+  font-size: 16px;
+}
+
+.header {
+  background: #1b2a4a;
+  color: #ffffff;
+  padding: 18px 18px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.headerRow {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.headerTitle {
+  flex: 1;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.headerButton {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  min-height: 52px;
+  min-width: 52px;
+}
+
+.headerButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.content {
+  padding: 16px;
+}
+
+.overlay {
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  inset: 0;
+  justify-content: flex-end;
+  position: fixed;
+  z-index: 80;
+}
+
+.drawer {
+  background: #ffffff;
+  border-left: 0.5px solid #cdd3dc;
+  height: 100%;
+  max-width: 82vw;
+  padding: 20px 16px;
+  width: 280px;
+}
+
+.drawerHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.drawerTitle {
+  color: #1a2420;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.drawerClose {
+  min-height: 44px;
+}
+
+.drawerList {
+  display: grid;
+  gap: 8px;
+}
+
+.drawerItem {
+  justify-content: flex-start;
+  text-align: left;
+  width: 100%;
+}
+
+.statusPill {
+  border-radius: 20px;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 10px;
+}
+
+.green {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.amber {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.red {
+  background: #fef2f2;
+  color: #1e4d3a;
+}
+
+.gray {
+  background: #f5f5f5;
+  color: #9ca3af;
+}

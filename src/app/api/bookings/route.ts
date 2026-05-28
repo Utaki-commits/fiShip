@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
 
     const { data: binSettingsData } = await supabase
       .from('bin_settings')
-      .select('max_capacity, start_month, end_month, days_of_week')
+      .select('max_capacity, start_month, end_month, days_of_week, fish_types')
       .eq('vessel_id', vessel_id)
       .eq('bin_type', bin_type)
 
@@ -161,6 +161,40 @@ export async function POST(req: NextRequest) {
     const status = allowedStatuses.includes(requestedStatus) ? requestedStatus : isImmediate ? 'confirmed' : 'pending'
     const resolvedDateTo = date_to || (isCharter ? date : null)
     const resolvedBoardToken = board_token || randomUUID()
+    const requestedFishingStyle = typeof fishing_style === 'string' ? fishing_style.trim() : ''
+    let resolvedFishingStyle: string | null = requestedFishingStyle || null
+
+    if (matchingBin) {
+      const configuredFishTypes = Array.isArray(matchingBin.fish_types)
+        ? matchingBin.fish_types as string[]
+        : []
+
+      if (configuredFishTypes.length > 0) {
+        resolvedFishingStyle = null
+      } else {
+        const { data: fixedBooking } = await supabase
+          .from('bookings')
+          .select('fishing_style')
+          .eq('vessel_id', vessel_id)
+          .eq('date', date)
+          .eq('bin_type', bin_type)
+          .eq('status', 'confirmed')
+          .not('fishing_style', 'is', null)
+          .limit(1)
+          .maybeSingle()
+
+        const fixedFishingStyle = fixedBooking?.fishing_style || null
+        if (fixedFishingStyle && requestedFishingStyle && requestedFishingStyle !== fixedFishingStyle) {
+          return NextResponse.json(
+            { error: `この便はすでに${fixedFishingStyle}での予約が入っています`, code: 'FISHING_STYLE_LOCKED' },
+            { status: 409 }
+          )
+        }
+        if (fixedFishingStyle) {
+          resolvedFishingStyle = fixedFishingStyle
+        }
+      }
+    }
 
     const { data, error } = await supabase
       .from('bookings')
@@ -172,7 +206,7 @@ export async function POST(req: NextRequest) {
         name,
         tel,
         count: Number(count),
-        fishing_style: fishing_style || null,
+        fishing_style: resolvedFishingStyle,
         message: message || null,
         status,
         channel,

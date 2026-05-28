@@ -1,0 +1,112 @@
+name: Captain UI Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      screenshots_dir:
+        description: 'Directory containing screenshot PNG files'
+        required: false
+        default: 'docs/ai-reports/screenshots/captain'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/captain-ui-review.yml'
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Download screenshots
+        env:
+          SCREENSHOTS_DIR: ${{ github.event.inputs.screenshots_dir || 'docs/ai-reports/screenshots/captain' }}
+        run: |
+          mkdir -p "$SCREENSHOTS_DIR"
+          if [ "$SCREENSHOTS_DIR" = "docs/ai-reports/screenshots/setup" ]; then
+            files="login step1 step2 step3 step4"
+          else
+            files="dashboard bookings bins blocked-dates vessel account customers logs extract"
+          fi
+          for name in $files; do
+            curl -fsSL "https://raw.githubusercontent.com/Utaki-commits/fiShip/main/${SCREENSHOTS_DIR}/${name}.png" \
+              -o "${SCREENSHOTS_DIR}/${name}.png"
+          done
+
+      - name: Run UI review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SCREENSHOTS_DIR: ${{ github.event.inputs.screenshots_dir || 'docs/ai-reports/screenshots/captain' }}
+        run: |
+          node -e "
+          const fs = require('fs')
+          const path = require('path')
+
+          if (!process.env.ANTHROPIC_API_KEY) {
+            throw new Error('ANTHROPIC_API_KEY is not set')
+          }
+
+          const screenshotsDir = process.env.SCREENSHOTS_DIR || 'docs/ai-reports/screenshots/captain'
+          const files = screenshotsDir.endsWith('/setup')
+            ? ['login','step1','step2','step3','step4']
+            : ['dashboard','bookings','bins','blocked-dates','vessel','account','customers','logs','extract']
+
+          async function reviewAll() {
+            const results = []
+            for (const name of files) {
+              const imgPath = path.join(screenshotsDir, name + '.png')
+              if (!fs.existsSync(imgPath)) {
+                results.push({ name, review: 'ファイルなし' })
+                continue
+              }
+
+              const img = fs.readFileSync(imgPath).toString('base64')
+              const res = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ANTHROPIC_API_KEY,
+                  'anthropic-version': '2023-06-01'
+                },
+                body: JSON.stringify({
+                  model: 'claude-sonnet-4-5',
+                  max_tokens: 800,
+                  messages: [{
+                    role: 'user',
+                    content: [
+                      { type: 'image', source: { type: 'base64', media_type: 'image/png', data: img }},
+                      { type: 'text', text: 'この船長向け業務管理UIの問題点を以下の観点で箇条書き（最大5点）してください。\n・カラーの一貫性\n・文字サイズ\n・タップ領域\n・情報の優先順位\n・CAPTAIN_UX_DNA違反（海上での使いやすさ）\n問題がない場合は「問題なし」と記載。' }
+                    ]
+                  }]
+                })
+              })
+
+              const data = await res.json()
+              if (!res.ok) {
+                throw new Error(name + ': ' + res.status + ' ' + JSON.stringify(data))
+              }
+
+              results.push({ name, review: data.content?.[0]?.text || 'レビュー結果なし' })
+              console.log('完了:', name)
+            }
+
+            const report = results.map(r => '## ' + r.name + '\n\n' + r.review).join('\n\n---\n\n')
+            fs.mkdirSync('docs/ai-reports', { recursive: true })
+            const reportPath = screenshotsDir.endsWith('/setup')
+              ? 'docs/ai-reports/setup-ui-review.md'
+              : 'docs/ai-reports/captain-ui-review.md'
+            fs.writeFileSync(reportPath, report)
+          }
+
+          reviewAll().catch(e => { console.error(e); process.exit(1) })
+          "
+
+      - name: Upload review report
+        uses: actions/upload-artifact@v4
+        with:
+          name: captain-ui-review
+          path: docs/ai-reports/*-ui-review.md
+          retention-days: 7

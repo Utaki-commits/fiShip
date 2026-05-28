@@ -110,19 +110,23 @@ export default function BookingsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
           {days.map(day => {
             const dateStr = toDateStr(day)
+            if (day.getMonth() !== currentMonth.getMonth()) {
+              return <div key={dateStr} style={{ minHeight: '62px' }} />
+            }
             const dayBookings = dailyBookings(dateStr)
             const pending = dayBookings.some(b => b.status === 'pending')
             const needsCall = dayBookings.some(b => b.needs_call)
-            const used = dayBookings.filter(b => b.status === 'confirmed').reduce((sum, b) => sum + b.count, 0)
-            const cap = dayCapacity(day)
-            const full = cap > 0 && used >= cap
             const blocked = isBlocked(dateStr)
             const selected = dateStr === selectedDate
             return (
-              <button key={dateStr} onClick={() => setSelectedDate(dateStr)} style={{ minHeight: '62px', borderRadius: '10px', border: `0.5px solid ${selected ? colors.action : colors.border}`, background: blocked ? '#F5F5F5' : selected ? colors.redBg : colors.card, color: day.getMonth() === currentMonth.getMonth() ? colors.text : colors.weak, fontFamily: 'inherit', padding: '6px', fontWeight: 500 }}>
+              <button key={dateStr} onClick={() => setSelectedDate(dateStr)} style={{ minHeight: '62px', borderRadius: '10px', border: `0.5px solid ${selected ? colors.action : colors.border}`, background: blocked ? '#F3F4F6' : colors.card, color: colors.text, fontFamily: 'inherit', padding: '6px', fontWeight: 500 }}>
                 <div>{day.getDate()}</div>
-                {blocked || full ? <div style={{ color: colors.weak }}>×</div> : dayBookings.length > 0 ? <div style={{ color: colors.action }}> {dayBookings.length}件</div> : <div style={{ color: colors.weak }}>空き</div>}
-                <div style={{ fontSize: '12px' }}>{pending ? '！' : ''}{needsCall ? ' TEL' : ''}</div>
+                {!blocked && dayBookings.length > 0 && (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', height: '22px', borderRadius: '11px', background: colors.action, color: '#fff', fontSize: '12px', marginTop: '4px' }}>
+                    {dayBookings.length}
+                  </div>
+                )}
+                <div style={{ fontSize: '12px', minHeight: '16px' }}>{pending ? '⚠️' : ''}{needsCall ? '📞' : ''}</div>
               </button>
             )
           })}
