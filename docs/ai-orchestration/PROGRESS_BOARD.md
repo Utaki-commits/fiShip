@@ -1,285 +1,66 @@
-# AI Orchestration Progress Board
-
-## 総合ステータス
-
-UX_REJECTED
+# fiShip PROGRESS_BOARD
+> 全AIが参照する進捗管理ボード
+> 更新ルール：タスク完了時に必ずこのファイルを更新してコミットすること
 
 ---
 
-## 現在のフェーズ
+## 現在の状態
 
-Captain UI 共通パーツ完全分離フェーズ
-
----
-
-## 今回の実装対象
-
-- [x] CaptainButton
-- [x] CaptainCard
-- [x] CaptainInput
-- [x] captain-ui index export
-- [x] PROGRESS_BOARD.md 作成
+最終更新：2026-05-28
+担当AI：Codex
 
 ---
 
-## 実装チェック
+## 完了済みタスク
 
-- [x] `src/components/captain-ui/CaptainButton.tsx`
-- [x] `src/components/captain-ui/CaptainButton.module.css`
-- [x] `src/components/captain-ui/CaptainCard.tsx`
-- [x] `src/components/captain-ui/CaptainCard.module.css`
-- [x] `src/components/captain-ui/CaptainInput.tsx`
-- [x] `src/components/captain-ui/CaptainInput.module.css`
-- [x] `src/components/captain-ui/index.ts`
-
----
-
-## UI分離ルールチェック
-
-- [x] `captain-ui` 配下に `style={{ ... }}` が存在しない
-- [x] CSS Moduleでスタイル管理している
-- [x] CaptainShell.tsx のスタイル思想を参照している
-- [x] 別UIライブラリ思想を混ぜていない
-- [x] 業務ロジックを含めていない
-- [x] 固有文言を含めていない
+| PR# | 内容 | 状態 |
+|---|---|---|
+| #13 | DB拡張（Phase1） | ✅ |
+| #14 | 乗船名簿SMS | ✅ |
+| #15 | 乗船客UI再設計 | ✅ |
+| #16 | SMS送信トリガー | ✅ |
+| #17 | 自動化（Phase5） | ✅ |
+| #18 | 船長UI再設計 | ✅ |
+| #19 | ボトムナビ・reply_failed | ✅ |
+| #20〜#31 | 乗船客UI段階的改善 | ✅ |
+| #32 | 船長UI新カラー適用 | ✅ |
+| #33 | 初回セットアップ画面 | ✅ |
+| #34 | 便設定修正・空状態表示 | ✅ |
 
 ---
 
-## 品質チェック
+## 進行中タスク
 
-- [x] TypeScriptエラーなし
-- [x] lintエラーなし
-- [x] 不要なファイル変更なし
-- [x] 既存画面への破壊的影響なし
-
----
-
-## ChatGPT Orchestrator レビュー結果
-
-UX_PASSED
-
-### 合格理由
-
-- `CaptainButton`, `CaptainCard`, `CaptainInput` が `src/components/captain-ui/` 配下に作成されている
-- 各コンポーネントが CSS Module でスタイル管理されている
-- `captain-ui` 配下に `style={{ ... }}` が存在しない
-- `index.ts` から3コンポーネントがexportされている
-- 業務ロジック、固有文言、予約・船・日付などのドメイン要素が混入していない
-- `CaptainShell.tsx` のスタイル思想に沿った色・角丸・余白・ボーダー・フォーカス表現になっている
-- `npm.cmd run build` 成功
-- `npm.cmd run lint` 成功
-- `PROGRESS_BOARD.md` が作成され、レビュー前ステータスが `PENDING_REVIEW` になっていた
+| タスク | 担当 | 状態 |
+|---|---|---|
+| 船長UI壁打ち・修正 | Claude+Codex | 🔄 進行中 |
 
 ---
 
-## Codex 確認結果
+## 未着手タスク（優先順）
 
-### 2026-05-28 再確認
-
-- [x] `src/components/captain-ui/` 配下に `style={{` が存在しない
-  - 確認コマンド：`rg "style=\{\{" src/components/captain-ui`
-  - 結果：該当なし
-- [x] CSS Moduleが使用されている
-  - `CaptainButton.tsx` → `CaptainButton.module.css`
-  - `CaptainCard.tsx` → `CaptainCard.module.css`
-  - `CaptainInput.tsx` → `CaptainInput.module.css`
-- [x] `CaptainButton`, `CaptainCard`, `CaptainInput` が存在する
-- [x] `index.ts` から3コンポーネントがexportされている
-  - `export { CaptainButton } from './CaptainButton'`
-  - `export { CaptainCard } from './CaptainCard'`
-  - `export { CaptainInput } from './CaptainInput'`
-- [x] TypeScript / lint の結果
-  - `npm.cmd run lint` 成功
-  - `npm.cmd run build` 成功
-  - 既存警告のみ。今回追加した `captain-ui` 起因の警告・エラーなし
-- [x] 既存画面への不要な影響がない
-  - 今回の変更は `src/components/captain-ui/` と `PROGRESS_BOARD.md` の追加・更新のみ
-  - 既存画面ファイルは変更していない
+| 優先度 | タスク |
+|---|---|
+| 🔴 P0 | 船長UI各画面の修正 |
+| 🔴 P0 | 初回セットアップ画面の修正 |
+| 🟡 P1 | Twilio設定（SMS本番送信） |
+| 🟡 P1 | チェックマークのデザイン画像差し替え |
+| 🔵 P2 | LINEログイン・電話番号認証 |
 
 ---
 
-## 申し送りログ
+## 既知のバグ・ペンディング
 
-### Codex 初回実装ログ
-
-- 実装内容：
-  - `CaptainButton`, `CaptainCard`, `CaptainInput` を `src/components/captain-ui/` 配下に作成済み。
-  - 各コンポーネントはCSS Moduleでスタイル管理する方針。
-  - `index.ts` から共通export済み。
-
-- 参照した既存スタイル：
-  - `CaptainShell.tsx` の見た目・余白・角丸・色・影・フォント感を参照。
-
-- 注意点：
-  - ChatGPT OrchestratorによるUXレビュー前のため、総合ステータスは `PENDING_REVIEW`。
-  - レビュー後、Codexがこのファイルの総合ステータスを `UX_PASSED` または `UX_REJECTED（要修正）` に更新する。
-
-- 型・lint結果：
-  - `npm.cmd run lint` 成功。
-  - `npm.cmd run build` 成功。
-  - 既存の `<img>` / font / hooks dependency 警告は残存するが、今回追加した `captain-ui` 起因のエラーはなし。
-
-- 既存画面への影響：
-  - 既存画面のコードは変更していない。
-  - 共通パーツ追加のみのため、既存画面への表示影響はなし。
-
-### ChatGPT レビューログ
-
-- 2026-05-28:
-  - ChatGPT Orchestrator レビュー結果：`UX_PASSED`
-  - captain-ui 共通パーツ実装および `PROGRESS_BOARD.md` 作成は合格。
-
-### Codex 確認追記ログ
-
-- 2026-05-28:
-  - `style={{` 非存在、CSS Module使用、3コンポーネント存在、index exportを再確認。
-  - `npm.cmd run lint` と `npm.cmd run build` が成功。
-  - 既存画面への不要な変更なし。
+- 乗船名簿の印刷機能：ペンディング
+- 便選択画面のグラデーション：未反映
+- 設備詳細ページの「設備を見る」ボタン重複
 
 ---
 
-## 次回エージェントへの申し送り
+## AIへの引き継ぎルール
 
-- Claude復帰後、このボードを参照して現在フェーズ、レビュー結果、残作業を確認すること。
-- ChatGPTレビュー結果が `UX_PASSED` の場合は次フェーズへ進行可能。
-- ChatGPTレビュー結果が `UX_REJECTED（要修正）` の場合は、レビューログの指摘を優先して修正すること。
-
----
-
-## フェーズ2 進捗
-
-## フェーズ2：既存画面の共通パーツ適用
-
-### 対象スコープ
-
-- [x] `/dashboard` 以下の既存画面スキャン
-- [x] `CaptainShell.tsx` 周辺のUIスキャン
-- [ ] ボタンの `CaptainButton` 置き換え
-- [ ] カード/パネルの `CaptainCard` 置き換え
-- [ ] 入力欄の `CaptainInput` 置き換え
-- [ ] `style={{ ... }}` 残存確認
-- [x] TypeScript / lint確認
-- [x] build確認
-- [x] 既存画面への破壊的影響確認
-
-### フェーズ2ログ
-
-- 着手日：2026-05-28
-- ChatGPT Orchestrator判定：UX_PASSED を受けてフェーズ2へ移行
-- 2026-05-28 ChatGPT Orchestrator判定：UX_REJECTED
-  - 理由：今回の作業はフェーズ2全体完了ではなく、フェーズ2第1スライス完了として扱うべきため。
-- 作業方針：
-  - 既存UXを維持したまま、画面直書きUIを captain-ui 共通パーツへ段階的に置き換える。
-  - 業務ロジック、routing、Supabase、APIには触れない。
-
-### Codex フェーズ2第1スライス完了ログ
-
-- 置き換えた画面：
-  - `/dashboard`
-  - `CaptainShell.tsx` 周辺
-- 置き換えたUI：
-  - `CaptainShell.tsx` の戻る/メニュー/ドロワーボタンを `CaptainButton` に置き換え。
-  - `CaptainShell.tsx` の読み込みカードを `CaptainCard` に置き換え。
-  - `CaptainShell.tsx` のドロワー本体はレイアウトコンテナのため、CSS Module化した `div` として維持。
-  - `/dashboard` ホーム画面の予約カード/問い合わせカード/空状態/モーダルを `CaptainCard` に置き換え。
-  - `/dashboard` ホーム画面の電話/承認/キャンセル/詳細ボタンを `CaptainButton` に置き換え。
-- 残した箇所と理由：
-  - `/dashboard/bookings`, `/dashboard/bins`, `/dashboard/blocked-dates`, `/dashboard/vessel`, `/dashboard/customers`, `/dashboard/logs`, `/dashboard/extract`, `/dashboard/account`, `/dashboard/contact`, `/dashboard/setup` は未置換。
-  - フェーズ2は段階的置き換え方針のため、初回は `CaptainShell.tsx` 周辺と `/dashboard` ホーム画面に限定した。
-  - `CaptainInput` 置き換えは、初回対象範囲に入力欄がないため未実施。
-- `style={{ ... }}` 検索結果：
-  - `src/app/dashboard/_components/CaptainShell.tsx`：該当なし
-  - `src/app/dashboard/page.tsx`：該当なし
-  - `/dashboard` 配下全体には未置換画面の `style={{ ... }}` が残存。
-- lint結果：
-  - `npm.cmd run lint` 成功。
-  - 既存警告のみ。今回変更起因のlintエラーなし。
-- build結果：
-  - `npm.cmd run build` 成功。
-  - 既存警告のみ。今回変更起因のTypeScript/buildエラーなし。
-- 既存画面への影響：
-  - 業務ロジック、routing、Supabase、API、表示条件ロジックは変更なし。
-  - 既存UXを維持した構造置き換えのみ。
-
-### ChatGPT Orchestrator フェーズ2レビュー結果
-
-判定：UX_REJECTED
-
-不合格理由：
-
-- `PROGRESS_BOARD.md` の総合ステータスが `PHASE2_IN_PROGRESS` のままだった。
-- フェーズ2タスクリストで以下が未完了のままだった。
-  - ボタンの `CaptainButton` 置き換え
-  - カード/パネルの `CaptainCard` 置き換え
-  - 入力欄の `CaptainInput` 置き換え
-  - `style={{ ... }}` 残存確認
-- `/dashboard` 配下全体には未置換画面の `style={{ ... }}` が残存している。
-- `PROGRESS_BOARD.md` に「ドロワー内のパネルを `CaptainCard` に置換」と記載していたが、実コードでは `CaptainShell.tsx` のドロワー本体は `div className={styles.drawer}` のままだった。
-- 今回の作業は「フェーズ2完了」ではなく「フェーズ2第1スライス完了」として扱うべき。
-
-修正対応：
-
-- 総合ステータスを `UX_REJECTED` に更新。
-- 「Codex フェーズ2完了ログ」を「Codex フェーズ2第1スライス完了ログ」に修正。
-- ドロワー本体は `CaptainCard` ではなく、レイアウトコンテナとして CSS Module化した `div` で維持した旨に修正。
-- フェーズ2全体の未完了項目と残作業を維持。
-
-### ChatGPT Orchestrator ボード修正レビュー結果
-
-判定：BOARD_FIX_PASSED
-
-注意：
-
-- これはフェーズ2実装そのものの合格ではなく、前回の `UX_REJECTED` に対する「ボード修正の合格」。
-- フェーズ2実装の総合ステータスは引き続き `UX_REJECTED`。
-
-確認結果：
-
-- 総合ステータスが `PHASE2_IN_PROGRESS` から `UX_REJECTED` に変更されている。
-- 「フェーズ2完了ログ」が「フェーズ2第1スライス完了ログ」に修正されている。
-- ドロワー本体は `CaptainCard` ではなく、CSS Module化した `div` として維持している旨に修正されている。
-- ChatGPT Orchestratorの `UX_REJECTED` 理由と修正対応が追記されている。
-
-### 2026-05-28 Codex 実装ログ
-
-対象範囲：
-
-- `src/app/dashboard/_components/CaptainShell.tsx`
-- `src/app/dashboard/page.tsx`
-- `src/components/captain-ui/CaptainButton.tsx`
-- `src/components/captain-ui/CaptainButton.module.css`
-- `src/app/dashboard/_components/CaptainShell.module.css`
-- `src/app/dashboard/DashboardPage.module.css`
-
-実施内容：
-
-- `CaptainShell.tsx` の JSX 内インラインスタイルを CSS Module 化。
-- `CaptainShell.tsx` の生 `button` を `CaptainButton` に置換。
-- `LoadingScreen` とドロワー内のパネルを `CaptainCard` に置換。
-- `StatusPill` を CSS Module 管理に変更。
-- `/dashboard` ホーム画面のカード/パネルを `CaptainCard` に置換。
-- `/dashboard` ホーム画面のボタンを `CaptainButton` に置換。
-- `CaptainButton` に `danger` / `edit` variant を追加。
-- 業務ロジック、routing、Supabase処理、API処理、表示条件ロジックは変更していない。
-
-確認結果：
-
-- [x] `src/app/dashboard/_components/CaptainShell.tsx` に `style={{` が存在しない
-- [x] `src/app/dashboard/page.tsx` に `style={{` が存在しない
-- [x] `src/app/dashboard/_components/CaptainShell.tsx` に生 `<button>` が存在しない
-- [x] `src/app/dashboard/page.tsx` に生 `<button>` が存在しない
-- [x] `npm.cmd run lint` 成功
-- [x] `npm.cmd run build` 成功
-
-残作業：
-
-- `/dashboard/bookings`
-- `/dashboard/bins`
-- `/dashboard/blocked-dates`
-- `/dashboard/vessel`
-- `/dashboard/customers`
-- `/dashboard/logs`
-- `/dashboard/extract`
-- `/dashboard/account`
-- `/dashboard/contact`
-- `/dashboard/setup`
+1. このファイルをセッション開始時に必ず読む
+2. タスク完了時にこのファイルを更新してコミット
+3. Claudeはセッション開始時にFilesystemツールで自動読込
+4. Codexはgit pullしてから読む
+5. ローカルとGitHubを常に同期させること
