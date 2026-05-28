@@ -28,6 +28,8 @@ jobs:
           mkdir -p "$SCREENSHOTS_DIR"
           if [ "$SCREENSHOTS_DIR" = "docs/ai-reports/screenshots/setup" ]; then
             files="login step1 step2 step3 step4"
+          elif [ "$SCREENSHOTS_DIR" = "docs/ai-reports/screenshots/dashboard-check" ]; then
+            files="dashboard dashboard-menu"
           else
             files="dashboard bookings bins blocked-dates vessel account customers logs extract"
           fi
@@ -52,6 +54,8 @@ jobs:
           const screenshotsDir = process.env.SCREENSHOTS_DIR || 'docs/ai-reports/screenshots/captain'
           const files = screenshotsDir.endsWith('/setup')
             ? ['login','step1','step2','step3','step4']
+            : screenshotsDir.endsWith('/dashboard-check')
+              ? ['dashboard','dashboard-menu']
             : ['dashboard','bookings','bins','blocked-dates','vessel','account','customers','logs','extract']
 
           async function reviewAll() {
@@ -97,6 +101,8 @@ jobs:
             fs.mkdirSync('docs/ai-reports', { recursive: true })
             const reportPath = screenshotsDir.endsWith('/setup')
               ? 'docs/ai-reports/setup-ui-review.md'
+              : screenshotsDir.endsWith('/dashboard-check')
+                ? 'docs/ai-reports/dashboard-review.md'
               : 'docs/ai-reports/captain-ui-review.md'
             fs.writeFileSync(reportPath, report)
           }
@@ -108,5 +114,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: captain-ui-review
-          path: docs/ai-reports/*-ui-review.md
+          path: |
+            docs/ai-reports/*-ui-review.md
+            docs/ai-reports/dashboard-review.md
           retention-days: 7
