@@ -155,10 +155,11 @@ export default function SetupPage() {
           <div style={{ fontSize: '44px', marginBottom: '14px' }}>⏰</div>
           <h1 style={{ fontSize: '24px', fontWeight: 500, margin: '0 0 12px' }}>出船する便を設定しましょう</h1>
           <p style={{ color: colors.sub, fontSize: '16px', lineHeight: 1.7, margin: '0 0 22px' }}>
-            昼便・夜便の出船時刻と定員を設定します
+            昼便・夜便の出船時刻と定員を設定します。<br />
+            あとから変更することもできます。
           </p>
           <button onClick={() => router.push('/dashboard/bins?setup=true')} style={{ ...primaryButtonStyle, width: '100%', padding: '16px' }}>
-            設定する →
+            ＋ 便を追加する →
           </button>
         </section>
       )}
