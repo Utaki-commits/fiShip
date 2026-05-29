@@ -70,3 +70,10 @@ PR #36確認：MERGED（2026-05-29 17:40:37 JST）
 3. Claudeはセッション開始時にFilesystemツールで自動読込
 4. Codexはgit pullしてから読む
 5. ローカルとGitHubを常に同期させること
+
+## Playwrightレビュールール
+
+- Codexは全PR完了後、毎回Playwrightを実行してスクリーンショットを保存する
+- スクリーンショットの保存先：`docs/ai-orchestration/screenshots/`（PR番号フォルダで管理）
+- ClaudeによるUIレビューは、みやもとさんから「確認して」と指示があったタイミングのみ実施する
+- Codexは自律的にClaudeへレビュー依頼をしない
