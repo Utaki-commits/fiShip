@@ -29,7 +29,7 @@ jobs:
           if [ "$SCREENSHOTS_DIR" = "docs/ai-reports/screenshots/setup" ]; then
             files="login step1 step2 step3 step4"
           elif [ "$SCREENSHOTS_DIR" = "docs/ai-reports/screenshots/dashboard-check" ]; then
-            files="dashboard-full dashboard-scroll"
+            files="dashboard-latest"
           else
             files="dashboard bookings bins blocked-dates vessel account customers logs extract"
           fi
@@ -55,7 +55,7 @@ jobs:
           const files = screenshotsDir.endsWith('/setup')
             ? ['login','step1','step2','step3','step4']
             : screenshotsDir.endsWith('/dashboard-check')
-              ? ['dashboard-full','dashboard-scroll']
+              ? ['dashboard-latest']
             : ['dashboard','bookings','bins','blocked-dates','vessel','account','customers','logs','extract']
 
           async function reviewAll() {
@@ -102,7 +102,7 @@ jobs:
             const reportPath = screenshotsDir.endsWith('/setup')
               ? 'docs/ai-reports/setup-ui-review.md'
               : screenshotsDir.endsWith('/dashboard-check')
-                ? 'docs/ai-reports/dashboard-review.md'
+                ? 'docs/ai-reports/dashboard-review-latest.md'
               : 'docs/ai-reports/captain-ui-review.md'
             fs.writeFileSync(reportPath, report)
           }
@@ -117,4 +117,5 @@ jobs:
           path: |
             docs/ai-reports/*-ui-review.md
             docs/ai-reports/dashboard-review.md
+            docs/ai-reports/dashboard-review-latest.md
           retention-days: 7

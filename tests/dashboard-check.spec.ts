@@ -63,8 +63,11 @@ test('ダッシュボード確認', async ({ page }) => {
         body: JSON.stringify({
           id: 'dashboard-preview-vessel',
           name: 'テスト丸',
+          captain_name: '山田船長',
+          banner_url: 'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?w=800',
           auto_confirm: true,
           setup_completed: true,
+          date_format: 'western',
         }),
       })
     })
@@ -90,6 +93,8 @@ test('ダッシュボード確認', async ({ page }) => {
       })
     })
     await page.route('**/rest/v1/bookings**', async route => {
+      const today = new Date().toISOString().slice(0, 10)
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -97,10 +102,64 @@ test('ダッシュボード確認', async ({ page }) => {
           {
             id: 'mock-booking-1',
             vessel_id: 'dashboard-preview-vessel',
-            date: new Date().toISOString().slice(0, 10),
+            date: today,
             bin_type: 'day',
             name: '山田太郎',
-            tel: '09000000000',
+            tel: '09012345678',
+            count: 2,
+            fishing_style: null,
+            message: null,
+            status: 'confirmed',
+            channel: 'page',
+            contacted: true,
+            is_charter: false,
+            needs_call: false,
+            needs_call_reason: null,
+            call_attempts: 0,
+          },
+          {
+            id: 'mock-booking-2',
+            vessel_id: 'dashboard-preview-vessel',
+            date: today,
+            bin_type: 'day',
+            name: '佐藤花子',
+            tel: '09087654321',
+            count: 1,
+            fishing_style: null,
+            message: '電話希望のメッセージあり',
+            status: 'confirmed',
+            channel: 'page',
+            contacted: false,
+            is_charter: false,
+            needs_call: true,
+            needs_call_reason: '電話希望のメッセージあり',
+            call_attempts: 0,
+          },
+          {
+            id: 'mock-booking-3',
+            vessel_id: 'dashboard-preview-vessel',
+            date: tomorrow,
+            bin_type: 'day',
+            name: '田中一郎',
+            tel: '09011112222',
+            count: 3,
+            fishing_style: null,
+            message: null,
+            status: 'confirmed',
+            channel: 'page',
+            contacted: false,
+            is_charter: false,
+            needs_call: false,
+            needs_call_reason: null,
+            call_attempts: 0,
+          },
+          {
+            id: 'mock-booking-4',
+            vessel_id: 'dashboard-preview-vessel',
+            date: tomorrow,
+            bin_type: 'day',
+            name: '鈴木次郎',
+            tel: '09033334444',
             count: 2,
             fishing_style: null,
             message: null,
@@ -108,18 +167,58 @@ test('ダッシュボード確認', async ({ page }) => {
             channel: 'page',
             contacted: false,
             is_charter: false,
-            needs_call: true,
-            needs_call_reason: '電話確認',
+            needs_call: false,
+            needs_call_reason: null,
+            call_attempts: 0,
+          },
+          {
+            id: 'mock-booking-5',
+            vessel_id: 'dashboard-preview-vessel',
+            date: tomorrow,
+            bin_type: 'day',
+            name: '高橋三郎',
+            tel: '09055556666',
+            count: 2,
+            fishing_style: null,
+            message: null,
+            status: 'pending',
+            channel: 'page',
+            contacted: false,
+            is_charter: false,
+            needs_call: false,
+            needs_call_reason: null,
             call_attempts: 0,
           },
         ]),
       })
     })
     await page.route('**/rest/v1/contacts**', async route => {
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([]),
+        body: JSON.stringify([
+          {
+            id: 'mock-contact-1',
+            name: '中村四郎',
+            tel: '09077778888',
+            message: '貸切で相談したいです',
+            preferred_date: tomorrow,
+            is_charter: true,
+            is_negotiating: true,
+          },
+        ]),
+      })
+    })
+    await page.route('**/rest/v1/sns_messages**', async route => {
+      const url = route.request().url()
+      const count = url.includes('channel=eq.instagram') ? 1 : 2
+      await route.fulfill({
+        status: 206,
+        headers: {
+          'Content-Range': `0-${count - 1}/${count}`,
+          'Access-Control-Expose-Headers': 'Content-Range',
+        },
       })
     })
   }
@@ -128,14 +227,7 @@ test('ダッシュボード確認', async ({ page }) => {
   await page.waitForTimeout(1000)
   await expect(page.locator('body')).toBeVisible()
   await page.screenshot({
-    path: 'docs/ai-reports/screenshots/dashboard-check/dashboard-full.png',
-    fullPage: true,
-  })
-
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-  await page.waitForTimeout(500)
-  await page.screenshot({
-    path: 'docs/ai-reports/screenshots/dashboard-check/dashboard-scroll.png',
+    path: 'docs/ai-reports/screenshots/dashboard-check/dashboard-latest.png',
     fullPage: true,
   })
 })
