@@ -7,6 +7,56 @@
   margin-bottom: 20px;
 }
 
+.hero {
+  background: #1b2a4a;
+  min-height: 140px;
+  position: relative;
+}
+
+.heroImage {
+  display: block;
+  height: 140px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.heroOverlay {
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.5);
+  bottom: 0;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  left: 0;
+  padding: 18px 16px;
+  position: absolute;
+  right: 0;
+}
+
+.heroTitle {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.heroSub {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.heroDate {
+  color: #ffffff;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  max-width: 148px;
+  text-align: right;
+}
+
 .sectionTitle {
   font-size: 18px;
   font-weight: 500;
@@ -22,7 +72,8 @@
 }
 
 .passengerCard {
-  margin-bottom: 10px;
+  border-top: 0.5px solid #cdd3dc;
+  padding: 12px 0;
 }
 
 .passengerSummary {
@@ -83,14 +134,38 @@
   line-height: 1.6;
 }
 
+.snsCard {
+  cursor: pointer;
+}
+
+.snsTitle {
+  color: #1a2420;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.needsCallCard {
+  border-color: #fca5a5;
+}
+
 .actionMeta {
   font-size: 18px;
   font-weight: 500;
 }
 
 .callAttempts {
-  color: #1e4d3a;
+  color: #b91c1c;
   margin: 8px 0 0;
+}
+
+.urgentCallButton {
+  background: #b91c1c;
+  color: #ffffff;
+}
+
+.urgentCallButton:hover {
+  background: #991b1b;
+  color: #ffffff;
 }
 
 .nextBookingButton {
@@ -136,14 +211,40 @@
   gap: 8px;
 }
 
+.binSectionCard {
+  padding-bottom: 12px;
+}
+
+.binSectionHeader {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cancelRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.cancelSailingButton {
+  border-color: #b91c1c;
+  border-radius: 6px;
+  color: #b91c1c;
+  font-size: 13px;
+  min-height: 44px;
+  padding: 8px 12px;
+}
+
 .binBadge {
   align-items: center;
-  border-radius: 20px;
+  border-radius: 3px;
   display: inline-flex;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
   min-height: 28px;
-  padding: 4px 10px;
+  padding: 2px 8px;
 }
 
 .dayBadge {

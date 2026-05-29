@@ -6,9 +6,9 @@ import type { ReactNode } from 'react'
 
 const navItems = [
   { label: '🏠 ホーム', href: '/dashboard' },
-  { label: '📋 予約', href: '/dashboard/bookings' },
+  { label: '📋 出船予定', href: '/dashboard/bookings' },
   { label: '📒 名簿', href: '/dashboard/logs' },
-  { label: '📞 電話メモ', href: '/dashboard/extract' },
+  { label: '📞 予約登録', href: '/dashboard/extract' },
 ]
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {

@@ -155,34 +155,49 @@ const menuItems = [
   { label: '設定', href: '/dashboard/account' },
 ]
 
-export function PageShell({ title, children, menu = false, back = false }: { title: string; children: ReactNode; menu?: boolean; back?: boolean }) {
+export function PageShell({ title, children, menu = false, back = false, hero }: { title: string; children: ReactNode; menu?: boolean; back?: boolean; hero?: ReactNode }) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerRow}>
-          {back && (
-            <CaptainButton
-              aria-label="戻る"
-              className={styles.headerButton}
-              onClick={() => router.push('/dashboard')}
-              size="md"
-              variant="secondary"
-            >←</CaptainButton>
-          )}
-          <h1 className={styles.headerTitle}>{title}</h1>
+      {hero ? (
+        <header className={styles.heroHeader}>
+          {hero}
           {menu && (
             <CaptainButton
               aria-label="メニュー"
-              className={styles.headerButton}
+              className={`${styles.headerButton} ${styles.heroMenuButton}`}
               onClick={() => setMenuOpen(true)}
               size="md"
               variant="secondary"
             >≡</CaptainButton>
           )}
-        </div>
-      </header>
+        </header>
+      ) : (
+        <header className={styles.header}>
+          <div className={styles.headerRow}>
+            {back && (
+              <CaptainButton
+                aria-label="戻る"
+                className={styles.headerButton}
+                onClick={() => router.push('/dashboard')}
+                size="md"
+                variant="secondary"
+              >←</CaptainButton>
+            )}
+            <h1 className={styles.headerTitle}>{title}</h1>
+            {menu && (
+              <CaptainButton
+                aria-label="メニュー"
+                className={styles.headerButton}
+                onClick={() => setMenuOpen(true)}
+                size="md"
+                variant="secondary"
+              >≡</CaptainButton>
+            )}
+          </div>
+        </header>
+      )}
       <main className={styles.content}>{children}</main>
       {menuOpen && (
         <div className={styles.overlay} onClick={() => setMenuOpen(false)}>

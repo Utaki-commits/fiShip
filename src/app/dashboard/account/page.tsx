@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { PageShell, LoadingScreen, cardStyle, colors, primaryButtonStyle, secondaryButtonStyle, dangerButtonStyle } from '../_components/CaptainShell'
 
-type Vessel = { id: string; notify_enabled: boolean | null; font_size: string | null; color_mode: string | null; auto_confirm: boolean | null; subscribed_at: string | null }
+type Vessel = { id: string; notify_enabled: boolean | null; font_size: string | null; color_mode: string | null; auto_confirm: boolean | null; subscribed_at: string | null; date_format: 'western' | 'japanese' | null }
 
 const expiry = (subscribedAt: string | null) => {
   if (!subscribedAt) return '未設定'
@@ -42,7 +42,7 @@ export default function AccountPage() {
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
-      const { data } = await supabase.from('vessels').select('id, notify_enabled, font_size, color_mode, auto_confirm, subscribed_at').eq('user_id', session.user.id).single()
+      const { data } = await supabase.from('vessels').select('id, notify_enabled, font_size, color_mode, auto_confirm, subscribed_at, date_format').eq('user_id', session.user.id).single()
       if (!data) { router.push('/register'); return }
       setVessel(data as Vessel)
       setLoading(false)
@@ -55,7 +55,7 @@ export default function AccountPage() {
   const save = async () => {
     if (!vessel) return
     setSaving(true)
-    const { error } = await supabase.from('vessels').update({ notify_enabled: vessel.notify_enabled ?? true, font_size: vessel.font_size || 'medium', color_mode: vessel.color_mode || 'light', auto_confirm: vessel.auto_confirm ?? true }).eq('id', vessel.id)
+    const { error } = await supabase.from('vessels').update({ notify_enabled: vessel.notify_enabled ?? true, font_size: vessel.font_size || 'medium', color_mode: vessel.color_mode || 'light', auto_confirm: vessel.auto_confirm ?? true, date_format: vessel.date_format || 'western' }).eq('id', vessel.id)
     setSaving(false)
     setSaved(error ? '保存できませんでした' : '保存しました')
     setTimeout(() => setSaved(''), 2200)
@@ -84,7 +84,14 @@ export default function AccountPage() {
       <div style={cardStyle}>
         <h2 style={{ fontSize: '20px', fontWeight: 500, margin: '0 0 14px' }}>見やすさ</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '12px' }}>{['small','medium','large'].map(size => <button key={size} onClick={() => setValue('font_size', size)} style={vessel.font_size === size ? primaryButtonStyle : secondaryButtonStyle}>{size === 'small' ? '小' : size === 'large' ? '大' : '標準'}</button>)}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>{['light','dark'].map(mode => <button key={mode} onClick={() => setValue('color_mode', mode)} style={vessel.color_mode === mode ? primaryButtonStyle : secondaryButtonStyle}>{mode === 'dark' ? '夜間' : '通常'}</button>)}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>{['light','dark'].map(mode => <button key={mode} onClick={() => setValue('color_mode', mode)} style={vessel.color_mode === mode ? primaryButtonStyle : secondaryButtonStyle}>{mode === 'dark' ? '夜間' : '通常'}</button>)}</div>
+        <div style={{ fontSize: '15px', fontWeight: 500, marginBottom: '8px' }}>日付表示形式</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          {[
+            { key: 'western', label: '西暦' },
+            { key: 'japanese', label: '和暦' },
+          ].map(option => <button key={option.key} onClick={() => setValue('date_format', option.key)} style={(vessel.date_format || 'western') === option.key ? primaryButtonStyle : secondaryButtonStyle}>{option.label}</button>)}
+        </div>
       </div>
 
       <div style={cardStyle}>
