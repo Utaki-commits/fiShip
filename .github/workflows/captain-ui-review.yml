@@ -29,7 +29,7 @@ jobs:
           if [ "$SCREENSHOTS_DIR" = "docs/ai-reports/screenshots/setup" ]; then
             files="login step1 step2 step3 step4"
           elif [ "$SCREENSHOTS_DIR" = "docs/ai-reports/screenshots/dashboard-check" ]; then
-            files="dashboard dashboard-menu"
+            files="dashboard-full dashboard-scroll"
           else
             files="dashboard bookings bins blocked-dates vessel account customers logs extract"
           fi
@@ -55,7 +55,7 @@ jobs:
           const files = screenshotsDir.endsWith('/setup')
             ? ['login','step1','step2','step3','step4']
             : screenshotsDir.endsWith('/dashboard-check')
-              ? ['dashboard','dashboard-menu']
+              ? ['dashboard-full','dashboard-scroll']
             : ['dashboard','bookings','bins','blocked-dates','vessel','account','customers','logs','extract']
 
           async function reviewAll() {

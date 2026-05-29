@@ -128,16 +128,14 @@ test('ダッシュボード確認', async ({ page }) => {
   await page.waitForTimeout(1000)
   await expect(page.locator('body')).toBeVisible()
   await page.screenshot({
-    path: 'docs/ai-reports/screenshots/dashboard-check/dashboard.png',
+    path: 'docs/ai-reports/screenshots/dashboard-check/dashboard-full.png',
     fullPage: true,
   })
 
-  const menuButton = page.locator('button[aria-label="メニュー"], button:has-text("≡"), .hamburger').first()
-  await expect(menuButton).toBeVisible()
-  await menuButton.click()
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
   await page.waitForTimeout(500)
   await page.screenshot({
-    path: 'docs/ai-reports/screenshots/dashboard-check/dashboard-menu.png',
+    path: 'docs/ai-reports/screenshots/dashboard-check/dashboard-scroll.png',
     fullPage: true,
   })
 })
