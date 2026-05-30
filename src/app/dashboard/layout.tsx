@@ -13,6 +13,7 @@ const navItems = [
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const activeColor = '#D4AC0D'
 
   return (
     <div style={{ paddingBottom: '56px' }}>
@@ -38,18 +39,33 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               key={item.href}
               href={item.href}
               style={{
+                position: 'relative',
                 minHeight: '56px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#FFFFFF',
-                opacity: active ? 1 : 0.58,
+                color: active ? activeColor : 'rgba(255,255,255,0.58)',
                 fontSize: '12px',
                 fontWeight: 500,
                 textDecoration: 'none',
                 fontFamily: 'var(--font-sans)',
               }}
             >
+              {active && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '28px',
+                    height: '3px',
+                    borderRadius: '0 0 3px 3px',
+                    background: activeColor,
+                  }}
+                />
+              )}
               {item.label}
             </Link>
           )
