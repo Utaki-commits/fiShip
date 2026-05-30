@@ -63,6 +63,30 @@
   margin: 0 0 10px;
 }
 
+.sectionTitleWithBadge {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.countBadge {
+  border-radius: 3px;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+}
+
+.criticalCountBadge {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.messageCountBadge {
+  background: #e8eef4;
+  color: #1b2a4a;
+}
+
 .sectionHeader {
   align-items: center;
   display: flex;
@@ -139,9 +163,12 @@
 }
 
 .snsTitle {
+  align-items: center;
   color: #1a2420;
+  display: flex;
   font-size: 16px;
   font-weight: 500;
+  gap: 8px;
 }
 
 .needsCallCard {
@@ -165,6 +192,26 @@
 
 .urgentCallButton:hover {
   background: #991b1b;
+  color: #ffffff;
+}
+
+.bookingCheckButton {
+  background: #1e4d3a;
+  color: #ffffff;
+}
+
+.bookingCheckButton:hover {
+  background: #173d2e;
+  color: #ffffff;
+}
+
+.messageCheckButton {
+  background: #1b2a4a;
+  color: #ffffff;
+}
+
+.messageCheckButton:hover {
+  background: #132039;
   color: #ffffff;
 }
 

@@ -235,15 +235,24 @@ export default function DashboardPage() {
       {notice && <CaptainCard className={styles.notice}>{notice}</CaptainCard>}
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>対応待ち{waitingCount > 0 ? ` ${waitingCount}件` : ''}</h2>
+        <h2 className={`${styles.sectionTitle} ${styles.sectionTitleWithBadge}`}>
+          対応待ち
+          {waitingCount > 0 && <span className={`${styles.countBadge} ${styles.criticalCountBadge}`}>{waitingCount}件</span>}
+        </h2>
         {snsCounts.line > 0 && (
           <CaptainCard className={styles.snsCard} onClick={() => router.push('/dashboard/extract')}>
-            <div className={styles.snsTitle}>💬 LINE 未処理 {snsCounts.line}件</div>
+            <div className={styles.snsTitle}>
+              <span>💬 LINE 未処理</span>
+              <span className={`${styles.countBadge} ${styles.messageCountBadge}`}>{snsCounts.line}件</span>
+            </div>
           </CaptainCard>
         )}
         {snsCounts.instagram > 0 && (
           <CaptainCard className={styles.snsCard} onClick={() => router.push('/dashboard/extract')}>
-            <div className={styles.snsTitle}>💬 Instagram 未処理 {snsCounts.instagram}件</div>
+            <div className={styles.snsTitle}>
+              <span>💬 Instagram 未処理</span>
+              <span className={`${styles.countBadge} ${styles.messageCountBadge}`}>{snsCounts.instagram}件</span>
+            </div>
           </CaptainCard>
         )}
         {contacts.map(contact => (
@@ -251,7 +260,7 @@ export default function DashboardPage() {
             <div className={styles.contactLabel}>貸切問い合わせ</div>
             <div className={styles.contactTitle}>{contact.name || '名前未登録'} 様 {contact.preferred_date ? formatDate(contact.preferred_date) : ''}</div>
             <p className={styles.contactMessage}>{contact.message}</p>
-            <CaptainButton onClick={() => router.push('/dashboard/contact')} variant="secondary">詳細を見る</CaptainButton>
+            <CaptainButton className={styles.messageCheckButton} onClick={() => router.push('/dashboard/contact')}>詳細を見る</CaptainButton>
           </CaptainCard>
         ))}
         {actionable.map(booking => (
@@ -265,7 +274,7 @@ export default function DashboardPage() {
             {(booking.call_attempts || 0) > 0 && <p className={styles.callAttempts}>留守 {booking.call_attempts}回</p>}
             <div className={`${styles.wrapRow} ${styles.topGap}`}>
               {booking.tel && <CaptainButton className={booking.needs_call ? styles.urgentCallButton : undefined} onClick={() => beginCall(booking)}>今すぐ電話する</CaptainButton>}
-              {booking.status === 'pending' && <CaptainButton onClick={() => updateBooking(booking, { status: 'confirmed' })} variant="secondary">承認する</CaptainButton>}
+              {booking.status === 'pending' && <CaptainButton className={styles.bookingCheckButton} onClick={() => updateBooking(booking, { status: 'confirmed' })}>承認する</CaptainButton>}
             </div>
           </CaptainCard>
         ))}
