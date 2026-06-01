@@ -170,7 +170,7 @@ export function PageShell({ title, children, menu = false, back = false, hero }:
               onClick={() => setMenuOpen(true)}
               size="md"
               variant="secondary"
-            >≡</CaptainButton>
+            >≡<span className={styles.heroMenuLabel}>メニュー</span></CaptainButton>
           )}
         </header>
       ) : (

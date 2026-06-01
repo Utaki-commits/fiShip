@@ -162,127 +162,171 @@ export default function DashboardPage() {
   const todaysBookings = bookings.filter(b => b.date === today && b.status === 'confirmed')
   const tomorrowBookings = bookings.filter(b => b.date === tomorrow && b.status === 'confirmed')
   const nextBooking = bookings.find(b => b.date > tomorrow && b.status === 'confirmed')
+  const importantBookings = actionable.filter(b => b.needs_call)
+  const pendingBookings = bookings.filter(b => b.status === 'pending')
+  const messageCount = snsCounts.line + snsCounts.instagram
   const waitingCount = contacts.length + actionable.length + snsCounts.line + snsCounts.instagram
+  const groupByBin = (items: Booking[]) => (Object.entries(items.reduce<Record<string, Booking[]>>((acc, booking) => {
+    acc[booking.bin_type] = [...(acc[booking.bin_type] || []), booking]
+    return acc
+  }, {})) as Array<['day' | 'night' | 'relay', Booking[]]>)
+  const todayGroups = groupByBin(todaysBookings)
+  const tomorrowGroups = groupByBin(tomorrowBookings)
+  const totalPeople = (items: Booking[]) => items.reduce((sum, booking) => sum + booking.count, 0)
+  const contactProgress = (items: Booking[]) => {
+    if (items.length === 0) return '連絡なし'
+    const contacted = items.filter(booking => booking.contacted).length
+    return `${contacted}/${items.length} 連絡済み`
+  }
   const binBadgeClass = (binType: string) => {
     if (binType === 'night') return `${styles.binBadge} ${styles.nightBadge}`
     if (binType === 'relay') return `${styles.binBadge} ${styles.relayBadge}`
     return `${styles.binBadge} ${styles.dayBadge}`
+  }
+  const binIcon = (binType: string) => {
+    if (binType === 'night') return '🌙'
+    if (binType === 'relay') return '🔄'
+    return '☀️'
   }
 
   const DashboardHero = () => (
     <div className={styles.hero}>
       {vessel?.banner_url && <img className={styles.heroImage} src={vessel.banner_url} alt={`${vessel.name} バナー`} />}
       <div className={styles.heroOverlay}>
-        <div>
+        <div className={styles.heroText}>
           <div className={styles.heroTitle}>{vessel?.name || 'ダッシュボード'}</div>
-          <div className={styles.heroSub}>船長 {vessel?.captain_name || '未設定'}</div>
+          <div className={styles.heroCaptain}>⚓ 船長 {vessel?.captain_name || '未設定'}</div>
+          <div className={styles.heroDate}>{formatHeroDate(todayDate, vessel?.date_format)}</div>
         </div>
-        <div className={styles.heroDate}>{formatHeroDate(todayDate, vessel?.date_format)}</div>
       </div>
     </div>
   )
-
-  const PassengerCard = ({ booking }: { booking: Booking }) => (
-    <div className={styles.passengerCard}>
-      <div className={styles.passengerSummary}>
-        <span className={styles.passengerName}>{booking.name} 様</span>
-        <span className={styles.subText}>{booking.count}名</span>
-        <span className={binBadgeClass(booking.bin_type)}>{binLabel(booking.bin_type)}</span>
-      </div>
-      <div className={styles.row}>
-        {booking.contacted ? <StatusPill tone="green">連絡済み</StatusPill> : <StatusPill tone="amber">未連絡</StatusPill>}
-        {(booking.call_attempts || 0) > 0 && <StatusPill tone="red">留守 {booking.call_attempts}回</StatusPill>}
-        {!booking.contacted && booking.tel && <CaptainButton className={styles.callButton} onClick={() => beginCall(booking)}>今すぐ電話する</CaptainButton>}
-      </div>
-    </div>
-  )
-
-  const SailingSection = ({ date, bookingsForDate }: { date: string; bookingsForDate: Booking[] }) => {
-    const grouped = bookingsForDate.reduce<Record<string, Booking[]>>((acc, booking) => {
-      acc[booking.bin_type] = [...(acc[booking.bin_type] || []), booking]
-      return acc
-    }, {})
-    const groups = (Object.entries(grouped) as Array<['day' | 'night' | 'relay', Booking[]]>)
-
-    return (
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>{formatDate(date)}の出船</h2>
-        {bookingsForDate.length > 0 ? groups.map(([binType, group]) => (
-          <CaptainCard className={styles.binSectionCard} key={`${date}-${binType}`}>
-            <div className={styles.binSectionHeader}>
-              <span className={binBadgeClass(binType)}>{binLabel(binType)}</span>
-              <span className={styles.subText}>{group.reduce((sum, booking) => sum + booking.count, 0)}名</span>
-            </div>
-            {group.map(booking => <PassengerCard key={booking.id} booking={booking} />)}
-            <div className={styles.cancelRow}>
-              <CaptainButton
-                className={styles.cancelSailingButton}
-                onClick={() => setCancelTarget({ date, bin_type: binType, bin_name: binLabel(binType) })}
-                size="sm"
-                variant="danger"
-              >
-                ⚠️ {binLabel(binType)}の出船を中止する
-              </CaptainButton>
-            </div>
-          </CaptainCard>
-        )) : <CaptainCard>{formatDate(date)}出船なし</CaptainCard>}
-      </section>
-    )
-  }
 
   return (
     <PageShell title={vessel?.name || 'ダッシュボード'} menu hero={<DashboardHero />}>
       {notice && <CaptainCard className={styles.notice}>{notice}</CaptainCard>}
 
-      <section className={styles.section}>
-        <h2 className={`${styles.sectionTitle} ${styles.sectionTitleWithBadge}`}>
-          対応待ち
-          {waitingCount > 0 && <span className={`${styles.countBadge} ${styles.criticalCountBadge}`}>{waitingCount}件</span>}
-        </h2>
-        {snsCounts.line > 0 && (
-          <CaptainCard className={styles.snsCard} onClick={() => router.push('/dashboard/extract')}>
-            <div className={styles.snsTitle}>
-              <span>💬 LINE 未処理</span>
-              <span className={`${styles.countBadge} ${styles.messageCountBadge}`}>{snsCounts.line}件</span>
-            </div>
-          </CaptainCard>
-        )}
-        {snsCounts.instagram > 0 && (
-          <CaptainCard className={styles.snsCard} onClick={() => router.push('/dashboard/extract')}>
-            <div className={styles.snsTitle}>
-              <span>💬 Instagram 未処理</span>
-              <span className={`${styles.countBadge} ${styles.messageCountBadge}`}>{snsCounts.instagram}件</span>
-            </div>
-          </CaptainCard>
-        )}
-        {contacts.map(contact => (
-          <CaptainCard className={styles.contactCard} key={contact.id}>
-            <div className={styles.contactLabel}>貸切問い合わせ</div>
-            <div className={styles.contactTitle}>{contact.name || '名前未登録'} 様 {contact.preferred_date ? formatDate(contact.preferred_date) : ''}</div>
-            <p className={styles.contactMessage}>{contact.message}</p>
-            <CaptainButton className={styles.messageCheckButton} onClick={() => router.push('/dashboard/contact')}>詳細を見る</CaptainButton>
-          </CaptainCard>
-        ))}
-        {actionable.map(booking => (
-          <CaptainCard className={booking.needs_call ? styles.needsCallCard : undefined} key={booking.id}>
-            <div className={styles.wrapRow}>
-              {booking.needs_call && <StatusPill tone="red">要電話連絡</StatusPill>}
-              {booking.status === 'pending' && <StatusPill tone="amber">承認待ち</StatusPill>}
-              {booking.is_charter && <StatusPill tone="amber">貸切</StatusPill>}
-            </div>
-            <div className={styles.actionMeta}>{booking.name} 様 {formatDate(booking.date)} {binLabel(booking.bin_type)} {booking.count}名</div>
-            {(booking.call_attempts || 0) > 0 && <p className={styles.callAttempts}>留守 {booking.call_attempts}回</p>}
-            <div className={`${styles.wrapRow} ${styles.topGap}`}>
-              {booking.tel && <CaptainButton className={booking.needs_call ? styles.urgentCallButton : undefined} onClick={() => beginCall(booking)}>今すぐ電話する</CaptainButton>}
-              {booking.status === 'pending' && <CaptainButton className={styles.bookingCheckButton} onClick={() => updateBooking(booking, { status: 'confirmed' })}>承認する</CaptainButton>}
-            </div>
-          </CaptainCard>
-        ))}
-        {waitingCount === 0 && <CaptainCard>今すぐ対応が必要な予約はありません。</CaptainCard>}
+      <section className={styles.summaryCard}>
+        <div className={styles.cardHeader}>
+          <span className={styles.headerIcon}>⚓</span>
+          <h2>本日の確認</h2>
+        </div>
+        <div className={styles.summaryGrid}>
+          <div className={`${styles.summaryItem} ${styles.summaryToday}`}>
+            <span className={styles.summaryCircle}>今</span>
+            <span className={styles.summaryLabel}>今日の便数</span>
+            <strong>{todayGroups.length}</strong>
+          </div>
+          <div className={`${styles.summaryItem} ${styles.summaryTomorrow}`}>
+            <span className={styles.summaryCircle}>明</span>
+            <span className={styles.summaryLabel}>明日の便数</span>
+            <strong>{tomorrowGroups.length}</strong>
+          </div>
+          <div className={`${styles.summaryItem} ${styles.summaryImportant}`}>
+            <span className={styles.summaryCircle}>!</span>
+            <span className={styles.summaryLabel}>最重要</span>
+            <strong>{importantBookings.length}</strong>
+          </div>
+        </div>
       </section>
 
-      <SailingSection date={today} bookingsForDate={todaysBookings} />
-      <SailingSection date={tomorrow} bookingsForDate={tomorrowBookings} />
+      <section className={`${styles.panel} ${styles.importantPanel}`}>
+        <div className={styles.panelHeader}>
+          <div className={styles.panelTitleWrap}>
+            <span className={`${styles.countBadge} ${styles.criticalCountBadge}`}>★ 最重要</span>
+          </div>
+          {importantBookings.length > 0 && <span className={`${styles.countBadge} ${styles.criticalCountBadge}`}>{importantBookings.length}件</span>}
+        </div>
+        {importantBookings.length > 0 ? importantBookings.slice(0, 2).map(booking => (
+          <div className={styles.importantItem} key={booking.id}>
+            <div className={styles.phoneIcon}>☎</div>
+            <div className={styles.importantBody}>
+              <div className={styles.importantName}>{booking.name} 様</div>
+              <div className={styles.importantReason}>{booking.needs_call_reason || '電話連絡が必要です'}</div>
+              <div className={styles.importantMeta}>{formatDate(booking.date)}・{binLabel(booking.bin_type)}・{booking.count}名</div>
+            </div>
+            {booking.tel && <CaptainButton className={styles.urgentCallButton} onClick={() => beginCall(booking)}>電話</CaptainButton>}
+          </div>
+        )) : <div className={styles.emptyText}>最重要の対応はありません。</div>}
+      </section>
+
+      <section className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <div className={styles.panelTitleWrap}>
+            <span className={styles.headerIcon}>🚢</span>
+            <h2>今日の出船</h2>
+          </div>
+        </div>
+        {todayGroups.length > 0 ? todayGroups.map(([binType, group]) => (
+          <div className={styles.sailingCard} key={`${today}-${binType}`}>
+            <div className={styles.binIcon}>{binIcon(binType)}</div>
+            <div className={styles.sailingBody}>
+              <div className={styles.sailingTitle}>{binLabel(binType)} <span>{group[0]?.fishing_style || '釣種未設定'}</span></div>
+              <div className={styles.sailingMeta}>{totalPeople(group)}名・集合 時刻未設定・出港 時刻未設定</div>
+              <div className={styles.wrapRow}>
+                <span className={`${styles.countBadge} ${styles.messageCountBadge}`}>{contactProgress(group)}</span>
+              </div>
+            </div>
+            <CaptainButton className={styles.navyButton} onClick={() => router.push('/dashboard/logs')}>名簿</CaptainButton>
+          </div>
+        )) : <div className={styles.emptyText}>{formatDate(today)} 出船なし</div>}
+      </section>
+
+      <section className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <div className={styles.panelTitleWrap}>
+            <span className={styles.headerIcon}>📅</span>
+            <h2>明日の準備</h2>
+          </div>
+        </div>
+        {tomorrowGroups.length > 0 ? tomorrowGroups.map(([binType, group]) => (
+          <div className={styles.prepareCard} key={`${tomorrow}-${binType}`}>
+            <div className={styles.binIcon}>{binIcon(binType)}</div>
+            <div className={styles.sailingBody}>
+              <div className={styles.sailingTitle}>{binLabel(binType)} <span>{group[0]?.fishing_style || '釣種未設定'}</span></div>
+              <div className={styles.sailingMeta}>{totalPeople(group)}名</div>
+              <div className={styles.wrapRow}>
+                {group.some(booking => !booking.contacted) && <span className={`${styles.countBadge} ${styles.goldCountBadge}`}>未送信あり</span>}
+                <span className={`${styles.countBadge} ${styles.bookingCountBadge}`}>承認済み</span>
+              </div>
+            </div>
+            <div className={styles.prepareActions}>
+              <CaptainButton className={styles.goldButton} onClick={() => router.push('/dashboard/bookings')}>連絡</CaptainButton>
+              <CaptainButton onClick={() => router.push('/dashboard/bookings')} variant="secondary">詳細</CaptainButton>
+            </div>
+          </div>
+        )) : <div className={styles.emptyText}>{formatDate(tomorrow)} 出船なし</div>}
+      </section>
+
+      <section className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <div className={styles.panelTitleWrap}>
+            <span className={styles.headerIcon}>👤</span>
+            <h2>予約対応</h2>
+          </div>
+          {contacts.length + pendingBookings.length > 0 && <span className={`${styles.countBadge} ${styles.bookingCountBadge}`}>{contacts.length + pendingBookings.length}件</span>}
+        </div>
+        <div className={styles.supportRow}>
+          <span className={`${styles.countBadge} ${styles.blueCountBadge}`}>貸切 {contacts.length}件</span>
+          <span className={`${styles.countBadge} ${styles.goldCountBadge}`}>承認 {pendingBookings.length}件</span>
+        </div>
+        <CaptainButton className={styles.bookingCheckButton} onClick={() => router.push('/dashboard/bookings')}>確認</CaptainButton>
+      </section>
+
+      <section className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <div className={styles.panelTitleWrap}>
+            <span className={styles.headerIcon}>💬</span>
+            <h2>メッセージ</h2>
+          </div>
+          {messageCount > 0 && <span className={`${styles.countBadge} ${styles.messageCountBadge}`}>{messageCount}件</span>}
+        </div>
+        <div className={styles.messageRow}>
+          <span>LINE {snsCounts.line}件</span>
+          <span>Instagram {snsCounts.instagram}件</span>
+        </div>
+        <CaptainButton className={styles.messageCheckButton} onClick={() => router.push('/dashboard/extract')}>確認</CaptainButton>
+      </section>
 
       {todaysBookings.length === 0 && tomorrowBookings.length === 0 && nextBooking && (
         <section>
