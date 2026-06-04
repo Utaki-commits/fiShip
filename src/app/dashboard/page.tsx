@@ -26,7 +26,7 @@ type Booking = {
   needs_call_reason: string | null
   call_attempts: number | null
 }
-type Contact = { id: string; name: string; message: string; preferred_date: string | null; is_charter: boolean; is_negotiating: boolean }
+type Contact = { id: string; name: string; tel: string | null; message: string; preferred_date: string | null; is_charter: boolean; is_negotiating: boolean }
 type CancelTarget = { date: string; bin_type: 'day' | 'night' | 'relay'; bin_name: string }
 type BinSetting = {
   bin_type: 'day' | 'night' | 'relay'
@@ -124,6 +124,11 @@ export default function DashboardPage() {
   const beginCall = (booking: Booking) => {
     window.location.href = `tel:${booking.tel}`
     setCallTarget(booking)
+  }
+
+  const beginContactCall = (contact: Contact) => {
+    if (!contact.tel) return
+    window.location.href = `tel:${contact.tel}`
   }
 
   const markConnected = async () => {
@@ -331,6 +336,22 @@ export default function DashboardPage() {
           <span className={`${styles.countBadge} ${styles.blueCountBadge}`}>貸切 {contacts.length}件</span>
           <span className={`${styles.countBadge} ${styles.goldCountBadge}`}>承認 {pendingBookings.length}件</span>
         </div>
+        {contacts.length > 0 && (
+          <div className={styles.charterList}>
+            {contacts.slice(0, 3).map(contact => (
+              <div className={styles.charterItem} key={contact.id}>
+                <div className={styles.charterBody}>
+                  <div className={styles.charterName}>{contact.name} 様</div>
+                  <div className={styles.charterMeta}>
+                    {contact.preferred_date ? `${formatDate(contact.preferred_date)}・` : ''}{contact.tel || '電話番号未入力'}
+                  </div>
+                  {contact.message && <div className={styles.charterMessage}>{contact.message}</div>}
+                </div>
+                {contact.tel && <CaptainButton className={styles.navyButton} onClick={() => beginContactCall(contact)}>電話</CaptainButton>}
+              </div>
+            ))}
+          </div>
+        )}
         <CaptainButton className={styles.bookingCheckButton} onClick={() => router.push('/dashboard/bookings')}>確認</CaptainButton>
       </section>
 

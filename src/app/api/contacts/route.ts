@@ -3,9 +3,9 @@ import { supabase } from '@/lib/supabase'
 
 export async function POST(request: Request) {
   try {
-    const { vessel_id, name, message, is_charter, preferred_date } = await request.json()
+    const { vessel_id, name, tel, message, is_charter, preferred_date } = await request.json()
 
-    if (!vessel_id || !name || !message) {
+    if (!vessel_id || !name) {
       return NextResponse.json(
         { error: '必須項目が不足しています' },
         { status: 400 }
@@ -17,7 +17,8 @@ export async function POST(request: Request) {
       .insert([{
         vessel_id,
         name,
-        message,
+        tel: tel || null,
+        message: message || '',
         is_charter: Boolean(is_charter),
         is_negotiating: Boolean(is_charter),
         preferred_date: preferred_date || null,
