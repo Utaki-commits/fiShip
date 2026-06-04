@@ -74,6 +74,51 @@ PR #36確認：MERGED（2026-05-29 17:40:37 JST）
   - 船長が過去の予約実績を確認できる画面
 - 備考：contactsテーブルのtel正規化（A案）完了後に着手
 
+### 🔴 P0：乗船客データ収集設計の実装
+
+#### 事業背景
+遊漁船乗船客は釣具メーカーにとって優良顧客。
+釣具メーカーへのバイアウトを最終目的とし、
+乗船客データの蓄積・活用を今から設計する。
+
+#### DBマイグレーション
+bookingsテーブルに以下を追加：
+```sql
+ALTER TABLE bookings
+  ADD COLUMN IF NOT EXISTS phone text,
+  ADD COLUMN IF NOT EXISTS prefecture text,
+  ADD COLUMN IF NOT EXISTS age integer,
+  ADD COLUMN IF NOT EXISTS gender text,
+  ADD COLUMN IF NOT EXISTS sns_account text,
+  ADD COLUMN IF NOT EXISTS sns_type text,
+  ADD COLUMN IF NOT EXISTS boarded boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS boarded_at timestamptz;
+```
+
+#### 予約フォーム（乗船客側）の修正
+- 氏名：必須（現行維持）
+- 電話番号：必須（新規追加）
+- 居住地域：任意（新規追加）
+- 年齢：任意（新規追加）
+- 性別：任意（新規追加）
+- SNSアカウント：SNS経由予約者は必須・直接予約は任意（新規追加）
+- 「予約する」ボタン直上に同意文言を追加
+  - 「個人情報の取り扱いに同意の上、予約します」
+  - 利用規約・プライバシーポリシーへのリンクを設置
+
+#### 名簿画面の修正
+- 乗船確認ボタンを追加
+- 押下時に boarded: true・boarded_at: now() を記録
+
+#### 将来タスク（P2）
+- 分析画面：月別予約人数・リピート率・居住地域分布・想定売上
+- 対応タイミング：乗船客データが一定数蓄積されてから
+
+#### 対応タイミング
+- DBマイグレーション：contactsのtel正規化完了後すぐ
+- 予約フォーム修正：マイグレーション完了後
+- 名簿画面修正：UI修正フェーズで対応
+
 ---
 
 ## 既知のバグ・ペンディング
