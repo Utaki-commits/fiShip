@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import CaptainHeader from '@/components/CaptainHeader'
 import { PageShell, LoadingScreen, cardStyle, colors, primaryButtonStyle, secondaryButtonStyle, dangerButtonStyle, inputStyle, StatusPill, formatDate } from '../_components/CaptainShell'
 
 type Customer = { id: string; vessel_id: string; name: string; tel: string; address: string | null; age: number | null; gender: string | null; emergency_contact: string | null; emergency_contact_relation: string | null; is_blacklisted: boolean; memo: string | null; note: string | null }
@@ -69,7 +70,7 @@ export default function CustomersPage() {
 
   if (selected) {
     return (
-      <PageShell title="顧客詳細">
+      <PageShell title="顧客詳細" menu hero={<CaptainHeader vesselId={vesselId} />}>
         {saved && <div style={{ ...cardStyle, background: colors.greenBg, color: colors.green }}>{saved}</div>}
         <div style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -103,7 +104,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <PageShell title="顧客名簿">
+    <PageShell title="顧客名簿" menu hero={<CaptainHeader vesselId={vesselId} />}>
       <div style={cardStyle}>
         <label>検索</label>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="名前・電話番号" style={{ ...inputStyle, margin: '8px 0 12px' }} />

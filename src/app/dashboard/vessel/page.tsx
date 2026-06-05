@@ -4,6 +4,7 @@ import { ChangeEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { QRCodeSVG } from 'qrcode.react'
 import { supabase } from '@/lib/supabase'
+import CaptainHeader from '@/components/CaptainHeader'
 import { PageShell, LoadingScreen, cardStyle, colors, primaryButtonStyle, secondaryButtonStyle, inputStyle } from '../_components/CaptainShell'
 
 type Facilities = {
@@ -155,7 +156,7 @@ export default function VesselPage() {
   const reserveUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/reserve/${vessel.id}`
 
   return (
-    <PageShell title="船情報" back>
+    <PageShell title="船情報" menu hero={<CaptainHeader vesselId={vessel.id} />}>
       {saved && <div style={{ ...cardStyle, background: saved.includes('でき') ? colors.redBg : colors.greenBg, color: saved.includes('でき') ? colors.action : colors.green }}>{saved}</div>}
       <div style={cardStyle}>
         <h2 style={{ fontSize: '20px', fontWeight: 500, margin: '0 0 14px' }}>基本情報</h2>

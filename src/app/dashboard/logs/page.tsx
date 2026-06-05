@@ -3,6 +3,7 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import CaptainHeader from '@/components/CaptainHeader'
 import { PageShell, LoadingScreen, cardStyle, colors, primaryButtonStyle, secondaryButtonStyle, inputStyle, StatusPill, binLabel, formatDate, toDateStr } from '../_components/CaptainShell'
 
 type Booking = { id: string; vessel_id: string; date: string; bin_type: string; name: string; tel: string; count: number; board_token: string | null; board_completed: boolean; board_completed_at: string | null; status: string }
@@ -50,7 +51,7 @@ export default function LogsPage() {
   if (loading) return <LoadingScreen />
 
   return (
-    <PageShell title="乗船名簿">
+    <PageShell title="乗船名簿" menu hero={<CaptainHeader vesselId={vesselId} />}>
       {notice && <div style={{ ...cardStyle, background: colors.greenBg, color: colors.green }}>{notice}</div>}
       <div style={cardStyle}>
         <label>確認する日付</label>

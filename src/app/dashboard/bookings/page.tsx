@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getHolidayInfo } from '@/lib/holidays'
+import CaptainHeader from '@/components/CaptainHeader'
 import { PageShell, LoadingScreen, cardStyle, colors, primaryButtonStyle, secondaryButtonStyle, dangerButtonStyle, StatusPill, binBadgeStyle, binLabel, formatDate, toDateStr } from '../_components/CaptainShell'
 
 type Booking = {
@@ -25,6 +27,9 @@ type BinSetting = { bin_type: 'day' | 'night' | 'relay'; max_capacity: number; s
 type BlockedDate = { date_from: string; date_to: string; bin_type: string | null; type: string; reason: string | null }
 
 const monthStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1)
+const dayNames = ['日','月','火','水','木','金','土']
+const actionButtonStyle = { width: '96px', whiteSpace: 'nowrap' as const }
+const calendarBadgeStyle = { color: '#fff', fontSize: '10px', padding: '1px 4px', borderRadius: '4px', lineHeight: 1.2, whiteSpace: 'nowrap' as const }
 
 export default function BookingsPage() {
   const router = useRouter()
@@ -68,6 +73,20 @@ export default function BookingsPage() {
     })
   }, [currentMonth])
 
+  const bookingStatsByDate = useMemo(() => {
+    const stats: Record<string, { day: number; night: number; total: number }> = {}
+    bookings.forEach(booking => {
+      if (booking.status === 'cancelled') return
+      const bookingDate = new Date(`${booking.date}T00:00:00`)
+      if (bookingDate.getFullYear() !== currentMonth.getFullYear() || bookingDate.getMonth() !== currentMonth.getMonth()) return
+      stats[booking.date] = stats[booking.date] || { day: 0, night: 0, total: 0 }
+      stats[booking.date].total += 1
+      if (booking.bin_type === 'day' || booking.bin_type === 'relay') stats[booking.date].day += 1
+      if (booking.bin_type === 'night' || booking.bin_type === 'relay') stats[booking.date].night += 1
+    })
+    return stats
+  }, [bookings, currentMonth])
+
   const updateBooking = async (booking: Booking, payload: Record<string, unknown>) => {
     const res = await fetch('/api/bookings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: booking.id, ...payload }) })
     if (!res.ok) return
@@ -82,6 +101,11 @@ export default function BookingsPage() {
 
   const isBlocked = (dateStr: string) => blockedDates.some(b => b.date_from <= dateStr && dateStr <= b.date_to)
   const dailyBookings = (dateStr: string) => bookings.filter(b => b.date === dateStr && b.status !== 'cancelled')
+  const getDateTextColor = (date: Date) => {
+    if (getHolidayInfo(date) || date.getDay() === 0) return '#B91C1C'
+    if (date.getDay() === 6) return '#2563EB'
+    return '#1A2420'
+  }
   const dayCapacity = (date: Date) => {
     const month = date.getMonth()
     const dow = date.getDay()
@@ -94,39 +118,60 @@ export default function BookingsPage() {
   if (loading) return <LoadingScreen />
 
   const selectedBookings = dailyBookings(selectedDate)
+  const selectedBookingCount = selectedBookings.length
 
   return (
-    <PageShell title="予約一覧">
+    <PageShell title="予約一覧" menu hero={<CaptainHeader vesselId={vesselId} />}>
       <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} style={secondaryButtonStyle}>前月</button>
+        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} style={{ ...secondaryButtonStyle, minWidth: '72px', minHeight: '44px' }}>前月</button>
         <div style={{ fontSize: '18px', fontWeight: 500 }}>{currentMonth.getFullYear()}年 {currentMonth.getMonth() + 1}月</div>
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} style={secondaryButtonStyle}>翌月</button>
+        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} style={{ ...secondaryButtonStyle, minWidth: '72px', minHeight: '44px' }}>翌月</button>
       </div>
 
       <div style={{ ...cardStyle, padding: '10px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '6px' }}>
-          {['日','月','火','水','木','金','土'].map(d => <div key={d} style={{ textAlign: 'center', color: colors.sub, fontSize: '13px' }}>{d}</div>)}
+          {dayNames.map((d, i) => <div key={d} style={{ textAlign: 'center', color: i === 0 ? '#B91C1C' : i === 6 ? '#2563EB' : '#1A2420', fontSize: '13px' }}>{d}</div>)}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
-          {days.map(day => {
+          {days.map((day, index) => {
             const dateStr = toDateStr(day)
             if (day.getMonth() !== currentMonth.getMonth()) {
-              return <div key={dateStr} style={{ minHeight: '62px' }} />
+              const weekStart = Math.floor(index / 7) * 7
+              const weekDays = days.slice(weekStart, weekStart + 7)
+              const isTrailingNextMonth = day > currentMonth && weekDays.some(weekDay => weekDay.getMonth() === currentMonth.getMonth())
+              if (isTrailingNextMonth) {
+                return (
+                  <div key={dateStr} style={{ height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#D1D5DB', fontSize: '20px', lineHeight: 1.2, fontWeight: 500 }}>
+                    {day.getDate()}
+                  </div>
+                )
+              }
+              return <div key={dateStr} style={{ minHeight: 0 }} />
             }
             const dayBookings = dailyBookings(dateStr)
-            const pending = dayBookings.some(b => b.status === 'pending')
-            const needsCall = dayBookings.some(b => b.needs_call)
             const blocked = isBlocked(dateStr)
             const selected = dateStr === selectedDate
+            const bookingStats = bookingStatsByDate[dateStr] || { day: 0, night: 0, total: 0 }
+            const hasBookings = bookingStats.total > 0
+            const hasDay = bookingStats.day > 0
+            const hasNight = bookingStats.night > 0
+            const today = toDateStr(new Date()) === dateStr
+            const cellBackground = blocked ? '#D1D5DB' : colors.card
+            const cellTextColor = blocked ? '#1A2420' : getDateTextColor(day)
+            const cellBorder = today
+              ? '2px solid #B91C1C'
+              : `0.5px solid ${selected ? colors.action : colors.border}`
             return (
-              <button key={dateStr} onClick={() => setSelectedDate(dateStr)} style={{ minHeight: '62px', borderRadius: '10px', border: `0.5px solid ${selected ? colors.action : colors.border}`, background: blocked ? '#F3F4F6' : colors.card, color: colors.text, fontFamily: 'inherit', padding: '6px', fontWeight: 500 }}>
-                <div>{day.getDate()}</div>
-                {!blocked && dayBookings.length > 0 && (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '22px', height: '22px', borderRadius: '11px', background: colors.action, color: '#fff', fontSize: '12px', marginTop: '4px' }}>
-                    {dayBookings.length}
+              <button key={dateStr} onClick={() => setSelectedDate(dateStr)} style={{ height: '56px', boxSizing: 'border-box', borderRadius: '10px', border: cellBorder, background: cellBackground, color: cellTextColor, fontFamily: 'inherit', padding: '4px 2px', fontWeight: 500, display: 'flex', flexDirection: 'column', justifyContent: blocked ? 'center' : 'space-between', alignItems: 'center', overflow: 'hidden' }}>
+                <div style={{ fontSize: '20px', lineHeight: 1.2 }}>{day.getDate()}</div>
+                {blocked && <div style={{ fontSize: '13px' }}>休</div>}
+                {!blocked && hasBookings && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', minHeight: '14px', maxWidth: '100%' }}>
+                    {hasDay && <span style={{ ...calendarBadgeStyle, background: '#F59E0B' }}>昼{bookingStats.day}</span>}
+                    {hasNight && <span style={{ ...calendarBadgeStyle, background: '#1A3A5C' }}>夜{bookingStats.night}</span>}
                   </div>
                 )}
-                <div style={{ fontSize: '12px', minHeight: '16px' }}>{pending ? '⚠️' : ''}{needsCall ? '📞' : ''}</div>
+                {!blocked && !hasBookings && <div style={{ minHeight: '14px' }} />}
               </button>
             )
           })}
@@ -134,7 +179,10 @@ export default function BookingsPage() {
       </div>
 
       <section>
-        <h2 style={{ fontSize: '18px', fontWeight: 500, margin: '18px 0 10px' }}>{formatDate(selectedDate)}の予約</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', margin: '18px 0 10px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 500, margin: 0 }}>{formatDate(selectedDate)}の予約</h2>
+          <StatusPill tone="green">{selectedBookingCount}件</StatusPill>
+        </div>
         {selectedBookings.length === 0 && <div style={cardStyle}>この日の予約はありません。</div>}
         {selectedBookings.map(b => (
           <div key={b.id} style={cardStyle}>
@@ -148,10 +196,10 @@ export default function BookingsPage() {
               電話: {b.tel || '未入力'}<br />釣り方: {b.fishing_style || '未入力'}<br />メッセージ: {b.message || 'なし'}
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
-              {b.tel && <button onClick={() => callBooking(b)} style={primaryButtonStyle}>電話する</button>}
-              {b.status === 'pending' && <button onClick={() => updateBooking(b, { status: 'confirmed' })} style={secondaryButtonStyle}>承認</button>}
-              {b.status === 'pending' && <button onClick={() => updateBooking(b, { status: 'rejected' })} style={dangerButtonStyle}>お断り</button>}
-              {b.status === 'confirmed' && <button onClick={() => updateBooking(b, { status: 'cancelled' })} style={dangerButtonStyle}>キャンセル</button>}
+              {b.tel && <button onClick={() => callBooking(b)} style={{ ...primaryButtonStyle, ...actionButtonStyle }}>電話する</button>}
+              {b.status === 'pending' && <button onClick={() => updateBooking(b, { status: 'confirmed' })} style={{ ...secondaryButtonStyle, ...actionButtonStyle }}>承認</button>}
+              {b.status === 'pending' && <button onClick={() => updateBooking(b, { status: 'rejected' })} style={{ ...dangerButtonStyle, ...actionButtonStyle }}>お断り</button>}
+              {b.status === 'confirmed' && <button onClick={() => updateBooking(b, { status: 'cancelled' })} style={{ ...dangerButtonStyle, ...actionButtonStyle }}>キャンセル</button>}
             </div>
           </div>
         ))}
@@ -162,8 +210,8 @@ export default function BookingsPage() {
           <div style={{ ...cardStyle, maxWidth: '420px', width: '100%' }}>
             <h3 style={{ fontSize: '20px', fontWeight: 500, margin: '0 0 12px' }}>{callTarget.name}様への連絡はとれましたか？</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <button onClick={() => { updateBooking(callTarget, { contacted: true, needs_call: false }); setCallTarget(null) }} style={primaryButtonStyle}>つながった</button>
-              <button onClick={() => { updateBooking(callTarget, { needs_call: true, call_attempts: (callTarget.call_attempts || 0) + 1 }); setCallTarget(null) }} style={secondaryButtonStyle}>留守だった</button>
+              <button onClick={() => { updateBooking(callTarget, { contacted: true, needs_call: false }); setCallTarget(null) }} style={{ ...primaryButtonStyle, ...actionButtonStyle }}>つながった</button>
+              <button onClick={() => { updateBooking(callTarget, { needs_call: true, call_attempts: (callTarget.call_attempts || 0) + 1 }); setCallTarget(null) }} style={{ ...secondaryButtonStyle, ...actionButtonStyle }}>留守だった</button>
             </div>
           </div>
         </div>

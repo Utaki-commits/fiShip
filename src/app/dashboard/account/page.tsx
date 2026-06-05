@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import CaptainHeader from '@/components/CaptainHeader'
 import { PageShell, LoadingScreen, cardStyle, colors, primaryButtonStyle, secondaryButtonStyle, dangerButtonStyle } from '../_components/CaptainShell'
 
 type Vessel = { id: string; notify_enabled: boolean | null; font_size: string | null; color_mode: string | null; auto_confirm: boolean | null; subscribed_at: string | null; date_format: 'western' | 'japanese' | null }
@@ -71,7 +72,7 @@ export default function AccountPage() {
   if (loading || !vessel) return <LoadingScreen />
 
   return (
-    <PageShell title="設定" back>
+    <PageShell title="設定" menu hero={<CaptainHeader vesselId={vessel.id} />}>
       {saved && <div style={{ ...cardStyle, background: saved.includes('でき') ? colors.redBg : colors.greenBg, color: saved.includes('でき') ? colors.action : colors.green }}>{saved}</div>}
       <div style={cardStyle}>
         <h2 style={{ fontSize: '20px', fontWeight: 500, margin: '0 0 14px' }}>運営設定</h2>

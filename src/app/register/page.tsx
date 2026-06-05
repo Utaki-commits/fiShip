@@ -59,8 +59,21 @@ export default function RegisterPage() {
       router.push('/login')
       return
     }
+    const slugRes = await fetch('/api/slugs/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: form.name }),
+    })
+    if (!slugRes.ok) {
+      setError('登録URLの作成に失敗しました。もう一度お試しください。')
+      setLoading(false)
+      return
+    }
+    const { slug } = await slugRes.json()
+
     const { error } = await supabase.from('vessels').insert([{
       ...form,
+      slug,
       user_id: session.user.id,
     }])
     if (error) {

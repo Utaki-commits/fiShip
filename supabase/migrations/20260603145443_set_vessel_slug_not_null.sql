@@ -1,0 +1,2 @@
+ALTER TABLE vessels
+  ALTER COLUMN slug SET NOT NULL;

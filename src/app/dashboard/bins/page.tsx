@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import CaptainHeader from '@/components/CaptainHeader'
 import { PageShell, LoadingScreen, cardStyle, colors, primaryButtonStyle, secondaryButtonStyle, dangerButtonStyle, inputStyle, binBadgeStyle, binLabel } from '../_components/CaptainShell'
 
 type BinType = 'day' | 'night' | 'relay'
@@ -45,6 +46,54 @@ type FormState = {
 
 const emptyForm = (): FormState => ({ id: '', name: '', bin_type: 'day', start_month: 0, end_month: 11, days_of_week: [0,1,2,3,4,5,6], departure_time: '06:00', end_time: '', max_capacity: '10', price: '', note: '', period_type: 'monthly', start_date: '', end_date: '' })
 
+const binTypeColors: Record<BinType, string[]> = {
+  day: ['#1A6B8A', '#5BA3C0', '#8EC5D8', '#B9DDEA'],
+  night: ['#4A3580', '#7A65B0', '#A293CC', '#C8BFE0'],
+  relay: ['#2D7A4F', '#5DAA7F', '#8EC8A5', '#BFE0CC'],
+}
+
+const inactiveMonthColor = '#E5E7EB'
+
+const getBinGaugeColor = (bin: BinSetting, allBins: BinSetting[]) => {
+  const sameTypeBins = allBins.filter(item => item.bin_type === bin.bin_type)
+  const index = sameTypeBins.findIndex(item => item.id === bin.id)
+  const palette = binTypeColors[bin.bin_type]
+  return palette[Math.max(0, Math.min(index, palette.length - 1))]
+}
+
+const isActiveMonth = (bin: BinSetting, monthIndex: number) => (
+  bin.start_month <= bin.end_month
+    ? bin.start_month <= monthIndex && monthIndex <= bin.end_month
+    : monthIndex >= bin.start_month || monthIndex <= bin.end_month
+)
+
+const statusBadgeStyle = (enabled: boolean) => ({
+  background: enabled ? '#DCFCE7' : '#E5E7EB',
+  color: enabled ? '#166534' : '#6B7280',
+  borderRadius: '999px',
+  padding: '4px 10px',
+  fontSize: '13px',
+  fontWeight: 500,
+})
+
+const actionButtonStyle = { width: '96px', whiteSpace: 'nowrap' as const }
+const toggleButtonStyle = { ...secondaryButtonStyle, ...actionButtonStyle }
+
+const deleteButtonStyle = {
+  ...dangerButtonStyle,
+  ...actionButtonStyle,
+  border: '1px solid #CDD3DC',
+  background: '#FFFFFF',
+  color: '#B91C1C',
+}
+
+const formatPrice = (price: string | null) => {
+  if (!price) return '料金未設定'
+  const numericPrice = Number(price)
+  if (Number.isNaN(numericPrice)) return price
+  return `${numericPrice.toLocaleString('ja-JP')}円`
+}
+
 export default function BinsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -54,6 +103,7 @@ export default function BinsPage() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<BinSetting | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -142,12 +192,13 @@ export default function BinsPage() {
   const deleteBin = async (bin: BinSetting) => {
     await fetch(`/api/bin-settings?id=${bin.id}`, { method: 'DELETE' })
     setBins(prev => prev.filter(b => b.id !== bin.id))
+    setDeleteTarget(null)
   }
 
   if (loading) return <LoadingScreen />
 
   return (
-    <PageShell title="便設定" back>
+    <PageShell title="便設定" menu hero={<CaptainHeader vesselId={vesselId} />}>
       {!editing && (
         <>
           {bins.length === 0 ? (
@@ -162,17 +213,27 @@ export default function BinsPage() {
               <button onClick={() => startEdit()} style={{ ...primaryButtonStyle, width: '100%', padding: '16px' }}>＋ 便を追加する</button>
             </div>
           ) : (
-            <div style={cardStyle}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '3px', marginBottom: '10px', color: colors.sub, fontSize: '12px' }}>
+            <div style={{ ...cardStyle, padding: '18px 14px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 500, color: colors.text, marginBottom: '12px' }}>営業期間</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(56px, 80px) repeat(12, minmax(0, 1fr))', gap: '2px', marginBottom: '6px', color: colors.sub, fontSize: '12px' }}>
+                <div />
                 {Array.from({ length: 12 }, (_, i) => <div key={i} style={{ textAlign: 'center' }}>{i + 1}</div>)}
               </div>
               {bins.map(bin => (
-                <div key={bin.id} style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr) 64px', gap: '3px', alignItems: 'center', marginBottom: '8px' }}>
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const active = bin.start_month <= bin.end_month ? bin.start_month <= i && i <= bin.end_month : i >= bin.start_month || i <= bin.end_month
-                    return <div key={i} style={{ height: '12px', borderRadius: '8px', background: active ? colors.action : colors.border, opacity: bin.enabled ? 1 : 0.3 }} />
-                  })}
-                  <span style={{ fontSize: '12px', color: bin.enabled ? colors.text : colors.weak }}>{bin.name || binLabel(bin.bin_type)}</span>
+                <div key={bin.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(56px, 80px) repeat(12, minmax(0, 1fr))', gap: '2px', alignItems: 'center', marginBottom: '8px', opacity: bin.enabled ? 1 : 0.3 }}>
+                  <span style={{ fontSize: '11px', color: bin.enabled ? colors.text : colors.weak, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bin.name || binLabel(bin.bin_type)}</span>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        width: '100%',
+                        minWidth: 0,
+                        height: '20px',
+                        borderRadius: '6px',
+                        background: isActiveMonth(bin, i) ? getBinGaugeColor(bin, bins) : inactiveMonthColor,
+                      }}
+                    />
+                  ))}
                 </div>
               ))}
             </div>
@@ -182,14 +243,14 @@ export default function BinsPage() {
             <div key={bin.id} style={{ ...cardStyle, background: bin.enabled ? colors.card : '#F5F5F5', color: bin.enabled ? colors.text : colors.weak }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '10px' }}>
                 <div><span style={binBadgeStyle(bin.bin_type)}>{bin.name || binLabel(bin.bin_type)}</span></div>
-                <span>{bin.enabled ? '有効' : '停止中'}</span>
+                <span style={statusBadgeStyle(bin.enabled)}>{bin.enabled ? '有効' : '停止中'}</span>
               </div>
-              <div style={{ color: bin.enabled ? colors.sub : colors.weak, lineHeight: 1.7 }}>{bin.departure_time} 出発 {bin.end_time ? `〜 ${bin.end_time}` : ''}<br />定員 {bin.max_capacity}名 / {bin.price || '料金未設定'}</div>
+              <div style={{ color: bin.enabled ? colors.sub : colors.weak, lineHeight: 1.7 }}>{bin.departure_time} 出発 {bin.end_time ? `〜 ${bin.end_time}` : ''}<br />定員 {bin.max_capacity}名 / {formatPrice(bin.price)}</div>
               {bin.note && <p style={{ color: colors.sub }}>{bin.note}</p>}
               <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                <button onClick={() => startEdit(bin)} style={secondaryButtonStyle}>編集</button>
-                <button onClick={() => toggleEnabled(bin)} style={secondaryButtonStyle}>{bin.enabled ? '受付停止' : '再開'}</button>
-                <button onClick={() => deleteBin(bin)} style={dangerButtonStyle}>削除</button>
+                <button onClick={() => startEdit(bin)} style={{ ...secondaryButtonStyle, ...actionButtonStyle }}>編集</button>
+                <button onClick={() => toggleEnabled(bin)} style={toggleButtonStyle}>{bin.enabled ? '受付停止' : '再開'}</button>
+                <button onClick={() => setDeleteTarget(bin)} style={deleteButtonStyle}>削除</button>
               </div>
             </div>
           ))}
@@ -234,6 +295,32 @@ export default function BinsPage() {
           <div style={{ display: 'grid', gap: '8px' }}>
             <button disabled={saving} onClick={save} style={primaryButtonStyle}>{saving ? '保存中...' : '保存する'}</button>
             <button onClick={() => setEditing(false)} style={secondaryButtonStyle}>戻る</button>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 100,
+          background: 'rgba(0,0,0,0.45)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+        }}>
+          <div style={{ ...cardStyle, width: '100%', maxWidth: '360px', marginBottom: 0 }}>
+            <div style={{ fontSize: '18px', fontWeight: 500, color: colors.text, marginBottom: '8px' }}>
+              {deleteTarget.name || binLabel(deleteTarget.bin_type)}を削除しますか？
+            </div>
+            <div style={{ fontSize: '14px', color: colors.sub, lineHeight: 1.7, marginBottom: '18px' }}>
+              削除すると元に戻せません。
+            </div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => deleteBin(deleteTarget)} style={deleteButtonStyle}>削除</button>
+              <button onClick={() => setDeleteTarget(null)} style={{ ...secondaryButtonStyle, ...actionButtonStyle }}>キャンセル</button>
+            </div>
           </div>
         </div>
       )}

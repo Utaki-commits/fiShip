@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import CaptainHeader from '@/components/CaptainHeader'
+import { PageShell } from '../_components/CaptainShell'
 
 export default function ContactPage() {
   const router = useRouter()
@@ -38,15 +40,7 @@ export default function ContactPage() {
   }
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', minHeight: '100vh', background: '#F4F6F2', fontFamily: 'var(--font-sans)' }}>
-      <div style={{ background: '#1B2A4A', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px', minHeight: '80px' }}>
-        <button onClick={() => router.push('/dashboard/account')}
-          style={{ width: '56px', height: '56px', borderRadius: '12px', background: 'rgba(255,255,255,0.08)', border: '0.5px solid rgba(255,255,255,0.3)', color: '#FFFFFF', fontSize: '22px', cursor: 'pointer' }}>
-          ←
-        </button>
-        <div style={{ fontSize: '24px', fontWeight: 500, color: '#FFFFFF' }}>お問い合わせ</div>
-      </div>
-
+    <PageShell title="お問い合わせ" menu hero={vesselId ? <CaptainHeader vesselId={vesselId} /> : undefined}>
       <div style={{ padding: '16px' }}>
         {done ? (
           <div style={{ background: 'var(--status-ok-bg)', border: '0.5px solid var(--status-ok-bd)', borderRadius: '14px', padding: '32px 20px', textAlign: 'center', marginTop: '20px' }}>
@@ -89,6 +83,6 @@ export default function ContactPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   )
 }

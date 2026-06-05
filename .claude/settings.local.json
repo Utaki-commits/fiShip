@@ -17,7 +17,16 @@
       "Bash(node -e \"const h = require\\('holidays-jp'\\); console.log\\(Object.keys\\(h\\)\\); const r = h.getHolidays\\(2025\\); console.log\\(typeof r\\); console.log\\(JSON.stringify\\(r\\).slice\\(0, 300\\)\\)\")",
       "Bash(node -e \"const h = require\\('holidays-jp'\\); console.log\\(h.isHoliday\\(new Date\\('2025-01-01'\\)\\)\\); console.log\\(h.getHolidayInfo\\(new Date\\('2025-01-01'\\)\\)\\); console.log\\(h.getHolidayInfo\\(new Date\\('2025-01-13'\\)\\)\\); console.log\\(JSON.stringify\\(Array.from\\(h.holidayMap.entries\\(\\)\\).slice\\(0,3\\)\\)\\)\")",
       "PowerShell(Get-ChildItem *)",
-      "PowerShell(git clone https://github.com/affaan-m/everything-claude-code.git \"$env:USERPROFILE\\\\everything-claude-code\")"
+      "PowerShell(git clone https://github.com/affaan-m/everything-claude-code.git \"$env:USERPROFILE\\\\everything-claude-code\")",
+      "WebSearch",
+      "Bash(gh api *)",
+      "Bash(python -c \"import sys,json,base64; print\\(base64.b64decode\\(json.load\\(sys.stdin\\)['content']\\).decode\\(\\)\\)\")",
+      "PowerShell(git clone https://github.com/tsubotax/melta-ui.git \"$env:USERPROFILE\\\\melta-ui\")",
+      "PowerShell(Set-Location *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(claude mcp add melta-ui node \"$env:USERPROFILE\\\\melta-ui\\\\dist\\\\index.js\")",
+      "PowerShell(claude mcp *)",
+      "Bash(npm audit *)"
     ]
   }
 }

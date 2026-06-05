@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { CaptainButton, CaptainCard } from '@/components/captain-ui'
-import { DAY_NAMES, PageShell, LoadingScreen, StatusPill, binLabel, formatDate, toDateStr } from './_components/CaptainShell'
+import CaptainHeader from '@/components/CaptainHeader'
+import { PageShell, LoadingScreen, StatusPill, binLabel, formatDate, toDateStr } from './_components/CaptainShell'
 import styles from './DashboardPage.module.css'
 
 type Vessel = { id: string; name: string; captain_name?: string | null; banner_url?: string | null; auto_confirm?: boolean; setup_completed?: boolean; date_format?: 'western' | 'japanese' | null }
@@ -35,18 +36,6 @@ type BinSetting = {
   fish_types: string[] | null
 }
 
-const toJapaneseYear = (date: Date) => {
-  const year = date.getFullYear()
-  if (year >= 2019) return `令和${year - 2018}年`
-  if (year >= 1989) return `平成${year - 1988}年`
-  return `${year}年`
-}
-
-const formatHeroDate = (date: Date, format?: 'western' | 'japanese' | null) => {
-  const prefix = format === 'japanese' ? toJapaneseYear(date) : `${date.getFullYear()}年`
-  return `${prefix}${date.getMonth() + 1}月${date.getDate()}日（${DAY_NAMES[date.getDay()]}）`
-}
-
 export default function DashboardPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -59,8 +48,6 @@ export default function DashboardPage() {
   const [cancelTarget, setCancelTarget] = useState<CancelTarget | null>(null)
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState('')
-  const todayDate = useMemo(() => new Date(), [])
-
   const today = useMemo(() => toDateStr(new Date()), [])
   const tomorrow = useMemo(() => toDateStr(new Date(Date.now() + 86400000)), [])
 
@@ -214,21 +201,8 @@ export default function DashboardPage() {
     return '☀️'
   }
 
-  const DashboardHero = () => (
-    <div className={styles.hero}>
-      {vessel?.banner_url && <img className={styles.heroImage} src={vessel.banner_url} alt={`${vessel.name} バナー`} />}
-      <div className={styles.heroOverlay}>
-        <div className={styles.heroText}>
-          <div className={styles.heroTitle}>{vessel?.name || 'ダッシュボード'}</div>
-          <div className={styles.heroCaptain}>⚓ 船長 {vessel?.captain_name || '未設定'}</div>
-          <div className={styles.heroDate}>{formatHeroDate(todayDate, vessel?.date_format)}</div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
-    <PageShell title={vessel?.name || 'ダッシュボード'} menu hero={<DashboardHero />}>
+    <PageShell title={vessel?.name || 'ダッシュボード'} menu hero={vessel?.id ? <CaptainHeader vesselId={vessel.id} /> : undefined}>
       {notice && <CaptainCard className={styles.notice}>{notice}</CaptainCard>}
 
       <section className={styles.summaryCard}>

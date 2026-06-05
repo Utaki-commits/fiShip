@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { generateUniqueVesselSlug } from '@/lib/slug'
 
 // サービスロールクライアントをリクエスト時に生成する（ビルド時のエラーを防ぐ）
 function getAdminClient() {
@@ -161,9 +162,12 @@ export async function POST(req: NextRequest) {
     }
 
     // 船情報を作成
+    const slug = await generateUniqueVesselSlug(adminClient, name)
+
     const { error: vesselError } = await adminClient.from('vessels').insert([{
       user_id: newUser.user.id,
       name,
+      slug,
       captain_name,
       prefecture,
       port_name,
