@@ -1,0 +1,27 @@
+name: Supabase Keepalive
+
+on:
+  schedule:
+    # 3日に1回 UTC 12:00（Supabaseは7日無通信で停止）
+    - cron: '0 12 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: |
+          response=$(curl -sf \
+            -X GET \
+            "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/rest/v1/bookings?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -w "\n%{http_code}" \
+            -o /dev/null)
+          echo "HTTP status: $response"
+          if [ "$response" != "200" ] && [ "$response" != "206" ]; then
+            echo "Ping failed with status $response"
+            exit 1
+          fi
+          echo "Supabase is alive."
