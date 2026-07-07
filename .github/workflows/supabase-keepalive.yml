@@ -17,7 +17,7 @@ jobs:
             "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/rest/v1/bookings?select=id&limit=1" \
             -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -w "\n%{http_code}" \
+            -w "%{http_code}" \
             -o /dev/null)
           echo "HTTP status: $response"
           if [ "$response" != "200" ] && [ "$response" != "206" ]; then
